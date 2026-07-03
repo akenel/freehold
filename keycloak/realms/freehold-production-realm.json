@@ -3,11 +3,17 @@
   "enabled": true,
   "sslRequired": "none",
   "registrationAllowed": false,
-  "loginTheme": "keycloak",
+  "loginTheme": "freehold",
   "roles": {
     "realm": [
-      { "name": "admin", "description": "Full access" },
-      { "name": "staff", "description": "Everyday user" }
+      {
+        "name": "admin",
+        "description": "Full access"
+      },
+      {
+        "name": "staff",
+        "description": "Everyday user"
+      }
     ]
   },
   "clients": [
@@ -21,8 +27,12 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "protocol": "openid-connect",
-      "redirectUris": ["http://localhost:8080/*"],
-      "webOrigins": ["http://localhost:8080"],
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ],
       "attributes": {
         "post.logout.redirect.uris": "http://localhost:8080/*"
       }
@@ -36,8 +46,16 @@
       "email": "demo@freehold.local",
       "firstName": "Demo",
       "lastName": "User",
-      "credentials": [ { "type": "password", "value": "demo", "temporary": false } ],
-      "realmRoles": ["admin"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "admin"
+      ]
     },
     {
       "username": "sam",
@@ -46,8 +64,22 @@
       "email": "sam@freehold.local",
       "firstName": "Sam",
       "lastName": "Staff",
-      "credentials": [ { "type": "password", "value": "sam", "temporary": false } ],
-      "realmRoles": ["staff"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "sam",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "staff"
+      ]
     }
-  ]
+  ],
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "en",
+    "hi"
+  ],
+  "defaultLocale": "en"
 }

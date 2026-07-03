@@ -92,7 +92,10 @@ async def login(request: Request):
     verifier, challenge = auth.make_pkce()
     request.session["oauth"] = {"state": state, "nonce": nonce, "cv": verifier}
     redirect_uri = f"{APP_BASE_URL}/auth/callback"
-    return RedirectResponse(auth.build_auth_redirect(redirect_uri, state, nonce, challenge))
+    lang = i18n.resolve_lang(request)  # carry the app language into the login page
+    return RedirectResponse(
+        auth.build_auth_redirect(redirect_uri, state, nonce, challenge, ui_locales=lang)
+    )
 
 
 @app.get("/auth/callback")

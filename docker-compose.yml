@@ -52,6 +52,7 @@ services:
       KC_PROXY_HEADERS: xforwarded
     volumes:
       - ./keycloak/realms:/opt/keycloak/data/import:ro
+      - ./keycloak/themes:/opt/keycloak/themes:ro    # custom login theme (adds Hindi)
     ports:
       - "127.0.0.1:8081:8080"    # direct KC (admin console + realm probe) — dev only
     depends_on:

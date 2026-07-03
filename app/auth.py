@@ -49,9 +49,14 @@ def make_pkce() -> tuple[str, str]:
     return verifier, challenge
 
 
-def build_auth_redirect(redirect_uri: str, state: str, nonce: str, challenge: str) -> str:
-    """The URL we send the browser to — Keycloak's hosted login page."""
-    query = urlencode({
+def build_auth_redirect(redirect_uri: str, state: str, nonce: str, challenge: str,
+                        ui_locales: str | None = None) -> str:
+    """The URL we send the browser to — Keycloak's hosted login page.
+
+    `ui_locales` (an OIDC standard param) tells Keycloak which language to render
+    the login page in, so the app's language carries through to the login screen.
+    """
+    params = {
         "client_id": CLIENT_ID,
         "response_type": "code",
         "scope": "openid profile email",
@@ -60,8 +65,10 @@ def build_auth_redirect(redirect_uri: str, state: str, nonce: str, challenge: st
         "nonce": nonce,
         "code_challenge": challenge,
         "code_challenge_method": "S256",
-    })
-    return f"{AUTH_URL}?{query}"
+    }
+    if ui_locales:
+        params["ui_locales"] = ui_locales
+    return f"{AUTH_URL}?{urlencode(params)}"
 
 
 async def exchange_code(code: str, redirect_uri: str, verifier: str) -> dict:
