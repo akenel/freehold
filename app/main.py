@@ -259,6 +259,11 @@ async def account(request: Request):
     })
 
 
+@app.get("/manifesto")
+async def manifesto(request: Request):
+    return templates.TemplateResponse("manifesto.html", {"request": request, "user": current_user(request)})
+
+
 @app.get("/terms")
 async def terms(request: Request):
     return templates.TemplateResponse("terms.html", {"request": request, "user": current_user(request)})

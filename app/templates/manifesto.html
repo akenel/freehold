@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The New Evolution — a Freehold manifesto</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .m-wrap{max-width:680px;margin:0 auto;padding:20px 22px 80px}
+    .m-serif{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif}
+    .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:var(--amber);margin:26px 0 16px;display:flex;align-items:center;gap:12px}
+    .eyebrow::before{content:"";width:26px;height:1px;background:var(--amber);opacity:.7}
+    .m-hero{font-family:var(--mono);font-weight:700;letter-spacing:-.01em;font-size:clamp(34px,7vw,58px);line-height:1.03;margin:0 0 16px;text-wrap:balance}
+    .m-sub{font-size:clamp(17px,2.6vw,20px);color:var(--muted);font-style:italic;margin:0 0 40px;line-height:1.5}
+    .m-body{font-size:19px;line-height:1.72;color:#e7ddca}
+    .m-body p{margin:0 0 22px}
+    .m-body p.drop::first-letter{font-family:var(--mono);float:left;font-size:66px;line-height:.82;font-weight:700;color:var(--amber);padding:6px 12px 0 0}
+    .m-h2{font-family:var(--mono);font-size:clamp(19px,3vw,24px);letter-spacing:-.01em;color:var(--bone);margin:44px 0 16px}
+    .roll{border-left:3px solid var(--line);padding:4px 0 4px 18px;margin:0 0 20px}
+    .roll .name{font-family:var(--mono);font-size:14px;letter-spacing:.03em;color:var(--amber);font-weight:700;margin-bottom:4px}
+    .roll p{margin:0}
+    blockquote.pull{margin:38px 0;padding:0;text-align:center;font-family:var(--mono);font-weight:700;font-size:clamp(22px,4vw,30px);color:var(--amber);letter-spacing:-.01em;line-height:1.25}
+    .m-body b{color:#fff}
+    .sign{margin-top:48px;padding-top:24px;border-top:1px solid var(--line);font-family:var(--mono);font-size:15px;color:var(--muted);line-height:1.7}
+    .sign b{color:var(--bone)}
+    .m-foot{margin-top:34px;font-size:13px;color:var(--dim);text-align:center}
+    .m-foot a{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap" style="padding-bottom:0">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      <span class="lang">{% for c, l in langs.items() %}{% if c == lang %}<b>{{ l }}</b>{% else %}<a href="/lang/{{ c }}">{{ l }}</a>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+      {% if user %}<a class="btn ghost" href="/dashboard">{{ t('nav.dashboard') }}</a>
+      {% else %}<a class="btn primary" href="/login">{{ t('nav.login') }}</a>{% endif %}
+    </div>
+  </div>
+
+  <article class="m-wrap m-serif">
+    <p class="eyebrow">A Freehold Manifesto</p>
+    <h1 class="m-hero">The New Evolution</h1>
+    <p class="m-sub">How software quietly became rented land — and how you walk off it.</p>
+
+    <div class="m-body">
+      <p class="drop">We used to own things. In 1990 you bought a program on a floppy disk. It was <i>yours.</i> It ran on <i>your</i> machine, offline, forever — whether the company that made it thrived, went bankrupt, or forgot you existed. You owned the tool the way a carpenter owns a hammer. Nobody could reach across the world and switch it off.</p>
+
+      <p>Then, quietly, over about thirty-five years, they took the disk away.</p>
+
+      <p>First the software moved to "the cloud" — a lovely word for <i>someone else's computer, with a meter running.</i> Then it went <b>subscription:</b> pay every month, or the hammer stops swinging. Then <b>per seat:</b> pay again for every hand that touches it. Then <b>usage-based:</b> pay by the swing. Nobody held a vote. We just woke up one morning and found we were all tenants — on land we used to own.</p>
+
+      <h2 class="m-h2">Meet the landlords</h2>
+      <p>You already pay them. Let's introduce them properly.</p>
+
+      <div class="roll"><div class="name">The Cathedral · SAP</div><p>Sells you a system so vast that installing it takes <i>years,</i> an army of consultants who bill by the hour, and a permanent department whose whole job is keeping it from falling over. You can't afford to finish it. You <i>definitely</i> can't afford to leave it. That's not the accident — that's the product.</p></div>
+
+      <div class="roll"><div class="name">The Auditor · Oracle</div><p>Hands you the database with a smile, then sends the license inspectors to count how you used it. The software was never the product. The <i>invoice</i> is the product.</p></div>
+
+      <div class="roll"><div class="name">The Meter · AWS &amp; Azure</div><p>A beautiful free tier. Sign up in five minutes. Build your whole company on it. Then the bill arrives like a ransom note — and you learn that getting your <i>own data back out</i> costs extra. They named that fee "egress." The rest of us call it a toll on the exit.</p></div>
+
+      <div class="roll"><div class="name">The Swamp · WordPress</div><p>"Free" and "open" — and then forty plugins from forty strangers, each one a door you didn't know was unlocked, each update a coin-flip on whether the site still loads in the morning. You don't own it. You <i>maintain</i> it, in a cold sweat, forever.</p></div>
+
+      <h2 class="m-h2">The cruelest word in the language is "free"</h2>
+      <p>Every trap on that list is baited with the same syllable. <b>Free</b> tier. <b>Free</b> plugin. <b>Free</b> community edition. Free is the open door. The lock is on the <i>inside</i> — and it's your data, your customers, your ten years of work, that won't fit back through it the day you finally try to leave.</p>
+
+      <h2 class="m-h2">Here's what they pray you never notice</h2>
+      <p>The engines under all of it — the actual machinery inside the cathedral — are sitting in the open. Free. Have been for years.</p>
+      <p>Postgres runs banks. Linux runs the internet. Keycloak guards logins for governments. Docker ships the lot. Caddy hands you HTTPS for nothing. None of it has a "Contact Sales" button. <b>The giants aren't selling you magic. They're selling you the assembly — and betting their whole empire that you'll never learn to do it yourself.</b></p>
+      <p>That bet is the entire game. And it is <i>losable.</i></p>
+
+      <h2 class="m-h2">Freehold</h2>
+      <p>A <i>freehold</i> is land you own outright. No lease. No landlord. No ground rent. No one who can raise your rent or put you off it.</p>
+      <p>This is that — for your software. A real, production-grade base — login, database, storage, deploy, backups that prove themselves — built from the free and open tools the giants use, wired so you can <i>read every layer.</i> You extend it by plugging in what you like, the honest way: as its own container, or over a plain API — the way we plug in Keycloak, Postgres, MinIO. <b>One rule: everything you bolt on has to be free and open too.</b> No paywall smuggled in the back. No "free until you succeed, and then we own you."</p>
+      <p>It is <i>right-sized,</i> on purpose. A shop's till is not a spaceship. Thirty dollars a month runs what the landlords bill three hundred for — and you can pick it up and move it to any machine on Earth on a Tuesday afternoon, and no one can stop you.</p>
+
+      <blockquote class="pull">Own your stack. Owe no one.</blockquote>
+
+      <h2 class="m-h2">All the way down to the silicon</h2>
+      <p>And when you're ready, it goes deeper than software. The last landlord — the biggest one in 2026 — rents you <i>compute.</i> The GPUs. <i>"You can't run the intelligence without our hardware."</i></p>
+      <p>Even that is a bluff. A community can bring its own machines and share the load — the one with the GPU lends a few cycles to the one without. Own your stack, own your brain, own the hardware, and trade it among neighbours. Owe no one — not even the people selling the future by the hour.</p>
+
+      <h2 class="m-h2">This isn't a revolution</h2>
+      <p>Revolutions burn the field down and then argue about the ashes. This is quieter, and it's already happening: builders reading the fine print, doing the arithmetic, and <i>walking off the rented land</i> onto ground they own — with the same free tools that were lying in the open the whole time.</p>
+      <p>Call it the new evolution. The fence is still standing. We just stopped paying to stand behind it.</p>
+    </div>
+
+    <p class="sign">🐺 The Wolf built the road. 🐯 The Tiger kept it honest.<br>The gate is open. <b>Walk free.</b></p>
+
+    <p class="m-foot"><a href="/">← Home</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+  </article>
+</body>
+</html>
