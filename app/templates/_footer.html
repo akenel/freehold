@@ -1,0 +1,17 @@
+<footer class="site-foot">
+  <nav class="foot-links">
+    <a href="/manifesto">Manifesto</a>
+    <a href="/sitemap">Site map</a>
+    <a href="/terms">Terms</a>
+    <a href="/privacy">Privacy</a>
+    <a href="https://github.com/akenel/freehold" rel="noreferrer">GitHub&nbsp;↗</a>
+  </nav>
+  <div class="foot-status" title="build {{ build.version }} · {{ build.sha }}{% if build.date %} · {{ build.date }}{% endif %}">
+    <span class="pulse ok" id="health-dot"></span>
+    <span class="env">{{ (env or 'sandbox')|upper }}</span>
+    <span class="bld">⚙ {{ build.version }}{% if build.sha and build.sha != 'dev' %} · {{ build.sha[:7] }}{% endif %}</span>
+    <span class="clock" id="clock">--:--:--</span>
+  </div>
+  <div class="foot-brand">🐺 Freehold — own your stack, owe no one · <a href="https://github.com/akenel/freehold" rel="noreferrer">MIT</a></div>
+  <script src="/static/nav.js" defer></script>
+</footer>

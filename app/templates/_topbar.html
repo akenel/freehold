@@ -16,24 +16,14 @@
   </nav>
 
   <div class="nav-right">
-    <span class="statusbar" title="build {{ build.version }} · {{ build.sha }}{% if build.date %} · deployed {{ build.date }}{% endif %}">
-      <span class="pulse ok" id="health-dot"></span>
-      <span class="env">{{ (env or 'sandbox')|upper }}</span>
-      <span class="clock" id="clock">--:--:--</span>
-      <span class="bld">⚙ {{ build.version }}{% if build.sha and build.sha != 'dev' %} · {{ build.sha[:7] }}{% endif %}</span>
-    </span>
-
     <span class="lang">{% for c, l in langs.items() %}{% if c == lang %}<b>{{ l }}</b>{% else %}<a href="/lang/{{ c }}">{{ l }}</a>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</span>
-
     {% if nav_user %}
-      <a href="/profile" class="who">
+      <a href="/profile" class="who" title="{{ nav_user.name }} — your profile">
         {% if nav_user.avatar %}<img class="avatar-sm" src="{{ nav_user.avatar }}" alt="">{% else %}<span class="mono-sm">{{ (nav_user.name or nav_user.username)[0]|upper }}</span>{% endif %}
-        <span class="who-name">{{ nav_user.name }}</span>
       </a>
       <a class="btn ghost sm" href="/logout">{{ t('nav.logout') }}</a>
     {% else %}
       <a class="btn primary sm" href="/login">{{ t('nav.login') }}</a>
     {% endif %}
   </div>
-  <script src="/static/nav.js" defer></script>
 </header>
