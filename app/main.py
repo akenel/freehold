@@ -15,6 +15,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 import auth
 import build_info
+import diagnostics
 import i18n
 import money
 import tickets
@@ -256,6 +257,21 @@ async def account(request: Request):
         return RedirectResponse("/login")
     return templates.TemplateResponse("account.html", {
         "request": request, "user": user, "env": APP_ENV, "realm": KC_REALM, "kc_url": KC_PUBLIC_URL,
+    })
+
+
+@app.get("/pulse")
+async def pulse(request: Request):
+    """System pulse — real diagnostics (DB · migrations · Keycloak · build). Admin only."""
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    if "admin" not in user.get("roles", []):
+        return templates.TemplateResponse("forbidden.html", {"request": request, "user": user}, status_code=403)
+    checks = await diagnostics.pulse()
+    overall = "ok" if all(c["status"] in ("ok", "info") for c in checks) else "error"
+    return templates.TemplateResponse("pulse.html", {
+        "request": request, "user": user, "checks": checks, "overall": overall,
     })
 
 
