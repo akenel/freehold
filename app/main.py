@@ -4,11 +4,13 @@ Real OIDC login against Keycloak, a signed session cookie, a dashboard behind
 auth, and role-based access (RBAC). Tokens live on the server; the browser only
 carries an opaque signed cookie. Every protected route is explicit — no magic.
 """
+import asyncio
+import json
 import os
 
 import asyncpg
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -21,6 +23,7 @@ import i18n
 import media
 import money
 import profiles
+import robot
 import tickets
 
 APP_ENV = os.getenv("APP_ENV", "sandbox")
@@ -434,6 +437,52 @@ async def money_demo(request: Request):
     return templates.TemplateResponse("money.html", {
         "request": request, "user": user, "base": base_amount, "rows": rows,
     })
+
+
+# ---------------------------------------------------------------- robot (Pi control pack)
+def _can_drive(user) -> bool:
+    return bool(user and "admin" in user.get("roles", []))
+
+
+@app.get("/robot")
+async def robot_panel(request: Request):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    return templates.TemplateResponse("robot.html", {
+        "request": request, "user": user, "can_drive": _can_drive(user),
+    })
+
+
+@app.get("/robot/stream")
+async def robot_stream(request: Request):
+    """Server-Sent Events — live telemetry streamed from the hardware bridge."""
+    if not current_user(request):
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    async def events():
+        while True:
+            if await request.is_disconnected():
+                break
+            try:
+                payload = await robot.get_state()
+            except Exception as exc:  # noqa: BLE001
+                payload = {"error": str(exc)[:80]}
+            yield f"data: {json.dumps(payload)}\n\n"
+            await asyncio.sleep(0.6)
+
+    return StreamingResponse(events(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+
+@app.post("/robot/drive")
+async def robot_drive(request: Request):
+    """Only an operator (admin role) may send drive commands — RBAC on the wire."""
+    user = current_user(request)
+    if not _can_drive(user):
+        return JSONResponse({"error": "operator (admin) role required to drive"}, status_code=403)
+    body = await request.json()
+    return JSONResponse(await robot.drive(body.get("action", "stop"), body.get("speed", 0.5)))
 
 
 @app.exception_handler(404)

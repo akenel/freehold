@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Robot — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .tele{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:16px 0}
+    .met{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+    .met .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+    .met .v{font-family:var(--mono);font-size:20px;color:var(--bone);margin-top:4px;font-variant-numeric:tabular-nums}
+    .batt{height:7px;border-radius:6px;background:var(--panel);border:1px solid var(--line);overflow:hidden;margin-top:8px}
+    .batt > i{display:block;height:100%;background:var(--green);width:100%;transition:width .5s}
+    .robo{display:flex;gap:22px;flex-wrap:wrap;align-items:center;margin-top:6px}
+    .compass{width:96px;height:96px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);display:flex;align-items:center;justify-content:center;flex:none;position:relative}
+    .compass .arrow{font-size:40px;line-height:1;color:var(--amber);transition:transform .3s}
+    .pad{display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(3,58px);gap:8px}
+    .pad button{font-size:20px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--bone);cursor:pointer}
+    .pad button:hover:not(:disabled){border-color:var(--amber);color:var(--amber)}
+    .pad button:disabled{opacity:.35;cursor:not-allowed}
+    .pad .up{grid-column:2;grid-row:1}.pad .left{grid-column:1;grid-row:2}.pad .stop{grid-column:2;grid-row:2}
+    .pad .right{grid-column:3;grid-row:2}.pad .down{grid-column:2;grid-row:3}
+    .pad .stop{color:var(--red)}
+    .rstat{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    {% include "_topbar.html" %}
+
+    <main class="card">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <h1 style="margin:0">🤖 Robot.</h1>
+        <span class="pill ok"><span class="dot"></span><span id="link">live</span></span>
+      </div>
+      <p class="lede" style="margin-top:8px">Live telemetry over SSE from the hardware bridge (the sim now — a real Raspberry Pi later, same REST). {% if not can_drive %}<b>You're viewing</b> — the <b>operator</b> role is needed to drive.{% endif %}</p>
+
+      <div class="tele">
+        <div class="met"><div class="k">Distance</div><div class="v" id="m-dist">— cm</div></div>
+        <div class="met"><div class="k">Temp</div><div class="v" id="m-temp">— °C</div></div>
+        <div class="met"><div class="k">Speed</div><div class="v" id="m-speed">—</div></div>
+        <div class="met"><div class="k">Position</div><div class="v" id="m-pos">—</div></div>
+        <div class="met"><div class="k">Battery</div><div class="v" id="m-batt">—%</div><div class="batt"><i id="m-battbar"></i></div></div>
+      </div>
+
+      <div class="robo">
+        <div class="compass"><span class="arrow" id="arrow">↑</span></div>
+        <div>
+          <div class="pad">
+            <button class="up"    onclick="drive('forward')" {{ '' if can_drive else 'disabled' }} title="Forward">↑</button>
+            <button class="left"  onclick="drive('left')"    {{ '' if can_drive else 'disabled' }} title="Left">↰</button>
+            <button class="stop"  onclick="drive('stop')"    {{ '' if can_drive else 'disabled' }} title="Stop">⏹</button>
+            <button class="right" onclick="drive('right')"   {{ '' if can_drive else 'disabled' }} title="Right">↱</button>
+            <button class="down"  onclick="drive('back')"    {{ '' if can_drive else 'disabled' }} title="Back">↓</button>
+          </div>
+          <div class="rstat">heading <b id="m-head">—</b> · cmd <b id="m-cmd">—</b></div>
+        </div>
+      </div>
+
+      <p class="foot" style="margin-top:20px"><a href="/dashboard">← Dashboard</a></p>
+    </main>
+  </div>
+
+  <script>
+    var $ = function (id) { return document.getElementById(id); };
+    var es = new EventSource('/robot/stream');
+    es.onmessage = function (e) {
+      var s = JSON.parse(e.data);
+      if (s.error) { $('link').textContent = 'bridge down'; return; }
+      $('link').textContent = 'live';
+      $('m-dist').textContent = s.distance_cm + ' cm';
+      $('m-temp').textContent = s.temp_c + ' °C';
+      $('m-speed').textContent = Number(s.speed).toFixed(1);
+      $('m-pos').textContent = s.x + ', ' + s.y;
+      $('m-batt').textContent = s.battery + '%';
+      $('m-battbar').style.width = s.battery + '%';
+      $('m-head').textContent = s.heading + '°';
+      $('m-cmd').textContent = s.cmd;
+      $('arrow').style.transform = 'rotate(' + (90 - s.heading) + 'deg)';
+    };
+    es.onerror = function () { $('link').textContent = 'reconnecting…'; };
+    function drive(action) {
+      fetch('/robot/drive', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: action }) })
+        .then(function (r) { if (!r.ok) $('link').textContent = 'drive denied'; });
+    }
+  </script>
+</body>
+</html>

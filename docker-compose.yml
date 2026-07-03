@@ -79,6 +79,13 @@ services:
       - "127.0.0.1:9001:9001"      # MinIO web console (dev)
     networks: [freehold]
 
+  robot-sim:
+    build: ./robot-sim          # the hardware bridge — swap for a real Pi bridge later
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9100:9100"   # peek at the sim directly (dev)
+    networks: [freehold]
+
   app:
     build: ./app
     restart: unless-stopped
