@@ -1,0 +1,38 @@
+{
+  "realm": "freehold-sandbox",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginTheme": "keycloak",
+  "roles": {
+    "realm": [
+      { "name": "admin", "description": "Full access" },
+      { "name": "staff", "description": "Everyday user" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "freehold-web",
+      "name": "Freehold Web",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "protocol": "openid-connect",
+      "redirectUris": ["http://localhost:8080/*"],
+      "webOrigins": ["*"]
+    }
+  ],
+  "users": [
+    {
+      "username": "demo",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "demo@freehold.local",
+      "firstName": "Demo",
+      "lastName": "User",
+      "credentials": [ { "type": "password", "value": "demo", "temporary": false } ],
+      "realmRoles": ["admin"]
+    }
+  ]
+}

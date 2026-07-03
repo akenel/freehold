@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Freehold — it's running</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <style>
+    :root{
+      --ink:#15120d; --panel:#1c1811; --line:#3a3225; --bone:#ece4d3;
+      --muted:#a2967f; --amber:#f0b02e; --green:#5fb37a; --red:#d9704e;
+      --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+      --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;font-family:var(--sans);color:var(--bone);
+      background:radial-gradient(900px 500px at 80% -10%,rgba(240,176,46,.10),transparent 60%),var(--ink);
+      display:flex;align-items:center;justify-content:center;padding:32px}
+    .card{width:100%;max-width:560px;background:linear-gradient(180deg,var(--panel),rgba(28,24,17,.55));
+      border:1px solid var(--line);border-radius:18px;padding:34px clamp(22px,5vw,40px)}
+    .flag{width:44px;height:44px;display:block;margin-bottom:18px}
+    h1{font-family:var(--mono);font-size:clamp(26px,6vw,38px);margin:0 0 6px;letter-spacing:-.01em}
+    .tag{color:var(--muted);margin:0 0 24px;font-size:15px}
+    .tag b{color:var(--bone)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 22px}
+    .cell{background:#241f16;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+    .cell .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+    .cell .v{font-size:15px;margin-top:4px;color:var(--bone);word-break:break-word}
+    .pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:13px;
+      padding:3px 10px;border-radius:999px;border:1px solid var(--line)}
+    .dot{width:9px;height:9px;border-radius:50%}
+    .ok{color:var(--green)} .ok .dot{background:var(--green);box-shadow:0 0 0 4px rgba(95,179,122,.18)}
+    .bad{color:var(--red)} .bad .dot{background:var(--red);box-shadow:0 0 0 4px rgba(217,112,78,.18)}
+    .services{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+    .svc{font-family:var(--mono);font-size:12px;color:var(--muted);background:#241f16;
+      border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+    .svc b{color:var(--amber)}
+    .foot{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:13px}
+    .foot b{color:var(--bone)}
+    a{color:var(--amber)}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <svg class="flag" viewBox="0 0 64 64" aria-hidden="true">
+      <rect width="64" height="64" rx="14" fill="#15120d"/>
+      <path d="M6 47 Q32 37 58 47 L58 58 L6 58 Z" fill="#241f16"/>
+      <rect x="26.6" y="12" width="3.4" height="35" rx="1.7" fill="#ece4d3"/>
+      <circle cx="28.3" cy="12" r="2.4" fill="#ece4d3"/>
+      <path d="M30 13.5 L51 19 Q45 22.5 51 26 L30 30.5 Z" fill="#f0b02e"/>
+    </svg>
+
+    <h1>Freehold is standing.</h1>
+    <p class="tag">The footing is poured. <b>You own this ground</b> — four real pieces, one command, no landlord.</p>
+
+    <div class="grid">
+      <div class="cell"><div class="k">Environment</div><div class="v">{{ env }}</div></div>
+      <div class="cell"><div class="k">Keycloak realm</div><div class="v">{{ realm }}</div></div>
+      <div class="cell">
+        <div class="k">Database</div>
+        <div class="v">
+          {% if db_ok %}<span class="pill ok"><span class="dot"></span>connected</span>
+          {% else %}<span class="pill bad"><span class="dot"></span>down</span>{% endif %}
+        </div>
+      </div>
+      <div class="cell"><div class="k">Auth server</div><div class="v"><a href="{{ kc_url }}/realms/{{ realm }}/account" rel="noreferrer">Keycloak ↗</a></div></div>
+    </div>
+
+    <div class="services">
+      <span class="svc"><b>postgres</b> · data</span>
+      <span class="svc"><b>keycloak</b> · login</span>
+      <span class="svc"><b>app</b> · fastapi</span>
+      <span class="svc"><b>caddy</b> · front door</span>
+    </div>
+
+    <p class="foot">{% if db_ok %}Postgres said: <b>{{ db_msg }}</b>{% else %}DB error: {{ db_msg }}{% endif %}<br>
+    <b>Phase 1 complete.</b> Next: the door — login &amp; roles, end to end. 🐺 own your stack · owe no one</p>
+  </main>
+</body>
+</html>

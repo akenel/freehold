@@ -1,0 +1,23 @@
+# Freehold — one front door.
+# Auth traffic goes to Keycloak; everything else is the app.
+# Local dev listens on plain :80 (mapped to host 8080). In production you
+# swap `:80` for your domain (e.g. `app.example.com`) and Caddy gets you
+# a real HTTPS cert automatically — no config, no landlord.
+
+:80 {
+	# Keycloak OIDC paths
+	handle /realms/* {
+		reverse_proxy keycloak:8080
+	}
+	handle /resources/* {
+		reverse_proxy keycloak:8080
+	}
+	handle /js/* {
+		reverse_proxy keycloak:8080
+	}
+
+	# The app (default)
+	handle {
+		reverse_proxy app:8000
+	}
+}

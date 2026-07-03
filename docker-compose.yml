@@ -1,0 +1,102 @@
+# =============================================================
+# Freehold — Phase 1: the skeleton
+# Four honest pieces, one command: `docker compose up -d`
+#   postgres  — your data
+#   keycloak  — login + roles, with 3 realms (sandbox/staging/production)
+#   app       — a FastAPI hello that proves the DB + env wiring
+#   caddy     — one front door; /realms/* -> keycloak, everything else -> app
+#
+# Config lives in .env  (copy .env.example -> .env first, or run `make up`).
+# Nothing here is a stripped-down toy — these are the real images, wired right.
+# =============================================================
+name: freehold
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_APP_DB}
+      POSTGRES_KC_DB: ${POSTGRES_KC_DB}      # second DB, created by the init script
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_APP_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks: [freehold]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    restart: unless-stopped
+    command: ["start-dev", "--import-realm"]   # dev mode; imports the 3 realms on first boot
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_KC_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+    volumes:
+      - ./keycloak/realms:/opt/keycloak/data/import:ro
+    ports:
+      - "127.0.0.1:8081:8080"    # direct KC (admin console + realm probe) — dev only
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 45s
+    networks: [freehold]
+
+  app:
+    build: ./app
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_APP_DB}
+    ports:
+      - "127.0.0.1:8000:8000"    # direct app — handy for debugging
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=5)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks: [freehold]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      - "127.0.0.1:8080:80"      # THE front door -> http://localhost:8080
+    depends_on:
+      - app
+      - keycloak
+    networks: [freehold]
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+
+networks:
+  freehold:
