@@ -15,3 +15,13 @@
   <div class="foot-brand">🐺 Freehold — own your stack, owe no one · <a href="https://github.com/akenel/freehold" rel="noreferrer">MIT</a></div>
   <script src="/static/nav.js" defer></script>
 </footer>
+
+{% if nav_user %}
+{% set p = request.url.path %}
+<nav class="appbar" aria-label="Quick navigation">
+  <a href="/dashboard" class="{{ 'active' if p == '/dashboard' else '' }}"><span class="i">🏠</span>Home</a>
+  <a href="/profile" class="{{ 'active' if p.startswith('/profile') else '' }}"><span class="i">👤</span>Profile</a>
+  <a href="/robot" class="{{ 'active' if p.startswith('/robot') else '' }}"><span class="i">🤖</span>Robot</a>
+  <a href="/feedback" class="{{ 'active' if p.startswith('/feedback') or p.startswith('/backlog') else '' }}"><span class="i">✉️</span>Feedback</a>
+</nav>
+{% endif %}

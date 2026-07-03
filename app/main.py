@@ -123,6 +123,20 @@ async def login(request: Request):
     )
 
 
+@app.get("/register")
+async def register(request: Request):
+    """Self-serve sign-up — Keycloak's registration page. New users land back at
+    /auth/callback already logged in (same code path as login)."""
+    state, nonce = auth.new_secret(), auth.new_secret()
+    verifier, challenge = auth.make_pkce()
+    request.session["oauth"] = {"state": state, "nonce": nonce, "cv": verifier}
+    redirect_uri = f"{APP_BASE_URL}/auth/callback"
+    lang = i18n.resolve_lang(request)
+    return RedirectResponse(
+        auth.build_register_redirect(redirect_uri, state, nonce, challenge, ui_locales=lang)
+    )
+
+
 @app.get("/auth/callback")
 async def auth_callback(request: Request):
     saved = request.session.get("oauth") or {}

@@ -2,7 +2,7 @@
   "realm": "freehold-staging",
   "enabled": true,
   "sslRequired": "none",
-  "registrationAllowed": false,
+  "registrationAllowed": true,
   "loginTheme": "freehold",
   "roles": {
     "realm": [

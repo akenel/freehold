@@ -27,8 +27,9 @@ CLIENT_ID = os.getenv("KC_CLIENT_ID", "freehold-web")
 CLIENT_SECRET = os.getenv("KC_CLIENT_SECRET", "")
 
 ISSUER = f"{PUBLIC}/realms/{REALM}"
-AUTH_URL = f"{PUBLIC}/realms/{REALM}/protocol/openid-connect/auth"        # browser
-LOGOUT_URL = f"{PUBLIC}/realms/{REALM}/protocol/openid-connect/logout"    # browser
+AUTH_URL = f"{PUBLIC}/realms/{REALM}/protocol/openid-connect/auth"                 # browser
+REGISTER_URL = f"{PUBLIC}/realms/{REALM}/protocol/openid-connect/registrations"    # browser (sign-up)
+LOGOUT_URL = f"{PUBLIC}/realms/{REALM}/protocol/openid-connect/logout"             # browser
 TOKEN_URL = f"{INTERNAL}/realms/{REALM}/protocol/openid-connect/token"    # backend
 CERTS_URL = f"{INTERNAL}/realms/{REALM}/protocol/openid-connect/certs"    # backend
 
@@ -49,13 +50,8 @@ def make_pkce() -> tuple[str, str]:
     return verifier, challenge
 
 
-def build_auth_redirect(redirect_uri: str, state: str, nonce: str, challenge: str,
-                        ui_locales: str | None = None) -> str:
-    """The URL we send the browser to — Keycloak's hosted login page.
-
-    `ui_locales` (an OIDC standard param) tells Keycloak which language to render
-    the login page in, so the app's language carries through to the login screen.
-    """
+def _flow_params(redirect_uri: str, state: str, nonce: str, challenge: str,
+                 ui_locales: str | None) -> str:
     params = {
         "client_id": CLIENT_ID,
         "response_type": "code",
@@ -67,8 +63,19 @@ def build_auth_redirect(redirect_uri: str, state: str, nonce: str, challenge: st
         "code_challenge_method": "S256",
     }
     if ui_locales:
-        params["ui_locales"] = ui_locales
-    return f"{AUTH_URL}?{urlencode(params)}"
+        params["ui_locales"] = ui_locales   # carry the app language into the KC page
+    return urlencode(params)
+
+
+def build_auth_redirect(redirect_uri, state, nonce, challenge, ui_locales=None) -> str:
+    """The URL we send the browser to — Keycloak's hosted LOGIN page."""
+    return f"{AUTH_URL}?{_flow_params(redirect_uri, state, nonce, challenge, ui_locales)}"
+
+
+def build_register_redirect(redirect_uri, state, nonce, challenge, ui_locales=None) -> str:
+    """Same flow, but starts on Keycloak's SIGN-UP page. On success the new user
+    lands back at /auth/callback already logged in — one code path."""
+    return f"{REGISTER_URL}?{_flow_params(redirect_uri, state, nonce, challenge, ui_locales)}"
 
 
 async def exchange_code(code: str, redirect_uri: str, verifier: str) -> dict:

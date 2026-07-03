@@ -144,3 +144,13 @@ input[type=file]::file-selector-button{font:inherit;margin-right:12px;background
 .foot-brand a{color:var(--muted)}
 
 .theme-btn{padding:5px 9px;font-size:14px;line-height:1}
+
+/* --- bottom app bar (mobile PWA feel) --- */
+.appbar{display:none}
+@media (max-width:760px){
+  .appbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--ink);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+  .appbar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--muted);font-family:var(--mono);font-size:10px;padding:4px 0}
+  .appbar a .i{font-size:19px;line-height:1}
+  .appbar a.active{color:var(--amber)}
+  body{padding-bottom:66px}
+}
