@@ -8,7 +8,7 @@ import os
 
 import asyncpg
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -65,6 +65,12 @@ async def db_check() -> tuple[bool, str]:
 async def healthz():
     ok, _ = await db_check()
     return JSONResponse({"status": "ok", "env": APP_ENV, "realm": KC_REALM, "db": ok})
+
+
+@app.get("/sw.js")
+async def service_worker():
+    """Served from root so the service worker's scope is the whole app (PWA)."""
+    return FileResponse("static/sw.js", media_type="application/javascript")
 
 
 @app.get("/version")

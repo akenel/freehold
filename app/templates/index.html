@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Freehold</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#15120d">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
@@ -55,5 +58,6 @@
       {{ env }} · {{ build.version }} · {{ build.sha }}{% if build.date %} · {{ build.date }}{% endif %}
     </p>
   </div>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 </body>
 </html>
