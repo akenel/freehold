@@ -45,6 +45,11 @@ services:
       KC_HEALTH_ENABLED: "true"
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
+      # Fix the public base URL so the token issuer is deterministic behind Caddy.
+      # Browser reaches KC at localhost:8080 (via Caddy); the app talks to it
+      # internally at keycloak:8080 — but the ISSUER is always localhost:8080.
+      KC_HOSTNAME: http://localhost:8080
+      KC_PROXY_HEADERS: xforwarded
     volumes:
       - ./keycloak/realms:/opt/keycloak/data/import:ro
     ports:

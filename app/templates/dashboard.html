@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      <span class="who">Signed in as <b>{{ user.name }}</b></span>
+      <a class="btn ghost" href="/logout">Log out</a>
+    </div>
+
+    <main class="card">
+      <h1>Welcome, {{ user.name }}.</h1>
+      <p class="lede">You came through the door — Keycloak vouched for you, the app trusts the token, and none of it left the server.</p>
+
+      <div class="grid">
+        <div class="cell"><div class="k">Username</div><div class="v">{{ user.username }}</div></div>
+        <div class="cell"><div class="k">Email</div><div class="v">{{ user.email }}</div></div>
+        <div class="cell"><div class="k">Environment</div><div class="v">{{ env }}</div></div>
+        <div class="cell"><div class="k">Realm</div><div class="v">{{ realm }}</div></div>
+      </div>
+
+      <div class="cell">
+        <div class="k">Your roles</div>
+        <div class="v"><div class="chips">
+          {% for r in user.roles %}<span class="chip {{ 'admin' if r == 'admin' else '' }}">{{ r }}</span>{% endfor %}
+        </div></div>
+      </div>
+
+      <div class="row" style="margin-top:18px">
+        <a class="btn primary" href="/console">Open admin console →</a>
+        <a class="btn ghost" href="/">Home</a>
+      </div>
+      <p class="foot">The <b>/console</b> page needs the <b>admin</b> role — sign in as <b>sam</b> to watch RBAC turn you away. 🐺</p>
+    </main>
+  </div>
+</body>
+</html>

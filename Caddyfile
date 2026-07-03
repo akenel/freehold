@@ -5,7 +5,7 @@
 # a real HTTPS cert automatically — no config, no landlord.
 
 :80 {
-	# Keycloak OIDC paths
+	# Keycloak: OIDC endpoints, its login theme resources, and the admin console
 	handle /realms/* {
 		reverse_proxy keycloak:8080
 	}
@@ -15,8 +15,12 @@
 	handle /js/* {
 		reverse_proxy keycloak:8080
 	}
+	handle /admin/* {
+		reverse_proxy keycloak:8080
+	}
 
-	# The app (default)
+	# The app (default) — note the app's own admin page lives at /console,
+	# so it never collides with Keycloak's /admin console.
 	handle {
 		reverse_proxy app:8000
 	}

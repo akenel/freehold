@@ -15,12 +15,17 @@
       "clientId": "freehold-web",
       "name": "Freehold Web",
       "enabled": true,
-      "publicClient": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "freehold-dev-secret-change-me",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "protocol": "openid-connect",
       "redirectUris": ["http://localhost:8080/*"],
-      "webOrigins": ["*"]
+      "webOrigins": ["http://localhost:8080"],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8080/*"
+      }
     }
   ],
   "users": [
@@ -33,6 +38,16 @@
       "lastName": "User",
       "credentials": [ { "type": "password", "value": "demo", "temporary": false } ],
       "realmRoles": ["admin"]
+    },
+    {
+      "username": "sam",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "sam@freehold.local",
+      "firstName": "Sam",
+      "lastName": "Staff",
+      "credentials": [ { "type": "password", "value": "sam", "temporary": false } ],
+      "realmRoles": ["staff"]
     }
   ]
 }

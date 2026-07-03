@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin console — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      <span class="who">Signed in as <b>{{ user.name }}</b></span>
+      <a class="btn ghost" href="/logout">Log out</a>
+    </div>
+
+    <main class="card">
+      <h1>Admin console.</h1>
+      <p class="lede">The gate opened — you carry the <b>admin</b> role, so RBAC let you through. This is where your privileged screens will live.</p>
+      <div class="cell">
+        <div class="k">Verified role</div>
+        <div class="v"><span class="chip admin">admin</span></div>
+      </div>
+      <div class="row" style="margin-top:18px">
+        <a class="btn ghost" href="/dashboard">← Back to dashboard</a>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
