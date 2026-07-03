@@ -37,9 +37,15 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 def _inject_i18n(request: Request) -> dict:
-    """Runs for every template render — makes t()/lang/langs available everywhere."""
+    """Runs for every template render — makes i18n, build info, env, and the logged-in
+    user available everywhere (so the shared nav/status bar works on any page)."""
     lang = i18n.resolve_lang(request)
-    return {"t": i18n.translator(lang), "lang": lang, "langs": i18n.LANGS}
+    return {
+        "t": i18n.translator(lang), "lang": lang, "langs": i18n.LANGS,
+        "env": APP_ENV,
+        "build": {"version": build_info.version(), "sha": build_info.sha(), "date": build_info.date()},
+        "nav_user": request.session.get("user"),
+    }
 
 
 templates = Jinja2Templates(directory="templates", context_processors=[_inject_i18n])

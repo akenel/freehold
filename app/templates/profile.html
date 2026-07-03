@@ -9,19 +9,7 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="topbar">
-      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
-      <span class="spacer"></span>
-      {% if user %}
-        <a href="/profile" class="who" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
-          {% if user.avatar %}<img class="avatar-sm" src="{{ user.avatar }}" alt="">{% else %}<span class="mono-sm">{{ (user.name or user.username)[0]|upper }}</span>{% endif %}
-          <span>{{ user.name }}</span>
-        </a>
-        <a class="btn ghost" href="/logout">Log out</a>
-      {% else %}
-        <a class="btn primary" href="/login">Log in</a>
-      {% endif %}
-    </div>
+    {% include "_topbar.html" %}
 
     <main class="card" style="padding-top:16px">
       <div class="banner"{% if banner_url %} style="background-image:url('{{ banner_url }}')"{% endif %}></div>

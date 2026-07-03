@@ -12,17 +12,7 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="topbar">
-      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
-      <span class="spacer"></span>
-      <span class="lang">{% for c, l in langs.items() %}{% if c == lang %}<b>{{ l }}</b>{% else %}<a href="/lang/{{ c }}">{{ l }}</a>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</span>
-      {% if user %}
-        <span class="who">{{ t('nav.signed_in', name=user.name) }}</span>
-        <a class="btn ghost" href="/logout">{{ t('nav.logout') }}</a>
-      {% else %}
-        <a class="btn primary" href="/login">{{ t('nav.login') }}</a>
-      {% endif %}
-    </div>
+    {% include "_topbar.html" %}
 
     <main class="card">
       <h1>{{ t('index.standing') }}</h1>
