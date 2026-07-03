@@ -25,3 +25,17 @@ services:
     environment:
       APP_BASE_URL: https://${SITE_DOMAIN}
       KC_PUBLIC_URL: https://${SITE_DOMAIN}
+
+  # Optional: keep the DuckDNS record pointed at this box (only needed if your
+  # server's IP is dynamic — a home box or Pi). Static VPS? Set the IP once on
+  # duckdns.org and delete this service. DUCKDNS_TOKEN lives in .env (gitignored)
+  # — NEVER commit it.
+  duckdns:
+    image: curlimages/curl:8.11.1
+    restart: unless-stopped
+    environment:
+      DUCKDNS_DOMAIN: ${DUCKDNS_DOMAIN:-freeholder}
+      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN}
+    entrypoint: ["/bin/sh", "-c",
+      "while true; do curl -fsS \"https://www.duckdns.org/update?domains=$${DUCKDNS_DOMAIN}&token=$${DUCKDNS_TOKEN}&ip=\" && echo \" duckdns updated\"; sleep 300; done"]
+    networks: [freehold]
