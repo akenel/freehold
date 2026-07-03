@@ -25,6 +25,12 @@ localhost {
 		reverse_proxy keycloak:8080
 	}
 
+	# Public media (avatars, banners) served from MinIO
+	handle /media/* {
+		uri strip_prefix /media
+		reverse_proxy minio:9000
+	}
+
 	# The app (default)
 	handle {
 		reverse_proxy app:8000

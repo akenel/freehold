@@ -15,7 +15,10 @@
       <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
       <span class="spacer"></span>
       <span class="lang">{% for c, l in langs.items() %}{% if c == lang %}<b>{{ l }}</b>{% else %}<a href="/lang/{{ c }}">{{ l }}</a>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</span>
-      <span class="who">{{ t('nav.signed_in', name=user.name) }}</span>
+      <a href="/profile" class="who" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
+        {% if user.avatar %}<img class="avatar-sm" src="{{ user.avatar }}" alt="">{% else %}<span class="mono-sm">{{ (user.name or user.username)[0]|upper }}</span>{% endif %}
+        <span>{{ user.name }}</span>
+      </a>
       <a class="btn ghost" href="/logout">{{ t('nav.logout') }}</a>
     </div>
 
@@ -38,7 +41,8 @@
       </div>
 
       <div class="row" style="margin-top:18px">
-        <a class="btn primary" href="/feedback">{{ t('dash.send_feedback') }}</a>
+        <a class="btn primary" href="/profile">My profile</a>
+        <a class="btn ghost" href="/feedback">{{ t('dash.send_feedback') }}</a>
         <a class="btn ghost" href="/backlog">{{ t('dash.backlog') }}</a>
         <a class="btn ghost" href="/money">{{ t('dash.currencies') }}</a>
         {% if 'admin' in user.roles %}<a class="btn ghost" href="/qa">{{ t('dash.qa') }}</a>{% endif %}

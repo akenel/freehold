@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ profile.display_name or profile.username }} — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      {% if user %}
+        <a href="/profile" class="who" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
+          {% if user.avatar %}<img class="avatar-sm" src="{{ user.avatar }}" alt="">{% else %}<span class="mono-sm">{{ (user.name or user.username)[0]|upper }}</span>{% endif %}
+          <span>{{ user.name }}</span>
+        </a>
+        <a class="btn ghost" href="/logout">Log out</a>
+      {% else %}
+        <a class="btn primary" href="/login">Log in</a>
+      {% endif %}
+    </div>
+
+    <main class="card" style="padding-top:16px">
+      <div class="banner"{% if banner_url %} style="background-image:url('{{ banner_url }}')"{% endif %}></div>
+      <div class="pf-head">
+        {% if avatar_url %}<img class="avatar" src="{{ avatar_url }}" alt="">
+        {% else %}<div class="mono">{{ (profile.display_name or profile.username)[0]|upper }}</div>{% endif %}
+        <div class="pf-id">
+          <p class="pf-name">{{ profile.display_name or profile.username }}</p>
+          <p class="pf-tag">{% if profile.tagline %}{{ profile.tagline }} · {% endif %}@{{ profile.username }}</p>
+        </div>
+      </div>
+
+      {% if is_owner %}
+      <div class="row" style="margin-top:16px">
+        <a class="btn primary" href="/profile/edit">Edit profile</a>
+        <a class="btn ghost" href="/u/{{ profile.username }}">View public page</a>
+      </div>
+      {% endif %}
+
+      <div class="bio">{{ profile.bio | markdown | safe }}</div>
+
+      {% if profile.links %}
+      <div class="pf-links">
+        {% for lnk in profile.links %}<a class="btn ghost sm" href="{{ lnk.url }}" target="_blank" rel="noreferrer nofollow">{{ lnk.label or lnk.url }} ↗</a>{% endfor %}
+      </div>
+      {% endif %}
+
+      <p class="foot" style="margin-top:24px"><a href="/dashboard">← Dashboard</a></p>
+    </main>
+  </div>
+</body>
+</html>

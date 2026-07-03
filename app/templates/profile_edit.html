@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit profile — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      <span class="who">Signed in as <b>{{ user.name }}</b></span>
+      <a class="btn ghost" href="/logout">Log out</a>
+    </div>
+
+    <main class="card">
+      <h1>Edit profile.</h1>
+      <p class="lede">Your bio is <b>Markdown</b> — headers, <b>bold</b>, lists, quotes all render. Upload a banner and an avatar, or keep the standard look. Password is managed in <a href="/account">your account</a> (Keycloak).</p>
+
+      <form method="post" action="/profile/edit" enctype="multipart/form-data">
+        <label for="dn">Display name</label>
+        <input id="dn" type="text" name="display_name" maxlength="120" value="{{ profile.display_name }}">
+
+        <label for="tg">Tagline</label>
+        <input id="tg" type="text" name="tagline" maxlength="160" value="{{ profile.tagline }}" placeholder="One line about you">
+
+        <label>Avatar {% if avatar_url %}<span style="color:var(--dim)">— current shown below; upload to replace</span>{% endif %}</label>
+        {% if avatar_url %}<div style="margin-bottom:8px"><img class="avatar-sm" src="{{ avatar_url }}" alt="" style="width:44px;height:44px"></div>{% endif %}
+        <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp,image/gif">
+
+        <label style="margin-top:14px">Banner</label>
+        <input type="file" name="banner" accept="image/png,image/jpeg,image/webp,image/gif">
+
+        <label for="bio">Bio (Markdown)</label>
+        <textarea id="bio" name="bio" style="min-height:190px">{{ profile.bio }}</textarea>
+
+        <label>Links (YouTube, LinkedIn, anything)</label>
+        {% set links = profile.links or [] %}
+        {% for i in range(4) %}
+        {% set lnk = links[i] if i < links|length else none %}
+        <div class="row" style="gap:8px;margin-bottom:8px">
+          <input type="text" name="link_label" placeholder="Label" value="{{ lnk.label if lnk else '' }}" style="flex:1;min-width:120px">
+          <input type="text" name="link_url" placeholder="https://…" value="{{ lnk.url if lnk else '' }}" style="flex:2;min-width:180px">
+        </div>
+        {% endfor %}
+
+        <div class="row" style="margin-top:18px">
+          <button class="btn primary" type="submit">Save profile</button>
+          <a class="btn ghost" href="/profile">Cancel</a>
+        </div>
+      </form>
+    </main>
+  </div>
+</body>
+</html>

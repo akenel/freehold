@@ -7,12 +7,30 @@ demands a *resolution* — so the closed pile becomes a searchable record of
 """
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy import JSON, DateTime, String, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
     pass
+
+
+class Profile(Base):
+    """One per user (keyed by Keycloak username). The juicy public page:
+    banner + avatar + bio + a set of links the person chooses themselves."""
+    __tablename__ = "profiles"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    display_name: Mapped[str] = mapped_column(String(120), default="")
+    tagline: Mapped[str] = mapped_column(String(160), default="")
+    bio: Mapped[str] = mapped_column(Text, default="")
+    avatar_key: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    banner_key: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    links: Mapped[list | None] = mapped_column(JSON, nullable=True)  # [{"label":..,"url":..}]
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class Ticket(Base):

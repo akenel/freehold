@@ -80,3 +80,26 @@ table.fx td.amt{font-family:var(--mono);font-variant-numeric:tabular-nums;color:
 table.fx td.grp{color:var(--dim);font-family:var(--mono);font-size:12px}
 table.fx tr.hi td{background:rgba(240,176,46,.08)}
 table.fx tr.hi td.amt{color:var(--amber)}
+
+/* --- profile --- */
+.banner{height:180px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(120deg,#2a1e0c,#8a5a1e 55%,#f0b02e);background-size:cover;background-position:center}
+.pf-head{display:flex;align-items:flex-end;gap:18px;margin-top:-46px;padding:0 6px}
+.avatar,.mono{width:96px;height:96px;border-radius:50%;border:3px solid var(--ink);flex:none;object-fit:cover;background:var(--panel2)}
+.mono{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:38px;font-weight:700;color:#1a1509;background:var(--amber)}
+.pf-id{padding-bottom:8px}
+.pf-name{font-family:var(--mono);font-size:23px;font-weight:700;margin:0;color:var(--bone)}
+.pf-tag{color:var(--muted);margin:2px 0 0;font-size:14px}
+.pf-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.avatar-sm,.mono-sm{width:30px;height:30px;border-radius:50%;flex:none;object-fit:cover}
+.mono-sm{display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;font-weight:700;color:#1a1509;background:var(--amber)}
+input[type=file]{width:100%;font:inherit;font-size:14px;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+input[type=file]::file-selector-button{font:inherit;margin-right:12px;background:var(--line);color:var(--bone);border:0;border-radius:7px;padding:6px 12px;cursor:pointer}
+/* markdown-rendered bio */
+.bio{margin-top:20px;color:#e7ddca;line-height:1.7}
+.bio h1,.bio h2,.bio h3{font-family:var(--mono);color:var(--bone);margin:18px 0 8px;line-height:1.25}
+.bio h1{font-size:22px}.bio h2{font-size:19px}.bio h3{font-size:16px}
+.bio p{margin:0 0 12px}
+.bio ul,.bio ol{margin:0 0 12px 22px}.bio li{margin:4px 0}
+.bio blockquote{border-left:3px solid var(--amber);margin:12px 0;padding:2px 0 2px 14px;color:var(--muted)}
+.bio a{color:var(--amber)}.bio strong{color:#fff}
+.bio code{font-family:var(--mono);background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:.92em}
