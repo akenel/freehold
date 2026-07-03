@@ -48,7 +48,7 @@ services:
       # Fix the public base URL so the token issuer is deterministic behind Caddy.
       # Browser reaches KC at localhost:8080 (via Caddy); the app talks to it
       # internally at keycloak:8080 — but the ISSUER is always localhost:8080.
-      KC_HOSTNAME: http://localhost:8080
+      KC_HOSTNAME: https://localhost:8443
       KC_PROXY_HEADERS: xforwarded
     volumes:
       - ./keycloak/realms:/opt/keycloak/data/import:ro
@@ -93,7 +93,9 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     ports:
-      - "127.0.0.1:8080:80"      # THE front door -> http://localhost:8080
+      - "127.0.0.1:8443:443"     # THE front door -> https://localhost:8443
+      # (dev uses 8443 so it never clashes with anything on 443; prod uses your
+      #  real domain on 443 via Caddy's automatic Let's Encrypt.)
     depends_on:
       - app
       - keycloak

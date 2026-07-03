@@ -1,10 +1,16 @@
-# Freehold — one front door.
-# Auth traffic goes to Keycloak; everything else is the app.
-# Local dev listens on plain :80 (mapped to host 8080). In production you
-# swap `:80` for your domain (e.g. `app.example.com`) and Caddy gets you
-# a real HTTPS cert automatically — no config, no landlord.
+# Freehold — one front door, HTTPS BY DEFAULT.
+#
+# Local dev uses Caddy's own internal CA (`tls internal`) on plain `localhost`,
+# so there's no /etc/hosts editing and no mkcert install — Caddy mints the cert
+# itself. Run `make trust` once to trust that CA in your browser (then the green
+# padlock, and secure-context features like camera + PWA + service workers work).
+#
+# In production you swap `localhost` for your real domain and delete `tls internal`
+# — Caddy fetches a real Let's Encrypt cert automatically. No config, no landlord.
 
-:80 {
+localhost {
+	tls internal
+
 	# Keycloak: OIDC endpoints, its login theme resources, and the admin console
 	handle /realms/* {
 		reverse_proxy keycloak:8080
@@ -19,8 +25,7 @@
 		reverse_proxy keycloak:8080
 	}
 
-	# The app (default) — note the app's own admin page lives at /console,
-	# so it never collides with Keycloak's /admin console.
+	# The app (default)
 	handle {
 		reverse_proxy app:8000
 	}

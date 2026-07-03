@@ -1,8 +1,11 @@
 # Freehold — the whole kit, in a few words.
 .PHONY: up down logs ps restart nuke backup deploy parity help
 
-help:    ; @echo "up | down | logs | ps | restart | nuke | backup | deploy [ENV=sandbox] | parity"
+help:    ; @echo "up | down | logs | ps | restart | nuke | trust | backup | deploy [ENV=sandbox] | parity"
 up:      ; @[ -f .env ] || cp .env.example .env ; docker compose up -d --build
+
+# Trust Caddy's local CA so https://localhost is green (run once).
+trust:   ; @docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./freehold-local-ca.crt && echo "Saved freehold-local-ca.crt — trust it once:  Linux: sudo cp freehold-local-ca.crt /usr/local/share/ca-certificates/freehold.crt && sudo update-ca-certificates   ·   Firefox: Settings→Privacy→Certificates→Import.  Then restart the browser."
 down:    ; docker compose down
 logs:    ; docker compose logs -f
 ps:      ; docker compose ps
