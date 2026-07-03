@@ -1,3 +1,9 @@
+<script>
+  // Apply the saved theme immediately (before paint) to avoid a flash.
+  (function(){try{var t=localStorage.getItem('fh-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+  function fhTheme(){var d=document.documentElement,c=d.getAttribute('data-theme')==='light'?'dark':'light';d.setAttribute('data-theme',c);try{localStorage.setItem('fh-theme',c);}catch(e){}var b=document.getElementById('theme-btn');if(b)b.textContent=(c==='light'?'☾':'☀');}
+  document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('theme-btn');if(b)b.textContent=(document.documentElement.getAttribute('data-theme')==='light'?'☾':'☀');});
+</script>
 <header class="nav" id="nav">
   <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
 
@@ -16,6 +22,7 @@
   </nav>
 
   <div class="nav-right">
+    <button id="theme-btn" class="btn ghost sm theme-btn" onclick="fhTheme()" aria-label="Toggle light/dark theme" title="Light / dark">☀</button>
     <span class="lang">{% for c, l in langs.items() %}{% if c == lang %}<b>{{ l }}</b>{% else %}<a href="/lang/{{ c }}">{{ l }}</a>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</span>
     {% if nav_user %}
       <a href="/profile" class="who" title="{{ nav_user.name }} — your profile">
