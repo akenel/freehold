@@ -1,7 +1,10 @@
 # Freehold — the whole kit, in a few words.
 .PHONY: up down logs ps restart nuke backup deploy parity help
 
-help:    ; @echo "up | down | logs | ps | restart | nuke | trust | backup | deploy [ENV=sandbox] | parity"
+help:    ; @echo "up | down | logs | ps | restart | nuke | trust | test | backup | deploy [ENV=sandbox] | parity"
+
+# Run the test suite in a throwaway app container (no infra needed).
+test:    ; docker compose run --rm --no-deps app python -m pytest -q tests/
 up:      ; @[ -f .env ] || cp .env.example .env ; docker compose up -d --build
 
 # Trust Caddy's local CA so https://localhost is green (run once).
