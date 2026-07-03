@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 import auth
+import build_info
 
 APP_ENV = os.getenv("APP_ENV", "sandbox")
 KC_REALM = os.getenv("KC_REALM", f"freehold-{APP_ENV}")
@@ -54,12 +55,22 @@ async def healthz():
     return JSONResponse({"status": "ok", "env": APP_ENV, "realm": KC_REALM, "db": ok})
 
 
+@app.get("/version")
+async def version():
+    """The truthful build bar — what deploy.py stamps, this serves, parity checks."""
+    return JSONResponse({
+        "version": build_info.version(), "sha": build_info.sha(),
+        "date": build_info.date(), "env": APP_ENV,
+    })
+
+
 @app.get("/")
 async def index(request: Request):
     ok, message = await db_check()
     return templates.TemplateResponse("index.html", {
         "request": request, "env": APP_ENV, "realm": KC_REALM, "kc_url": KC_PUBLIC_URL,
         "db_ok": ok, "db_msg": message, "user": current_user(request),
+        "build": {"version": build_info.version(), "sha": build_info.sha(), "date": build_info.date()},
     })
 
 

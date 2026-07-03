@@ -11,3 +11,7 @@ uat.env
 *.sqlite3
 # local scratch
 scratchpad/
+# generated at deploy time
+app/build-sha.txt
+# encrypted db dumps (never commit backups)
+backups/
