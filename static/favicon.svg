@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Freehold">
+  <!-- tile: warm ink -->
+  <rect width="64" height="64" rx="14" fill="#15120d"/>
+  <!-- your land: a low mound / horizon you own -->
+  <path d="M6 47 Q32 37 58 47 L58 58 L6 58 Z" fill="#241f16"/>
+  <path d="M6 47 Q32 37 58 47" fill="none" stroke="#4a3f2c" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- flagpole, planted -->
+  <rect x="26.6" y="12" width="3.4" height="35" rx="1.7" fill="#ece4d3"/>
+  <circle cx="28.3" cy="12" r="2.4" fill="#ece4d3"/>
+  <!-- the banner: bold amber pennant, waving right -->
+  <path d="M30 13.5 L51 19 Q45 22.5 51 26 L30 30.5 Z" fill="#f0b02e"/>
+  <!-- a little wind-lift highlight -->
+  <path d="M30 13.5 L51 19 Q45 22.5 51 26" fill="none" stroke="#ffcf5e" stroke-width="0.9" opacity="0.7"/>
+</svg>
