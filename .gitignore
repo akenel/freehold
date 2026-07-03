@@ -1,0 +1,13 @@
+# python
+__pycache__/
+*.pyc
+.venv/
+# env / secrets — NEVER commit
+.env
+*.env
+uat.env
+# data
+*.db
+*.sqlite3
+# local scratch
+scratchpad/
