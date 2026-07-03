@@ -1,0 +1,32 @@
+# Freehold — PRODUCTION front door.
+#
+# Real HTTPS via Let's Encrypt, automatically. Set SITE_DOMAIN (e.g. your free
+# DuckDNS subdomain, freeholder.duckdns.org). Because this is a real hostname —
+# not `localhost` — and there's no `tls internal`, Caddy fetches and renews a
+# genuine certificate on its own. Green padlock for everyone, $0.
+#
+# Used via the prod overlay:
+#   SITE_DOMAIN=freeholder.duckdns.org CADDYFILE=./Caddyfile.prod \
+#     docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+{$SITE_DOMAIN} {
+	handle /realms/* {
+		reverse_proxy keycloak:8080
+	}
+	handle /resources/* {
+		reverse_proxy keycloak:8080
+	}
+	handle /js/* {
+		reverse_proxy keycloak:8080
+	}
+	handle /admin/* {
+		reverse_proxy keycloak:8080
+	}
+	handle /media/* {
+		uri strip_prefix /media
+		reverse_proxy minio:9000
+	}
+	handle {
+		reverse_proxy app:8000
+	}
+}

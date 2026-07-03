@@ -111,7 +111,7 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${CADDYFILE:-./Caddyfile}:/etc/caddy/Caddyfile:ro    # prod overlay sets ./Caddyfile.prod
       - caddy_data:/data
       - caddy_config:/config
     ports:
