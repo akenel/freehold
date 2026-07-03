@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QA dashboard — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      <span class="who">Signed in as <b>{{ user.name }}</b></span>
+      <a class="btn ghost" href="/logout">Log out</a>
+    </div>
+
+    <main class="card">
+      <h1>QA dashboard.</h1>
+      <p class="lede">Work the queue. <b>Closing a ticket needs a resolution</b> — that note is what turns the closed pile into a knowledge base.</p>
+      {% if error %}<div class="err">{{ error }}</div>{% endif %}
+
+      <div class="counts">
+        <span class="count">open <b>{{ counts.get('open', 0) }}</b></span>
+        <span class="count">in progress <b>{{ counts.get('in_progress', 0) }}</b></span>
+        <span class="count">closed <b>{{ counts.get('closed', 0) }}</b></span>
+      </div>
+
+      {% for t in tickets %}
+      <div class="tk">
+        <div class="h">
+          <span class="id">#{{ t.id }}</span>
+          <span class="kd">{{ t.kind }}</span>
+          <span class="ti">{{ t.title }}</span>
+          <span class="spacer"></span>
+          <span class="st {{ t.status }}">{{ t.status.replace('_', ' ') }}</span>
+        </div>
+        {% if t.body %}<p class="bd">{{ t.body }}</p>{% endif %}
+        <div class="meta">by {{ t.created_by }}</div>
+
+        {% if t.status != 'closed' %}
+        <div class="actions">
+          {% if t.status == 'open' %}
+          <form method="post" action="/qa/{{ t.id }}/status">
+            <input type="hidden" name="status" value="in_progress">
+            <button class="btn ghost sm" type="submit">Start</button>
+          </form>
+          {% endif %}
+          <form method="post" action="/qa/{{ t.id }}/close">
+            <input type="text" name="resolution" placeholder="Resolution (required) — what was done + why">
+            <button class="btn primary sm" type="submit">Close</button>
+          </form>
+        </div>
+        {% else %}
+        <div class="res">
+          <span class="k">Resolution</span><br>{{ t.resolution }}
+          <div class="meta">closed by {{ t.resolved_by }}</div>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      <div class="row" style="margin-top:16px">
+        <a class="btn ghost" href="/dashboard">← Dashboard</a>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

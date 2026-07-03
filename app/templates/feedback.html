@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Send feedback — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      <span class="who">Signed in as <b>{{ user.name }}</b></span>
+      <a class="btn ghost" href="/logout">Log out</a>
+    </div>
+
+    <main class="card">
+      <h1>Send feedback.</h1>
+      <p class="lede">Bug, idea, or a rough edge — drop it here. It becomes a ticket the team can track and answer.</p>
+      {% if error %}<div class="err">{{ error }}</div>{% endif %}
+      <form method="post" action="/feedback">
+        <label for="kind">Type</label>
+        <select id="kind" name="kind">
+          <option value="feedback">Feedback</option>
+          <option value="bug">Bug</option>
+          <option value="idea">Idea</option>
+        </select>
+        <label for="title">Title</label>
+        <input id="title" type="text" name="title" maxlength="200" placeholder="One line — what's up?">
+        <label for="body">Details (optional)</label>
+        <textarea id="body" name="body" placeholder="Steps, context, what you expected…"></textarea>
+        <div class="row" style="margin-top:18px">
+          <button class="btn primary" type="submit">Submit</button>
+          <a class="btn ghost" href="/dashboard">Cancel</a>
+        </div>
+      </form>
+    </main>
+  </div>
+</body>
+</html>

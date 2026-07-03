@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Backlog — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      <span class="who">Signed in as <b>{{ user.name }}</b></span>
+      <a class="btn ghost" href="/logout">Log out</a>
+    </div>
+
+    <main class="card">
+      <h1>Backlog.</h1>
+      <p class="lede">Everything submitted, newest first.{% if 'admin' in user.roles %} Work them on the <a href="/qa">QA dashboard</a>.{% endif %}</p>
+
+      {% if not tickets %}
+        <p class="lede">No tickets yet — be the first: <a href="/feedback">send feedback</a>.</p>
+      {% endif %}
+
+      {% for t in tickets %}
+      <div class="tk">
+        <div class="h">
+          <span class="id">#{{ t.id }}</span>
+          <span class="kd">{{ t.kind }}</span>
+          <span class="ti">{{ t.title }}</span>
+          <span class="spacer"></span>
+          <span class="st {{ t.status }}">{{ t.status.replace('_', ' ') }}</span>
+        </div>
+        {% if t.body %}<p class="bd">{{ t.body }}</p>{% endif %}
+        <div class="meta">by {{ t.created_by }}{% if t.resolved_by %} · closed by {{ t.resolved_by }}{% endif %}</div>
+      </div>
+      {% endfor %}
+
+      <div class="row" style="margin-top:16px">
+        <a class="btn primary" href="/feedback">+ New feedback</a>
+        <a class="btn ghost" href="/dashboard">Home</a>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

@@ -15,6 +15,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 import auth
 import build_info
+import tickets
 
 APP_ENV = os.getenv("APP_ENV", "sandbox")
 KC_REALM = os.getenv("KC_REALM", f"freehold-{APP_ENV}")
@@ -140,3 +141,95 @@ async def console(request: Request):
             "forbidden.html", {"request": request, "user": user}, status_code=403,
         )
     return templates.TemplateResponse("console.html", {"request": request, "user": user})
+
+
+# ---------------------------------------------------------------- the loop
+@app.get("/feedback")
+async def feedback_form(request: Request):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    return templates.TemplateResponse("feedback.html", {"request": request, "user": user})
+
+
+@app.post("/feedback")
+async def feedback_submit(request: Request):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    form = await request.form()
+    title = (form.get("title") or "").strip()
+    if not title:
+        return templates.TemplateResponse(
+            "feedback.html",
+            {"request": request, "user": user, "error": "A short title is required."},
+            status_code=400,
+        )
+    await tickets.create_ticket(
+        kind=form.get("kind", "feedback"),
+        title=title,
+        body=(form.get("body") or "").strip(),
+        created_by=user["username"],
+    )
+    return RedirectResponse("/backlog", status_code=303)
+
+
+@app.get("/backlog")
+async def backlog(request: Request):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    return templates.TemplateResponse(
+        "backlog.html",
+        {"request": request, "user": user, "tickets": await tickets.list_tickets()},
+    )
+
+
+def _require_admin(request: Request):
+    """Returns the user if admin, else None (caller redirects/403s)."""
+    user = current_user(request)
+    if user and "admin" in user.get("roles", []):
+        return user
+    return None
+
+
+@app.get("/qa")
+async def qa(request: Request):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    if "admin" not in user.get("roles", []):
+        return templates.TemplateResponse(
+            "forbidden.html", {"request": request, "user": user}, status_code=403,
+        )
+    return templates.TemplateResponse("qa.html", {
+        "request": request, "user": user,
+        "tickets": await tickets.list_tickets(), "counts": await tickets.counts(),
+    })
+
+
+@app.post("/qa/{ticket_id}/status")
+async def qa_set_status(request: Request, ticket_id: int):
+    if not _require_admin(request):
+        return RedirectResponse("/login")
+    form = await request.form()
+    await tickets.set_status(ticket_id, form.get("status", "open"))
+    return RedirectResponse("/qa", status_code=303)
+
+
+@app.post("/qa/{ticket_id}/close")
+async def qa_close(request: Request, ticket_id: int):
+    user = _require_admin(request)
+    if not user:
+        return RedirectResponse("/login")
+    form = await request.form()
+    resolution = (form.get("resolution") or "").strip()
+    if not resolution:
+        # Enforce the discipline: no close without the WHY.
+        return templates.TemplateResponse("qa.html", {
+            "request": request, "user": user,
+            "tickets": await tickets.list_tickets(), "counts": await tickets.counts(),
+            "error": f"Ticket #{ticket_id}: a resolution note is required to close (capture the why).",
+        }, status_code=400)
+    await tickets.close_ticket(ticket_id, resolution, user["username"])
+    return RedirectResponse("/qa", status_code=303)
