@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terms — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      {% if user %}<a class="btn ghost" href="/dashboard">Dashboard</a>
+      {% else %}<a class="btn ghost" href="/">Home</a>{% endif %}
+    </div>
+
+    <main class="card">
+      <h1>Terms of Service.</h1>
+      <div class="err">⚠ Starter template — replace this with your own text, reviewed by a lawyer for your jurisdiction. Do not ship as-is.</div>
+
+      <p class="lede">These terms govern your use of this service. By using it, you agree to them.</p>
+
+      <label>1 · The service</label>
+      <p class="lede">Describe what your service does and who may use it.</p>
+      <label>2 · Acceptable use</label>
+      <p class="lede">Set out what users may and may not do (no unlawful use, no abuse, no scraping, etc.).</p>
+      <label>3 · Accounts</label>
+      <p class="lede">Users are responsible for their account and credentials. State suspension/termination conditions.</p>
+      <label>4 · Liability</label>
+      <p class="lede">Your limitation of liability and warranty disclaimers.</p>
+      <label>5 · Changes &amp; contact</label>
+      <p class="lede">How you'll notify users of changes, and how to reach you.</p>
+
+      <p class="foot"><a href="/privacy">Privacy</a> · <a href="/">Home</a></p>
+    </main>
+  </div>
+</body>
+</html>

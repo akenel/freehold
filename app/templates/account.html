@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Account — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      <span class="who">Signed in as <b>{{ user.name }}</b></span>
+      <a class="btn ghost" href="/logout">Log out</a>
+    </div>
+
+    <main class="card">
+      <h1>Your account.</h1>
+      <p class="lede">Your identity is managed by Keycloak — <b>Freehold never stores your password.</b></p>
+
+      <div class="grid">
+        <div class="cell"><div class="k">Name</div><div class="v">{{ user.name }}</div></div>
+        <div class="cell"><div class="k">Username</div><div class="v">{{ user.username }}</div></div>
+        <div class="cell"><div class="k">Email</div><div class="v">{{ user.email }}</div></div>
+        <div class="cell"><div class="k">Environment</div><div class="v">{{ env }}</div></div>
+      </div>
+
+      <div class="cell">
+        <div class="k">Your roles</div>
+        <div class="v"><div class="chips">
+          {% for r in user.roles %}<span class="chip {{ 'admin' if r == 'admin' else '' }}">{{ r }}</span>{% endfor %}
+        </div></div>
+      </div>
+
+      <div class="row" style="margin-top:18px">
+        <a class="btn primary" href="{{ kc_url }}/realms/{{ realm }}/account" rel="noreferrer">Manage in Keycloak ↗</a>
+        <a class="btn ghost" href="{{ kc_url }}/realms/{{ realm }}/account/#/security/signingin" rel="noreferrer">Change password ↗</a>
+        <a class="btn ghost" href="/dashboard">Dashboard</a>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

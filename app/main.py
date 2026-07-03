@@ -233,3 +233,30 @@ async def qa_close(request: Request, ticket_id: int):
         }, status_code=400)
     await tickets.close_ticket(ticket_id, resolution, user["username"])
     return RedirectResponse("/qa", status_code=303)
+
+
+# ---------------------------------------------------------------- base pages
+@app.get("/account")
+async def account(request: Request):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    return templates.TemplateResponse("account.html", {
+        "request": request, "user": user, "env": APP_ENV, "realm": KC_REALM, "kc_url": KC_PUBLIC_URL,
+    })
+
+
+@app.get("/terms")
+async def terms(request: Request):
+    return templates.TemplateResponse("terms.html", {"request": request, "user": current_user(request)})
+
+
+@app.get("/privacy")
+async def privacy(request: Request):
+    return templates.TemplateResponse("privacy.html", {"request": request, "user": current_user(request)})
+
+
+@app.exception_handler(404)
+async def not_found(request: Request, exc):
+    user = request.session.get("user") if "session" in request.scope else None
+    return templates.TemplateResponse("404.html", {"request": request, "user": user}, status_code=404)

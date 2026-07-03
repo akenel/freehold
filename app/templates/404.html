@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Not found — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      {% if user %}<a class="btn ghost" href="/dashboard">Dashboard</a>
+      {% else %}<a class="btn ghost" href="/">Home</a>{% endif %}
+    </div>
+
+    <main class="card">
+      <h1>404 — this ground isn't claimed.</h1>
+      <p class="lede">There's nothing at that address. It may have moved, or never existed.</p>
+      <div class="row" style="margin-top:8px">
+        <a class="btn primary" href="/">Back home</a>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

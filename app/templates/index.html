@@ -46,7 +46,10 @@
       {% endif %}
     </main>
 
-    <p style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:12px;margin-top:16px">
+    <p style="text-align:center;margin-top:16px;font-size:13px">
+      <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a>
+    </p>
+    <p style="text-align:center;color:var(--dim);font-family:var(--mono);font-size:12px;margin-top:8px">
       {{ env }} · {{ build.version }} · {{ build.sha }}{% if build.date %} · {{ build.date }}{% endif %}
     </p>
   </div>
