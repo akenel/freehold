@@ -66,3 +66,17 @@ textarea{min-height:110px;resize:vertical}
 .btn.sm{padding:7px 13px;font-size:13px;white-space:nowrap}
 .res{background:rgba(95,179,122,.1);border:1px solid #35563f;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px;color:var(--bone)}
 .res .k{font-family:var(--mono);font-size:11px;color:var(--green);letter-spacing:.1em;text-transform:uppercase}
+
+/* --- language switcher --- */
+.lang{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.lang b{color:var(--amber)}
+.lang a{color:var(--muted);text-decoration:none}
+.lang a:hover{color:var(--bone)}
+/* --- fx table --- */
+table.fx{width:100%;border-collapse:collapse;font-size:14px}
+table.fx th{text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 12px;border-bottom:1px solid var(--line)}
+table.fx td{padding:11px 12px;border-bottom:1px solid var(--line)}
+table.fx td.amt{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--bone);white-space:nowrap}
+table.fx td.grp{color:var(--dim);font-family:var(--mono);font-size:12px}
+table.fx tr.hi td{background:rgba(240,176,46,.08)}
+table.fx tr.hi td.amt{color:var(--amber)}

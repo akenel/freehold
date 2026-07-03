@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,35 +12,37 @@
     <div class="topbar">
       <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
       <span class="spacer"></span>
-      <span class="who">Signed in as <b>{{ user.name }}</b></span>
-      <a class="btn ghost" href="/logout">Log out</a>
+      <span class="lang">{% for c, l in langs.items() %}{% if c == lang %}<b>{{ l }}</b>{% else %}<a href="/lang/{{ c }}">{{ l }}</a>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+      <span class="who">{{ t('nav.signed_in', name=user.name) }}</span>
+      <a class="btn ghost" href="/logout">{{ t('nav.logout') }}</a>
     </div>
 
     <main class="card">
-      <h1>Welcome, {{ user.name }}.</h1>
-      <p class="lede">You came through the door — Keycloak vouched for you, the app trusts the token, and none of it left the server.</p>
+      <h1>{{ t('dash.welcome', name=user.name) }}</h1>
+      <p class="lede">{{ t('dash.lede') }}</p>
 
       <div class="grid">
-        <div class="cell"><div class="k">Username</div><div class="v">{{ user.username }}</div></div>
-        <div class="cell"><div class="k">Email</div><div class="v">{{ user.email }}</div></div>
-        <div class="cell"><div class="k">Environment</div><div class="v">{{ env }}</div></div>
-        <div class="cell"><div class="k">Realm</div><div class="v">{{ realm }}</div></div>
+        <div class="cell"><div class="k">{{ t('dash.username') }}</div><div class="v">{{ user.username }}</div></div>
+        <div class="cell"><div class="k">{{ t('dash.email') }}</div><div class="v">{{ user.email }}</div></div>
+        <div class="cell"><div class="k">{{ t('dash.environment') }}</div><div class="v">{{ env }}</div></div>
+        <div class="cell"><div class="k">{{ t('dash.realm') }}</div><div class="v">{{ realm }}</div></div>
       </div>
 
       <div class="cell">
-        <div class="k">Your roles</div>
+        <div class="k">{{ t('dash.your_roles') }}</div>
         <div class="v"><div class="chips">
           {% for r in user.roles %}<span class="chip {{ 'admin' if r == 'admin' else '' }}">{{ r }}</span>{% endfor %}
         </div></div>
       </div>
 
       <div class="row" style="margin-top:18px">
-        <a class="btn primary" href="/feedback">Send feedback</a>
-        <a class="btn ghost" href="/backlog">Backlog</a>
-        {% if 'admin' in user.roles %}<a class="btn ghost" href="/qa">QA dashboard</a>{% endif %}
-        {% if 'admin' in user.roles %}<a class="btn ghost" href="/console">Admin console</a>{% endif %}
+        <a class="btn primary" href="/feedback">{{ t('dash.send_feedback') }}</a>
+        <a class="btn ghost" href="/backlog">{{ t('dash.backlog') }}</a>
+        <a class="btn ghost" href="/money">{{ t('dash.currencies') }}</a>
+        {% if 'admin' in user.roles %}<a class="btn ghost" href="/qa">{{ t('dash.qa') }}</a>{% endif %}
+        {% if 'admin' in user.roles %}<a class="btn ghost" href="/console">{{ t('dash.admin_console') }}</a>{% endif %}
       </div>
-      <p class="foot">Feedback becomes a ticket → the <b>backlog</b> → worked in <b>QA</b>, where closing demands a <b>resolution</b>. Tickets are the knowledge base. 🐺</p>
+      <p class="foot">{{ t('dash.foot') }} 🐺</p>
     </main>
   </div>
 </body>

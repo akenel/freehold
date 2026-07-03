@@ -15,6 +15,8 @@ from starlette.middleware.sessions import SessionMiddleware
 
 import auth
 import build_info
+import i18n
+import money
 import tickets
 
 APP_ENV = os.getenv("APP_ENV", "sandbox")
@@ -28,7 +30,15 @@ app = FastAPI(title="Freehold", version="0.2.0-phase2")
 # Signed, http-only session cookie. same_site=lax lets the OIDC redirect back in.
 app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET, same_site="lax", https_only=False)
 app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+
+
+def _inject_i18n(request: Request) -> dict:
+    """Runs for every template render — makes t()/lang/langs available everywhere."""
+    lang = i18n.resolve_lang(request)
+    return {"t": i18n.translator(lang), "lang": lang, "langs": i18n.LANGS}
+
+
+templates = Jinja2Templates(directory="templates", context_processors=[_inject_i18n])
 
 
 def current_user(request: Request):
@@ -254,6 +264,33 @@ async def terms(request: Request):
 @app.get("/privacy")
 async def privacy(request: Request):
     return templates.TemplateResponse("privacy.html", {"request": request, "user": current_user(request)})
+
+
+@app.get("/lang/{code}")
+async def set_lang(request: Request, code: str):
+    """Switch language (sets a cookie), then bounce back where you came from."""
+    resp = RedirectResponse(request.headers.get("referer") or "/", status_code=303)
+    if code in i18n.LANGS:
+        resp.set_cookie("lang", code, max_age=31536000, samesite="lax")
+    return resp
+
+
+@app.get("/money")
+async def money_demo(request: Request):
+    """Enterprise taste: one base amount, formatted the way each market writes it."""
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    base_amount = 123456.78
+    rows = [{
+        "code": code,
+        "label": cfg["label"],
+        "formatted": money.format_money(base_amount, code),
+        "grouping": money.GROUP_LABEL[cfg["group"]],
+    } for code, cfg in money.CURRENCIES.items()]
+    return templates.TemplateResponse("money.html", {
+        "request": request, "user": user, "base": base_amount, "rows": rows,
+    })
 
 
 @app.exception_handler(404)

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Currencies — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      <span class="lang">{% for c, l in langs.items() %}{% if c == lang %}<b>{{ l }}</b>{% else %}<a href="/lang/{{ c }}">{{ l }}</a>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+      <span class="who">{{ t('nav.signed_in', name=user.name) }}</span>
+      <a class="btn ghost" href="/logout">{{ t('nav.logout') }}</a>
+    </div>
+
+    <main class="card">
+      <h1>{{ t('money.title') }}</h1>
+      <p class="lede">{{ t('money.lede') }}</p>
+
+      <div class="cell" style="margin-bottom:16px">
+        <div class="k">{{ t('money.base') }}</div>
+        <div class="v">{{ base }} CHF</div>
+      </div>
+
+      <div style="overflow-x:auto">
+        <table class="fx">
+          <thead>
+            <tr><th>{{ t('money.currency') }}</th><th>{{ t('money.formatted') }}</th><th>{{ t('money.grouping') }}</th></tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            <tr class="{{ 'hi' if r.code == 'INR' else '' }}">
+              <td><b>{{ r.code }}</b> · {{ r.label }}</td>
+              <td class="amt">{{ r.formatted }}</td>
+              <td class="grp">{{ r.grouping }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <p class="foot">{{ t('money.note') }}</p>
+      <div class="row" style="margin-top:12px"><a class="btn ghost" href="/dashboard">{{ t('money.back') }}</a></div>
+    </main>
+  </div>
+</body>
+</html>
