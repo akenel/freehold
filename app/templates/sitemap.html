@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Site map — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .sm-group{margin-top:24px}
+    .sm-group h2{font-family:var(--mono);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 10px}
+    .sm-row{display:flex;gap:12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line)}
+    .sm-row a{font-family:var(--mono);font-size:14px;color:var(--bone);text-decoration:none;flex:none;min-width:150px}
+    .sm-row a:hover{color:var(--amber)}
+    .sm-row .d{color:var(--muted);font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+      <span class="spacer"></span>
+      {% if user %}<a class="btn ghost" href="/dashboard">Dashboard</a>
+      {% else %}<a class="btn primary" href="/login">Log in</a>{% endif %}
+    </div>
+
+    <main class="card">
+      <h1>Site map.</h1>
+      <p class="lede">Everything Freehold does, on one honest page — so you always know what's here.</p>
+
+      {% set groups = [
+        ["Public", [
+          ["/", "Home", "The landing — status, login, language, currency."],
+          ["/manifesto", "Manifesto", "Why Freehold exists — the story."],
+          ["/terms", "Terms", "Terms of service (template)."],
+          ["/privacy", "Privacy", "Privacy policy (template)."],
+          ["/sitemap", "Site map", "This page."]
+        ]],
+        ["You (signed in)", [
+          ["/dashboard", "Dashboard", "Your home once logged in."],
+          ["/profile", "Profile", "Your public page — banner, avatar, bio, links."],
+          ["/profile/edit", "Edit profile", "Upload avatar/banner, write Markdown bio."],
+          ["/account", "Account", "Identity + password (managed by Keycloak)."],
+          ["/money", "Currencies", "Multi-currency + locale formatting demo."]
+        ]],
+        ["Community", [
+          ["/u/demo", "Public profile", "Anyone's shareable profile page (/u/<name>)."],
+          ["/feedback", "Send feedback", "Open a ticket."],
+          ["/backlog", "Backlog", "Everything submitted."]
+        ]],
+        ["Admin & ops", [
+          ["/qa", "QA dashboard", "Work tickets; close needs a resolution."],
+          ["/console", "Admin console", "Admin-only area (RBAC demo)."],
+          ["/pulse", "System pulse", "Live diagnostics: DB · migrations · Keycloak · build."]
+        ]],
+        ["Developer / API", [
+          ["/docs", "Swagger UI", "Interactive API docs — test every endpoint."],
+          ["/redoc", "ReDoc", "Clean API reference."],
+          ["/openapi.json", "OpenAPI", "The machine-readable API spec."],
+          ["/version", "Version", "What build is running (JSON)."],
+          ["/healthz", "Health", "Liveness ping (JSON)."]
+        ]]
+      ] %}
+
+      {% for name, rows in groups %}
+      <div class="sm-group">
+        <h2>{{ name }}</h2>
+        {% for path, label, desc in rows %}
+        <div class="sm-row"><a href="{{ path }}">{{ label }}</a><span class="d">{{ desc }}</span></div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+
+      <p class="foot" style="margin-top:22px"><a href="https://github.com/akenel/freehold" rel="noreferrer">Source on GitHub ↗</a> · <a href="/">Home</a></p>
+    </main>
+  </div>
+</body>
+</html>

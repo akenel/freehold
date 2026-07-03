@@ -387,6 +387,12 @@ async def manifesto(request: Request):
     return templates.TemplateResponse("manifesto.html", {"request": request, "user": current_user(request)})
 
 
+@app.get("/sitemap")
+async def sitemap(request: Request):
+    """A human site map — everything the app does, one honest page."""
+    return templates.TemplateResponse("sitemap.html", {"request": request, "user": current_user(request)})
+
+
 @app.get("/terms")
 async def terms(request: Request):
     return templates.TemplateResponse("terms.html", {"request": request, "user": current_user(request)})
