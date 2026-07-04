@@ -84,6 +84,26 @@ The `kc-prd` realm is already tightened for the open internet:
   nothing may stay `change_me`. The `kc-prd` client secret in Keycloak must match
   `KC_CLIENT_SECRET` in `.env`.
 
+## Rebuild a box from scratch (one command after `up`)
+
+The realm JSONs are clean templates; the deployment-specific identity config
+(client secret, social IdP enablement, the no-email account-link flow) lives in
+`.env` and is applied by **`make apply`** (`ops/prod-apply.py`). So a dead box
+comes back exactly:
+
+1. New box, DNS pointed at it, ports 80/443 open.
+2. `git clone` the repo.
+3. **Restore `.env`** from your password manager (or `make secrets ENV=production`
+   if you keep it in SOPS). It carries every secret — DB, Keycloak, session, and the
+   Google/GitHub client id + secret.
+4. Launch: `CADDYFILE=./Caddyfile.prod docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`
+5. **`make apply`** — reconciles the running Keycloak to `.env`: aligns the client
+   secret, enables the social logins, sets account-linking to password re-auth.
+6. Recreate your admin (register at `/register`, grant the `admin` role — step 4 above).
+
+`make apply` is **idempotent** — re-run it whenever `.env` changes (rotated a secret,
+added a provider); it reconciles live, no restart, no re-import, no data loss.
+
 ## One box now, three boxes later
 
 Today all five names point at one IP — one box runs the shared Keycloak *and* the
