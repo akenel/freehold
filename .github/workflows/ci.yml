@@ -1,0 +1,30 @@
+name: CI
+
+# Fast gate: run the test suite on every push and PR, before you ever `make promote`.
+# Infra-free (in-process route tests), so it finishes in ~1 minute. No secrets, no
+# deploy — deploying stays a deliberate `make promote` on the box (its own backup gate).
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: app/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r app/requirements.txt
+
+      - name: Run tests
+        working-directory: app
+        env:
+          # tests don't connect — this just lets the SQLAlchemy engine parse at import
+          DATABASE_URL: postgresql://u:p@localhost:5432/x
+        run: python -m pytest -q tests/

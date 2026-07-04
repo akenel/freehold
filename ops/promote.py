@@ -80,6 +80,14 @@ def main():
         return 1
     sha, count = built
 
+    # Test the EXACT artifact about to go live (in-process tests, no infra needed).
+    # A dummy DATABASE_URL just lets the engine PARSE at import; tests don't connect.
+    print(f"→ running the test suite inside freehold-app:{tag} (must pass to deploy) ...")
+    if subprocess.run(["docker", "run", "--rm", "-e",
+                       "DATABASE_URL=postgresql://u:p@localhost:5432/x",
+                       f"freehold-app:{tag}", "python", "-m", "pytest", "-q", "tests/"]).returncode != 0:
+        print("✋ ABORT: tests failed in the built image — not promoting."); return 1
+
     print(f"→ recreating {service} on the new image (no rebuild, no other env touched) ...")
     if compose(*FILES, "up", "-d", "--no-deps", "--no-build", "--force-recreate", service).returncode != 0:
         print("ERROR: recreate failed"); return 1
