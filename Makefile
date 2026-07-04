@@ -25,3 +25,11 @@ smtp:    ; python3 ops/set-smtp.py
 
 # Turn on social logins (Google/GitHub/Facebook) from .env — see docs/SOCIAL-LOGIN.md
 idp:     ; python3 ops/set-idp.py
+
+# --- secrets (SOPS + age) — see docs/SECRETS.md ---
+# Decrypt this env's secrets to .env AND load them into Keycloak (vault + IdPs).
+secrets:      ; python3 ops/secrets.py apply $${ENV:-sandbox}
+# Edit an env's encrypted secrets in $EDITOR (re-encrypts on save).
+secrets-edit: ; sops secrets/$${ENV:-sandbox}.enc.yaml
+# Re-encrypt to the current recipients in .sops.yaml (after adding a box/teammate).
+secrets-rekey: ; @for f in secrets/*.enc.yaml; do sops updatekeys -y $$f && echo "rekeyed $$f"; done

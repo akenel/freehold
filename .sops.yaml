@@ -1,0 +1,10 @@
+# Freehold — SOPS config. Encrypted secrets live in secrets/<env>.enc.yaml and
+# are safe to commit (values are ciphertext; keys stay readable for clean diffs).
+#
+# The matching PRIVATE key lives OUTSIDE the repo at ~/.config/sops/age/keys.txt
+# (perms 600) and is backed up in KeePass. To add a new box or teammate, add
+# their age public key as another recipient below and run `make secrets-rekey`.
+creation_rules:
+  - path_regex: secrets/.*\.enc\.yaml$
+    age: >-
+      age1hhge8meh9m87ztcntld32zdet0q8cfkx2yezt66j8zzwppu7wezshzpazq
