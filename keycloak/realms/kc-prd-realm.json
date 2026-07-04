@@ -1,5 +1,5 @@
 {
-  "realm": "freehold-sandbox",
+  "realm": "kc-prd",
   "enabled": true,
   "sslRequired": "none",
   "registrationAllowed": true,
@@ -28,13 +28,17 @@
       "directAccessGrantsEnabled": true,
       "protocol": "openid-connect",
       "redirectUris": [
-        "https://localhost:8443/*"
+        "https://localhost:8443/*",
+        "https://www.wolfhold.app/*",
+        "https://wolfhold.app/*"
       ],
       "webOrigins": [
-        "https://localhost:8443"
+        "https://localhost:8443",
+        "https://www.wolfhold.app",
+        "https://wolfhold.app"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "https://localhost:8443/*"
+        "post.logout.redirect.uris": "https://localhost:8443/*##https://www.wolfhold.app/*##https://wolfhold.app/*"
       }
     }
   ],

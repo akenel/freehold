@@ -27,7 +27,9 @@ import robot
 import tickets
 
 APP_ENV = os.getenv("APP_ENV", "sandbox")
-KC_REALM = os.getenv("KC_REALM", f"freehold-{APP_ENV}")
+# One shared Keycloak holds all three realms; each environment uses its own.
+_REALM_BY_ENV = {"sandbox": "kc-sbx", "staging": "kc-stg", "production": "kc-prd"}
+KC_REALM = os.getenv("KC_REALM") or _REALM_BY_ENV.get(APP_ENV, f"kc-{APP_ENV}")
 KC_PUBLIC_URL = os.getenv("KC_PUBLIC_URL", "http://localhost:8080")
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8080").rstrip("/")
 DATABASE_URL = os.getenv("DATABASE_URL", "")

@@ -44,4 +44,4 @@ def test_lang_route_sets_cookie_and_redirects():
 def test_healthz_reports_shape():
     body = client.get("/healthz").json()
     assert body["status"] == "ok"
-    assert body["realm"] == "freehold-sandbox"
+    assert body["realm"] == "kc-sbx"   # sandbox env -> shared Keycloak's kc-sbx realm

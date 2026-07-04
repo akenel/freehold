@@ -2,7 +2,7 @@
 # Freehold — Phase 1: the skeleton
 # Four honest pieces, one command: `docker compose up -d`
 #   postgres  — your data
-#   keycloak  — login + roles, with 3 realms (sandbox/staging/production)
+#   keycloak  — login + roles; ONE shared instance, 3 realms (kc-sbx/kc-stg/kc-prd)
 #   app       — a FastAPI hello that proves the DB + env wiring
 #   caddy     — one front door; /realms/* -> keycloak, everything else -> app
 #

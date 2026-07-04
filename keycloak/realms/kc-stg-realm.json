@@ -1,5 +1,5 @@
 {
-  "realm": "freehold-production",
+  "realm": "kc-stg",
   "enabled": true,
   "sslRequired": "none",
   "registrationAllowed": true,
@@ -28,13 +28,15 @@
       "directAccessGrantsEnabled": true,
       "protocol": "openid-connect",
       "redirectUris": [
-        "https://localhost:8443/*"
+        "https://localhost:8443/*",
+        "https://staging.wolfhold.app/*"
       ],
       "webOrigins": [
-        "https://localhost:8443"
+        "https://localhost:8443",
+        "https://staging.wolfhold.app"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "https://localhost:8443/*"
+        "post.logout.redirect.uris": "https://localhost:8443/*##https://staging.wolfhold.app/*"
       }
     }
   ],

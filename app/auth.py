@@ -20,7 +20,9 @@ import jwt
 from jwt import PyJWKClient
 
 APP_ENV = os.getenv("APP_ENV", "sandbox")
-REALM = os.getenv("KC_REALM", f"freehold-{APP_ENV}")
+# One shared Keycloak holds all three realms; each environment uses its own.
+_REALM_BY_ENV = {"sandbox": "kc-sbx", "staging": "kc-stg", "production": "kc-prd"}
+REALM = os.getenv("KC_REALM") or _REALM_BY_ENV.get(APP_ENV, f"kc-{APP_ENV}")
 PUBLIC = os.getenv("KC_PUBLIC_URL", "http://localhost:8080").rstrip("/")
 INTERNAL = os.getenv("KC_INTERNAL_URL", "http://keycloak:8080").rstrip("/")
 CLIENT_ID = os.getenv("KC_CLIENT_ID", "freehold-web")

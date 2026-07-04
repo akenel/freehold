@@ -1,18 +1,21 @@
-# Freehold — PRODUCTION overlay. Real domain + real HTTPS (Let's Encrypt via DuckDNS).
+# Freehold — PRODUCTION overlay. Real domains + real HTTPS (Let's Encrypt).
 #
-#   1) Register a free subdomain at duckdns.org and point it at THIS server's IP.
-#   2) Open ports 80 + 443.
-#   3) Add the domain to the realms:   python3 ops/set-domain.py freeholder.duckdns.org
-#   4) Launch:
-#        SITE_DOMAIN=freeholder.duckdns.org CADDYFILE=./Caddyfile.prod \
-#          docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Shared-auth model: the app is served at SITE_DOMAIN (this env's subdomain) and
+# ONE shared Keycloak is served at AUTH_DOMAIN, holding all three realms. Both
+# come from .env (see deploy/<env>.env.example).
 #
-# (Uses the SAME app/keycloak/postgres/minio as dev — only the front door, hostname,
-#  and public URLs change. That's the whole point: one stack, dev to prod.)
+#   cp deploy/sandbox.env.example .env      # (or staging / production)
+#   # fill in the secrets, then:
+#   CADDYFILE=./Caddyfile.prod \
+#     docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# (Same app/keycloak/postgres/minio as dev — only the front door, hostnames, and
+#  public URLs change. One stack, dev to prod.)
 services:
   caddy:
     environment:
-      SITE_DOMAIN: ${SITE_DOMAIN}
+      SITE_DOMAIN: ${SITE_DOMAIN}      # this box's app host, e.g. sandbox.wolfhold.app
+      AUTH_DOMAIN: ${AUTH_DOMAIN}      # the shared Keycloak host, auth.wolfhold.app
     ports:
       # Defaults to the real 80/443. On a box where those are taken (e.g. an
       # existing Traefik), set CADDY_HTTP_PORT/CADDY_HTTPS_PORT to high ports and
@@ -22,23 +25,25 @@ services:
 
   keycloak:
     environment:
-      KC_HOSTNAME: https://${SITE_DOMAIN}
+      # The shared auth host — makes the token ISSUER deterministic for every realm.
+      KC_HOSTNAME: https://${AUTH_DOMAIN}
 
   app:
     environment:
-      APP_BASE_URL: https://${SITE_DOMAIN}
-      KC_PUBLIC_URL: https://${SITE_DOMAIN}
+      APP_BASE_URL: https://${SITE_DOMAIN}      # this env's own front door
+      KC_PUBLIC_URL: https://${AUTH_DOMAIN}     # browser logs in at the shared auth host
 
-  # Optional: keep the DuckDNS record pointed at this box (only needed if your
-  # server's IP is dynamic — a home box or Pi). Static VPS? Set the IP once on
-  # duckdns.org and delete this service. DUCKDNS_TOKEN lives in .env (gitignored)
-  # — NEVER commit it.
+  # Optional dynamic-DNS updater — only for a box with a DYNAMIC public IP (home
+  # box / Pi). A static VPS (e.g. Porkbun A-records to a fixed IP) does NOT need
+  # this; it stays off unless you opt in with `--profile duckdns`. Token lives in
+  # .env (gitignored) — NEVER commit it.
   duckdns:
     image: curlimages/curl:8.11.1
     restart: unless-stopped
+    profiles: ["duckdns"]
     environment:
       DUCKDNS_DOMAIN: ${DUCKDNS_DOMAIN:-freeholder}
-      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN}
+      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN:-}
     entrypoint: ["/bin/sh", "-c",
       "while true; do curl -fsS \"https://www.duckdns.org/update?domains=$${DUCKDNS_DOMAIN}&token=$${DUCKDNS_TOKEN}&ip=\" && echo \" duckdns updated\"; sleep 300; done"]
     networks: [freehold]
