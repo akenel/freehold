@@ -11,10 +11,13 @@ decision, a console, or a cost), 🤝 = both.
       on every prod deploy; round-trip proven. *(was the #1 gap: box death = data death)*
 
 ## 🟢 Tier 1 — quick wins
-- [~] **1. Immutability** — governance retention + lifecycle wired (ops/b2-immutable.py):
-      backups un-deletable for B2_LOCK_DAYS, auto-cleaned B2-side. backup.py no longer
-      deletes (write-only-key-ready). REMAINING (🐺): create a write-only B2 key for
-      attacker-proof (2 clicks) — governance can still be bypassed by the current key.
+- [~] **1. Immutability** — DONE: governance 14d Object-Lock retention + 30d lifecycle
+      cleanup (ops/b2-immutable.py, B2_LOCK_MODE); backups un-deletable 14d, backup.py
+      upload-only (--no-check-dest, write-only-key-ready). REMAINING for *attacker-proof*
+      (🐺, needs the B2 MASTER key — app keys can't): either flip to **compliance** mode
+      (no key incl. master can delete a locked object) OR `b2 create-key ...
+      writeFiles,listBuckets` for a genuinely delete-less box key. B2's web-UI "Write
+      Only" is NOT enough (it keeps deleteFiles+bypassGovernance).
       but no retention, and the key can delete → off-box but not ransomware-proof.
       Fix: a **write-only** B2 key + **default retention** (e.g. 14-day compliance) +
       a lifecycle rule for cleanup. *You: 2 clicks in the B2 console. Me: wire it.*
