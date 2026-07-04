@@ -70,9 +70,13 @@ def main() -> int:
     except urllib.error.HTTPError as e:
         print("ERROR: b2_update_bucket failed —", e.read().decode()[:300]); return 1
 
-    dr = res.get("defaultRetention", {})
-    print(f"✅ B2 '{bucket}': backups now IMMUTABLE {lock_days}d (default retention: "
-          f"{dr.get('mode')}), auto-deleted ~{keep_days}d after upload (lifecycle).")
+    # Read back the applied retention from the response (nested under fileLockConfiguration).
+    dr = (((res.get("fileLockConfiguration") or {}).get("value") or {}).get("defaultRetention") or {})
+    mode, period = dr.get("mode"), dr.get("period") or {}
+    if mode != "governance":
+        print("⚠️  retention not applied — is Object Lock enabled on the bucket?"); return 1
+    print(f"✅ B2 '{bucket}': backups IMMUTABLE for {period.get('duration')} {period.get('unit')} "
+          f"({mode}), auto-deleted ~{keep_days}d after upload (lifecycle).")
     print("   Cleanup is B2-side now — switch the backup key to write-only for full ransomware-proofing.")
     return 0
 
