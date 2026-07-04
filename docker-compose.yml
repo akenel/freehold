@@ -50,9 +50,15 @@ services:
       # internally at keycloak:8080 — but the ISSUER is always localhost:8080.
       KC_HOSTNAME: https://localhost:8443
       KC_PROXY_HEADERS: xforwarded
+      # Files vault — keeps secrets (SMTP/Resend key) OUT of the realm JSON.
+      # Realms reference ${vault.resendkey}; the value lives in a gitignored file
+      # under keycloak/vault/, written from .env by `python3 ops/set-smtp.py`.
+      KC_VAULT: file
+      KC_VAULT_DIR: /opt/keycloak/data/vault
     volumes:
       - ./keycloak/realms:/opt/keycloak/data/import:ro
       - ./keycloak/themes:/opt/keycloak/themes:ro    # custom login theme (adds Hindi)
+      - ./keycloak/vault:/opt/keycloak/data/vault:ro  # secret files (gitignored)
     ports:
       - "127.0.0.1:8081:8080"    # direct KC (admin console + realm probe) — dev only
     depends_on:

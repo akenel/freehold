@@ -1,0 +1,2 @@
+# Keycloak file-vault directory. Secret files (e.g. kc-prd_resendkey) are written
+# here by `python3 ops/set-smtp.py` from .env and are gitignored — never committed.

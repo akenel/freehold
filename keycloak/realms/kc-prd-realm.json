@@ -3,6 +3,18 @@
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": true,
+  "resetPasswordAllowed": true,
+  "smtpServer": {
+    "host": "smtp.resend.com",
+    "port": "465",
+    "ssl": "true",
+    "starttls": "false",
+    "auth": "true",
+    "user": "resend",
+    "password": "${vault.resendkey}",
+    "from": "no-reply@wolfhold.app",
+    "fromDisplayName": "Wolfhold"
+  },
   "loginTheme": "freehold",
   "roles": {
     "realm": [

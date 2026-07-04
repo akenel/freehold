@@ -1,7 +1,7 @@
 # Freehold — the whole kit, in a few words.
-.PHONY: up down logs ps restart nuke backup deploy parity help
+.PHONY: up down logs ps restart nuke backup deploy parity smtp help
 
-help:    ; @echo "up | down | logs | ps | restart | nuke | trust | test | backup | deploy [ENV=sandbox] | parity"
+help:    ; @echo "up | down | logs | ps | restart | nuke | trust | test | backup | deploy [ENV=sandbox] | parity | smtp"
 
 # Run the test suite in a throwaway app container (no infra needed).
 test:    ; docker compose run --rm --no-deps app python -m pytest -q tests/
@@ -19,3 +19,6 @@ nuke:    ; docker compose down -v   # also wipes the database volumes
 backup:  ; python3 ops/backup.py
 deploy:  ; python3 ops/deploy.py $${ENV:-sandbox}
 parity:  ; python3 ops/env-parity.py
+
+# Load the Resend key from .env into Keycloak's file vault (all realms).
+smtp:    ; python3 ops/set-smtp.py
