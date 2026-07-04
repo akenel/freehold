@@ -32,7 +32,7 @@ decision, a console, or a cost), 🤝 = both.
       (multi-env ladder). 10 scripts → 7.
 
 ## 🟡 Tier 2 — the real safety net
-- [ ] **5. Test coverage that matters** — 🐯 — today: 14 shallow tests. Add the OIDC
+- [x] **5. Test coverage (14→25)** — auth-helper units + RBAC gates added, run in the deploy gate. Deeper integration (OIDC
       login flow, RBAC gating (admin-only routes), profile + ticket CRUD, and an
       `ops/` smoke. Then the CI gate is a net, not a speed bump.
 - [ ] **6. Observability** — 🤝 — nothing watches it live. Add **uptime + alerts**
