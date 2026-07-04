@@ -10,19 +10,20 @@ decision, a console, or a cost), 🤝 = both.
 - [x] **Off-box backups** — encrypted, restore-verified dumps ship to Backblaze B2
       on every prod deploy; round-trip proven. *(was the #1 gap: box death = data death)*
 
-## 🟢 Tier 1 — quick wins (do next, hours not days)
+## 🟢 Tier 1 — quick wins
 - [ ] **1. Finish the backup story: immutability** — 🤝 — bucket has Object Lock on
       but no retention, and the key can delete → off-box but not ransomware-proof.
       Fix: a **write-only** B2 key + **default retention** (e.g. 14-day compliance) +
       a lifecycle rule for cleanup. *You: 2 clicks in the B2 console. Me: wire it.*
-- [ ] **2. `make` on the box** — 🐯 — docs say `make backup`/`make apply`; box has no
-      `make`. One `apt-get install -y make`.
-- [ ] **3. Kill the client-secret coupling** — 🐯 — `KC_CLIENT_SECRET` must match the
-      realm JSON by hand (it bit us). Make it a single source (vault ref or generated
-      in `prod-apply`). Removes a whole class of "login broke on deploy".
-- [ ] **4. Consolidate `ops/`** — 🐯 — `deploy.py` vs `promote.py`, `set-idp.py` vs
-      `prod-apply.py`, three ways to stamp a realm. Collapse into one clear path so a
-      junior isn't guessing. *(I made this sprawl worse — I'll clean it.)*
+- [x] **2. `make` on the box** — done (GNU Make 4.4.1 installed).
+- [x] **3. Client-secret coupling killed** — `.env` is now the single source;
+      `make apply` (`prod-apply.py`) sets the client secret on the running Keycloak,
+      and a **production `promote` auto-runs it** — you can't deploy prod with drifted
+      auth anymore.
+- [x] **4. `ops/` consolidated** — removed `set-domain.py` (dead), `set-smtp.py` +
+      `set-idp.py` (folded into `make apply`, the ONE config path). `secrets.py` now
+      just decrypts. Deploy tools split by role: `deploy` (single-env) vs `promote`
+      (multi-env ladder). 10 scripts → 7.
 
 ## 🟡 Tier 2 — the real safety net
 - [ ] **5. Test coverage that matters** — 🐯 — today: 14 shallow tests. Add the OIDC

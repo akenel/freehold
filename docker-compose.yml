@@ -52,7 +52,7 @@ services:
       KC_PROXY_HEADERS: xforwarded
       # Files vault — keeps secrets (SMTP password etc.) OUT of the realm JSON.
       # Realms reference ${vault.smtppass}; the value lives in a gitignored file
-      # under keycloak/vault/, written from .env by `python3 ops/set-smtp.py`.
+      # under keycloak/vault/, written from .env by `python3 ops/prod-apply.py`.
       KC_VAULT: file
       KC_VAULT_DIR: /opt/keycloak/data/vault
     volumes:

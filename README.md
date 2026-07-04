@@ -121,9 +121,9 @@ More detail + the shared-auth topology: [`docs/GOING-LIVE.md`](docs/GOING-LIVE.m
 ## 🔌 Turn on the optional packs
 
 - **Social login (Google/GitHub/Facebook)** — [`docs/SOCIAL-LOGIN.md`](docs/SOCIAL-LOGIN.md).
-  Register an OAuth app, add the redirect URIs, drop the creds in `.env`, `make idp`.
+  Register an OAuth app, add the redirect URIs, drop the creds in `.env`, `make apply`.
 - **Email (forgot-password)** — [`docs/EMAIL.md`](docs/EMAIL.md). Any SMTP; SMTP2GO
-  free by default, Gmail app-password works instantly. `make smtp`.
+  free by default, Gmail app-password works instantly. `make apply`.
 - **Secrets (SOPS + age)** — [`docs/SECRETS.md`](docs/SECRETS.md). Encrypt `.env` into
   git, hold one key in your password manager. `make secrets ENV=production`.
 
@@ -179,10 +179,11 @@ More detail + the shared-auth topology: [`docs/GOING-LIVE.md`](docs/GOING-LIVE.m
 make up        # build + start (local)         make test    # run the test suite
 make trust     # trust Caddy's local CA         make logs    # tail logs
 make down      # stop            make nuke      # stop + WIPE volumes (fresh realms)
-make deploy ENV=sandbox          # run the deploy pipeline
-make backup    # encrypted, restore-verified backup
-make smtp      # load SMTP creds into Keycloak  make idp     # enable social logins
-make secrets ENV=<env>           # decrypt SOPS secrets -> .env -> Keycloak
+make deploy ENV=sandbox          # single-env: rebuild the whole stack (+ backup gate)
+make promote ENV=.. REF=..       # multi-env ladder: build one env's image from a git ref
+make apply     # reconcile running Keycloak to .env (client secret, SMTP, social logins)
+make backup    # encrypted, restore-verified, off-box (B2) backup
+make secrets ENV=<env>           # decrypt SOPS secrets -> .env
 ```
 
 ## 📚 Docs

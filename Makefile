@@ -1,7 +1,7 @@
 # Freehold — the whole kit, in a few words.
-.PHONY: up down logs ps restart nuke backup deploy parity smtp idp help
+.PHONY: up down logs ps restart nuke backup deploy promote apply parity secrets help
 
-help:    ; @echo "up | down | logs | ps | restart | nuke | trust | test | backup | deploy [ENV=sandbox] | parity | smtp | idp"
+help:    ; @echo "up | down | logs | ps | restart | nuke | trust | test | backup | deploy [ENV=] | promote ENV=.. REF=.. | apply | secrets ENV=.. | parity"
 
 # Run the test suite in a throwaway app container (no infra needed).
 test:    ; docker compose run --rm --no-deps app python -m pytest -q tests/
@@ -17,17 +17,16 @@ nuke:    ; docker compose down -v   # also wipes the database volumes
 
 # --- the rails ---
 backup:  ; python3 ops/backup.py
-deploy:  ; python3 ops/deploy.py $${ENV:-sandbox}
 parity:  ; python3 ops/env-parity.py
 
-# Load the SMTP password from .env into Keycloak's vault + stamp the sender (all realms).
-smtp:    ; python3 ops/set-smtp.py
+# Deploy — TWO tools, pick by topology:
+#   deploy  : single-env box, rebuild the whole stack from the working tree (+ backup gate).
+#   promote : multi-env ladder — build ONE env's image from a git ref (test-gated, per-env code).
+deploy:  ; python3 ops/deploy.py $${ENV:-sandbox}
+promote: ; python3 ops/promote.py $${ENV:-sandbox} $${REF:-HEAD}
 
-# Turn on social logins (Google/GitHub/Facebook) from .env — see docs/SOCIAL-LOGIN.md
-idp:     ; python3 ops/set-idp.py
-
-# Reconcile a RUNNING Keycloak to .env (client secret, SMTP, social IdPs, link flow).
-# The one-command "make prod match .env" — run after `up` on a deployed box.
+# The ONE config path: reconcile a RUNNING Keycloak to .env — client secret, SMTP,
+# social IdPs, and the no-email account-link flow. Run after `up`. Idempotent.
 apply:   ; python3 ops/prod-apply.py
 
 # Promote a git ref's code to ONE env (per-env images). ENV=sandbox|staging|production REF=<sha>
@@ -35,7 +34,7 @@ apply:   ; python3 ops/prod-apply.py
 promote: ; python3 ops/promote.py $${ENV:-sandbox} $${REF:-HEAD}
 
 # --- secrets (SOPS + age) — see docs/SECRETS.md ---
-# Decrypt this env's secrets to .env AND load them into Keycloak (vault + IdPs).
+# Decrypt this env's secrets to .env (then `up` + `make apply` load them into Keycloak).
 secrets:      ; python3 ops/secrets.py apply $${ENV:-sandbox}
 # Edit an env's encrypted secrets in $EDITOR (re-encrypts on save).
 secrets-edit: ; sops secrets/$${ENV:-sandbox}.enc.yaml

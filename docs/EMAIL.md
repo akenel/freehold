@@ -7,7 +7,7 @@ provider works though (Resend, Brevo, Amazon SES, your own postfix) — you only
 change the `SMTP_*` vars.
 
 The config is provider-agnostic: host/port/user/from live in `.env` (→ stamped
-into the realms by `make smtp`); the password lives in the SOPS/vault (never in
+into the realms by `make apply`); the password lives in the SOPS/vault (never in
 git) as `${vault.smtppass}`.
 
 ## SMTP2GO setup, click for click
@@ -54,10 +54,11 @@ SMTP_FROM_NAME=Wolfhold
 
 Just change the four transport vars — e.g. Resend (`smtp.resend.com` / user
 `resend` / port 465 / `SMTP_SSL=true`), Brevo (`smtp-relay.brevo.com` / 587),
-SES, etc. `make smtp` stamps whatever you set into all three realms.
+SES, etc. `make apply` stamps whatever you set into all three realms.
 
 ## Verify it actually sends
 
-`make smtp` writes the vault + stamps the sender; restart Keycloak, then hit any
-login screen → **Forgot password?**. If mail doesn't arrive, 99% of the time the
-**sender domain isn't verified** at the provider — check that first.
+`make apply` vaults the password + sets the sender on the running Keycloak (no
+restart needed), then hit any login screen → **Forgot password?**. If mail doesn't
+arrive, 99% of the time the **sender domain isn't verified** at the provider —
+check that first.

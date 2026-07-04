@@ -8,10 +8,9 @@ shows no broken buttons. You turn on only what you configure.
 
 1. Create an OAuth app on the provider (Google / GitHub / Facebook).
 2. Put its **client id + secret** in `.env`.
-3. Run `make idp` — it writes the secret into Keycloak's file vault (never
-   committed) and stamps the client id in + flips the provider **enabled** in the
-   realm JSONs, for all three realms.
-4. `up` (fresh box) or re-import. The button appears on the login screen.
+3. `up`, then **`make apply`** — it vaults the secret (never committed) and enables
+   the provider with your client id on the *running* Keycloak, for all realms. The
+   button appears on the login screen.
 
 Client **ids** are public (fine to commit in your own fork); client **secrets**
 live only in `.env` → the vault.
@@ -53,8 +52,8 @@ privacy-policy URL and app review before the `email` scope works for the public.
 Then:
 
 ```
-make idp
-docker compose up -d          # fresh box; or down && up to re-import realms
+docker compose up -d          # bring the stack up first
+make apply                    # then configure the running Keycloak from .env
 ```
 
 ## Telegram — the exception

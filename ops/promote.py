@@ -105,6 +105,13 @@ def main():
     if not healthy:
         print("ERROR: did not become healthy in time"); return 1
 
+    # Reconcile Keycloak to .env so a prod deploy can't drift (client secret, IdPs,
+    # link flow). .env is the single source; this enforces it. Idempotent, non-fatal.
+    if args.env == "production":
+        print("→ reconciling Keycloak to .env (make apply) ...")
+        if subprocess.run([sys.executable, str(REPO / "ops" / "prod-apply.py")]).returncode != 0:
+            print("   ⚠️  prod-apply reported an issue — check `make apply` manually.")
+
     served = json.loads(urllib.request.urlopen(f"{base}/version", timeout=5).read()).get("sha")
     ok = served == sha
     print(f"\n{'✅' if ok else '⚠️ '} PROMOTED {args.env} · {base}")

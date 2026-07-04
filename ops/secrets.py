@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-"""Freehold — decrypt this env's SOPS secrets into .env, then load them into Keycloak.
+"""Freehold — decrypt this env's SOPS secrets into .env.
 
     python3 ops/secrets.py apply <sandbox|staging|production>
 
-What it does, in order:
-  1. sops -d secrets/<env>.enc.yaml   ->  writes .env  (needs the age key at
-     ~/.config/sops/age/keys.txt — from KeePass; perms 600).
-  2. ops/set-smtp.py                  ->  SMTP password into the file vault.
-  3. ops/set-idp.py                   ->  social-login secrets vaulted + enabled.
+Decrypts secrets/<env>.enc.yaml (needs the age key at ~/.config/sops/age/keys.txt
+— from KeePass, perms 600) and writes .env. That's the ONLY thing it does now —
+loading the secrets into Keycloak is `make apply` (ops/prod-apply.py), the single
+config path, run after `up`. So the deploy sequence is always:
+
+    make secrets ENV=<env>   # SOPS -> .env
+    docker compose ... up -d
+    make apply               # .env -> running Keycloak (client secret, SMTP, IdPs, link flow)
 
 Secrets never sit in plaintext in git: the encrypted secrets/<env>.enc.yaml is
-committed, .env is gitignored, and the vault files are gitignored. Edit secrets
-with:  sops secrets/<env>.enc.yaml   (or `make secrets-edit ENV=<env>`).
+committed, .env is gitignored, the vault files are gitignored. Edit secrets with:
+  sops secrets/<env>.enc.yaml   (or `make secrets-edit ENV=<env>`).
 """
 import subprocess
 import sys
@@ -37,24 +40,15 @@ def main() -> int:
         print("       Restore it from KeePass (chmod 600), then re-run.")
         return 1
 
-    print(f"[1/3] decrypting {enc.relative_to(REPO)} -> .env ...")
-    dec = subprocess.run(
-        ["sops", "-d", "--output-type", "dotenv", str(enc)],
-        capture_output=True, text=True)
+    print(f"→ decrypting {enc.relative_to(REPO)} -> .env ...")
+    dec = subprocess.run(["sops", "-d", "--output-type", "dotenv", str(enc)],
+                         capture_output=True, text=True)
     if dec.returncode != 0:
         print("ERROR: sops decrypt failed\n" + dec.stderr)
         return 1
     (REPO / ".env").write_text(dec.stdout)
     print(f"      wrote .env ({len(dec.stdout.splitlines())} lines)")
-
-    print("[2/3] loading the SMTP password into the vault ...")
-    if subprocess.run([sys.executable, str(REPO / "ops" / "set-smtp.py")]).returncode != 0:
-        print("      (skipped — SMTP_PASSWORD not set)")
-    print("[3/3] enabling configured social logins ...")
-    subprocess.run([sys.executable, str(REPO / "ops" / "set-idp.py")])
-
-    print(f"\n✅ {env} secrets applied. Restart to pick them up:")
-    print("   docker compose up -d   (fresh box)  ·  down && up  (re-import realms)")
+    print(f"\n✅ {env} secrets in .env. Next:  docker compose ... up -d   then   make apply")
     return 0
 
 

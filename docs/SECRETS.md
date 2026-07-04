@@ -45,14 +45,15 @@ commit.
 # edit a secret (opens $EDITOR decrypted; re-encrypts on save)
 make secrets-edit ENV=production        # or: sops secrets/production.enc.yaml
 
-# on a box: decrypt to .env AND load into Keycloak (vault + social logins) in one shot
+# on a box: decrypt to .env, bring the stack up, load config into the running Keycloak
 make secrets ENV=production
-docker compose up -d                    # fresh box; or down && up to re-import realms
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+make apply                              # reconcile the running Keycloak to .env
 ```
 
-`make secrets` runs `ops/secrets.py`: `sops -d` → writes `.env`, then
-`ops/set-smtp.py` (SMTP password → vault) and `ops/set-idp.py` (social-login secrets
-→ vault, providers enabled). One command from encrypted-in-git to live-in-Keycloak.
+`make secrets` decrypts (`sops -d` → `.env`); **`make apply`** (`ops/prod-apply.py`)
+then loads it into the *running* Keycloak — the single config path (client secret,
+SMTP, social logins, link flow). Encrypted-in-git → live-in-Keycloak, two clear steps.
 
 ## Rotating a secret
 
