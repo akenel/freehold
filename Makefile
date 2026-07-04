@@ -1,7 +1,7 @@
 # Freehold — the whole kit, in a few words.
-.PHONY: up down logs ps restart nuke backup deploy parity smtp help
+.PHONY: up down logs ps restart nuke backup deploy parity smtp idp help
 
-help:    ; @echo "up | down | logs | ps | restart | nuke | trust | test | backup | deploy [ENV=sandbox] | parity | smtp"
+help:    ; @echo "up | down | logs | ps | restart | nuke | trust | test | backup | deploy [ENV=sandbox] | parity | smtp | idp"
 
 # Run the test suite in a throwaway app container (no infra needed).
 test:    ; docker compose run --rm --no-deps app python -m pytest -q tests/
@@ -22,3 +22,6 @@ parity:  ; python3 ops/env-parity.py
 
 # Load the Resend key from .env into Keycloak's file vault (all realms).
 smtp:    ; python3 ops/set-smtp.py
+
+# Turn on social logins (Google/GitHub/Facebook) from .env — see docs/SOCIAL-LOGIN.md
+idp:     ; python3 ops/set-idp.py
