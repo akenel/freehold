@@ -26,6 +26,10 @@ smtp:    ; python3 ops/set-smtp.py
 # Turn on social logins (Google/GitHub/Facebook) from .env — see docs/SOCIAL-LOGIN.md
 idp:     ; python3 ops/set-idp.py
 
+# Reconcile a RUNNING Keycloak to .env (client secret, SMTP, social IdPs, link flow).
+# The one-command "make prod match .env" — run after `up` on a deployed box.
+apply:   ; python3 ops/prod-apply.py
+
 # --- secrets (SOPS + age) — see docs/SECRETS.md ---
 # Decrypt this env's secrets to .env AND load them into Keycloak (vault + IdPs).
 secrets:      ; python3 ops/secrets.py apply $${ENV:-sandbox}
