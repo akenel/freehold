@@ -42,7 +42,7 @@ decision, a console, or a cost), 🤝 = both.
       GlitchTip, or hosted Sentry free tier). *You: pick self-host vs hosted.*
 
 ## 🟠 Tier 3 — structural / your call
-- [ ] **7. Feature triage** — 🐺→🐯 — robot / DuckDNS / money / i18n: which are core
+- [x] **7. Feature triage** — cut money demo + DuckDNS; robot pack labeled optional (README).
       vs demo? You decide what stays; I prune the grab-bag so "what you get" is honest.
 - [x] **8. `main.py` broke up** — 516 → 29 lines. deps.py (config + templates + guards)
       + routers/{base,door,loop,profile,extras,robot_panel}.py. Route surface proven

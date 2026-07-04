@@ -17,7 +17,7 @@ def test_public_pages_serve():
 
 
 def test_protected_pages_redirect_to_login_when_anonymous():
-    for path in ("/dashboard", "/qa", "/console", "/account", "/feedback", "/backlog", "/money"):
+    for path in ("/dashboard", "/qa", "/console", "/account", "/feedback", "/backlog"):
         r = client.get(path, follow_redirects=False)
         assert r.status_code == 307, path
         assert r.headers["location"] == "/login", path

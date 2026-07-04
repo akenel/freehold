@@ -35,7 +35,6 @@
         <a class="btn primary" href="/profile">My profile</a>
         <a class="btn ghost" href="/feedback">{{ t('dash.send_feedback') }}</a>
         <a class="btn ghost" href="/backlog">{{ t('dash.backlog') }}</a>
-        <a class="btn ghost" href="/money">{{ t('dash.currencies') }}</a>
         {% if 'admin' in user.roles %}<a class="btn ghost" href="/qa">{{ t('dash.qa') }}</a>{% endif %}
         {% if 'admin' in user.roles %}<a class="btn ghost" href="/console">{{ t('dash.admin_console') }}</a>{% endif %}
       </div>

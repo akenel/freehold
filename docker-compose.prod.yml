@@ -33,18 +33,3 @@ services:
     environment:
       APP_BASE_URL: https://${SITE_DOMAIN}      # this env's own front door
       KC_PUBLIC_URL: https://${AUTH_DOMAIN}     # browser logs in at the shared auth host
-
-  # Optional dynamic-DNS updater — only for a box with a DYNAMIC public IP (home
-  # box / Pi). A static VPS (e.g. Porkbun A-records to a fixed IP) does NOT need
-  # this; it stays off unless you opt in with `--profile duckdns`. Token lives in
-  # .env (gitignored) — NEVER commit it.
-  duckdns:
-    image: curlimages/curl:8.11.1
-    restart: unless-stopped
-    profiles: ["duckdns"]
-    environment:
-      DUCKDNS_DOMAIN: ${DUCKDNS_DOMAIN:-freeholder}
-      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN:-}
-    entrypoint: ["/bin/sh", "-c",
-      "while true; do curl -fsS \"https://www.duckdns.org/update?domains=$${DUCKDNS_DOMAIN}&token=$${DUCKDNS_TOKEN}&ip=\" && echo \" duckdns updated\"; sleep 300; done"]
-    networks: [freehold]

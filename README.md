@@ -24,7 +24,8 @@ use, wired up right, with the **why** in plain Lego language.
 - 📧 **Email that's provider-agnostic** — forgot-password / verify-email over any SMTP (SMTP2GO free tier by default; Gmail, Resend, SES, Brevo — a 4-line swap).
 - 🔑 **Secrets done right** — SOPS + `age`: encrypted **in git**, one key you hold (no Vault container, no unseal ceremony).
 - 🚀 **A deploy pipeline that won't break prod** — stamp the build → **encrypted, restore-verified backup that gates production** → restart → prove the running SHA.
-- 🎫 **Feedback + QA loop** · 🌗 **light/dark** · 🌍 **i18n (EN + हिन्दी)** · 💱 **multi-currency** · 🤖 **a Raspberry-Pi robot pack (sim-first)** · ℹ️ **an honest build/SHA status bar**.
+- 🎫 **Feedback + QA loop** · 🌗 **light/dark** · 🌍 **i18n (EN + हिन्दी)** · ℹ️ **an honest build/SHA status bar**.
+- 🤖 **Optional pack:** a Raspberry-Pi robot control panel (sim-first) — a bolt-on demo, not core; delete `app/robot.py` + `app/routers/robot_panel.py` + `robot-sim/` to drop it.
 
 Full requirements are in [`docs/FREEHOLD-SPEC.md`](docs/FREEHOLD-SPEC.md).
 
