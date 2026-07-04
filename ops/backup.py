@@ -91,14 +91,14 @@ def main() -> int:
         rc = {**os.environ, "RCLONE_CONFIG_B2_TYPE": "b2",
               "RCLONE_CONFIG_B2_ACCOUNT": key_id, "RCLONE_CONFIG_B2_KEY": app_key}
         print(f"[4/4] shipping encrypted copy off-box → {dest} ...")
-        # Upload only — no delete. Cleanup + immutability are handled B2-side by the
-        # bucket's lifecycle rule + Object-Lock retention (see ops/b2-immutable.py), so
-        # the backup key can be write-only and an attacker can't wipe recovery points.
-        if subprocess.run(["rclone", "copy", str(enc_file), dest, "--no-traverse"], env=rc).returncode != 0:
+        # Upload only, --no-check-dest so a key with no read/list rights still works:
+        # cleanup + immutability are handled B2-side (lifecycle rule + Object-Lock
+        # retention, see ops/b2-immutable.py), so the box key never needs to read or
+        # delete — only add. An attacker who owns the box can't wipe recovery points.
+        if subprocess.run(["rclone", "copy", str(enc_file), dest,
+                           "--no-traverse", "--no-check-dest"], env=rc).returncode != 0:
             print("ERROR: off-box copy to B2 failed"); return 1
-        listing = subprocess.run(["rclone", "lsf", dest], env=rc, capture_output=True, text=True).stdout
-        n = len([l for l in listing.splitlines() if l.strip()])
-        print(f"      ✅ OFF-BOX — {n} encrypted backup(s) in B2 (B2 lifecycle keeps ≤ {keep}d). Survives box loss.")
+        print(f"      ✅ OFF-BOX — {enc_file.name} shipped to B2 (immutable; lifecycle keeps ≤ {keep}d). Survives box loss.")
     else:
         print("[4/4] off-box copy: B2 not configured (set B2_KEY_ID/B2_APP_KEY/B2_BUCKET) — LOCAL ONLY ⚠️")
 
