@@ -32,10 +32,15 @@ KC_PUBLIC_URL = os.getenv("KC_PUBLIC_URL", "http://localhost:8080")
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8080").rstrip("/")
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 SESSION_SECRET = os.getenv("SESSION_SECRET", "dev-insecure-change-me")
+# Mark the session cookie Secure whenever we're served over HTTPS (the default,
+# even in dev via Caddy's internal CA). Override with SESSION_COOKIE_SECURE if needed.
+SESSION_HTTPS_ONLY = os.getenv(
+    "SESSION_COOKIE_SECURE", str(APP_BASE_URL.startswith("https"))
+).strip().lower() in ("1", "true", "yes")
 
 app = FastAPI(title="Freehold", version="0.2.0-phase2")
 # Signed, http-only session cookie. same_site=lax lets the OIDC redirect back in.
-app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET, same_site="lax", https_only=False)
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET, same_site="lax", https_only=SESSION_HTTPS_ONLY)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
@@ -187,13 +192,9 @@ async def dashboard(request: Request):
 @app.get("/console")
 async def console(request: Request):
     """RBAC demo: admins only. A logged-in 'staff' user gets a clean 403."""
-    user = current_user(request)
-    if not user:
-        return RedirectResponse("/login")
-    if "admin" not in user.get("roles", []):
-        return templates.TemplateResponse(
-            "forbidden.html", {"request": request, "user": user}, status_code=403,
-        )
+    user, denied = _admin_or_deny(request)
+    if denied:
+        return denied
     return templates.TemplateResponse("console.html", {"request": request, "user": user})
 
 
@@ -247,15 +248,25 @@ def _require_admin(request: Request):
     return None
 
 
-@app.get("/qa")
-async def qa(request: Request):
+def _admin_or_deny(request: Request):
+    """Guard for admin-only PAGES. Returns (user, None) for admins; otherwise
+    (user_or_None, response) — a redirect to /login when logged out, or a clean
+    403 forbidden page when logged in without the role. Caller: `if denied: return denied`."""
     user = current_user(request)
     if not user:
-        return RedirectResponse("/login")
+        return None, RedirectResponse("/login")
     if "admin" not in user.get("roles", []):
-        return templates.TemplateResponse(
+        return user, templates.TemplateResponse(
             "forbidden.html", {"request": request, "user": user}, status_code=403,
         )
+    return user, None
+
+
+@app.get("/qa")
+async def qa(request: Request):
+    user, denied = _admin_or_deny(request)
+    if denied:
+        return denied
     return templates.TemplateResponse("qa.html", {
         "request": request, "user": user,
         "tickets": await tickets.list_tickets(), "counts": await tickets.counts(),
@@ -393,11 +404,9 @@ async def save_profile(request: Request):
 @app.get("/pulse")
 async def pulse(request: Request):
     """System pulse — real diagnostics (DB · migrations · Keycloak · build). Admin only."""
-    user = current_user(request)
-    if not user:
-        return RedirectResponse("/login")
-    if "admin" not in user.get("roles", []):
-        return templates.TemplateResponse("forbidden.html", {"request": request, "user": user}, status_code=403)
+    user, denied = _admin_or_deny(request)
+    if denied:
+        return denied
     checks = await diagnostics.pulse()
     overall = "ok" if all(c["status"] in ("ok", "info") for c in checks) else "error"
     return templates.TemplateResponse("pulse.html", {
