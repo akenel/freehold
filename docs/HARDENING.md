@@ -11,7 +11,10 @@ decision, a console, or a cost), 🤝 = both.
       on every prod deploy; round-trip proven. *(was the #1 gap: box death = data death)*
 
 ## 🟢 Tier 1 — quick wins
-- [ ] **1. Finish the backup story: immutability** — 🤝 — bucket has Object Lock on
+- [~] **1. Immutability** — governance retention + lifecycle wired (ops/b2-immutable.py):
+      backups un-deletable for B2_LOCK_DAYS, auto-cleaned B2-side. backup.py no longer
+      deletes (write-only-key-ready). REMAINING (🐺): create a write-only B2 key for
+      attacker-proof (2 clicks) — governance can still be bypassed by the current key.
       but no retention, and the key can delete → off-box but not ransomware-proof.
       Fix: a **write-only** B2 key + **default retention** (e.g. 14-day compliance) +
       a lifecycle rule for cleanup. *You: 2 clicks in the B2 console. Me: wire it.*

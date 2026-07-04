@@ -18,6 +18,8 @@ nuke:    ; docker compose down -v   # also wipes the database volumes
 # --- the rails ---
 backup:  ; python3 ops/backup.py
 parity:  ; python3 ops/env-parity.py
+# One-time: make B2 backups immutable (Object-Lock retention + lifecycle cleanup).
+b2-lock: ; python3 ops/b2-immutable.py
 
 # Deploy — TWO tools, pick by topology:
 #   deploy  : single-env box, rebuild the whole stack from the working tree (+ backup gate).
