@@ -35,7 +35,9 @@ decision, a console, or a cost), 🤝 = both.
 - [x] **5. Test coverage (14→25)** — auth-helper units + RBAC gates added, run in the deploy gate. Deeper integration (OIDC
       login flow, RBAC gating (admin-only routes), profile + ticket CRUD, and an
       `ops/` smoke. Then the CI gate is a net, not a speed bump.
-- [ ] **6. Observability** — 🤝 — nothing watches it live. Add **uptime + alerts**
+- [x] **6. Observability (uptime)** — .github/workflows/uptime.yml: external GitHub-cron
+      probe of www/auth/apex every ~10min, emails owner on failure (off-box, so it
+      catches box-death). Error tracking (self-host GlitchTip) still TODO if wanted.
       (self-host Uptime Kuma, $0, I deploy it) and **error tracking** (self-host
       GlitchTip, or hosted Sentry free tier). *You: pick self-host vs hosted.*
 

@@ -1,0 +1,32 @@
+name: Uptime
+
+# External uptime check — runs on GitHub's runners (OFF your box), so it can catch
+# the box being *down* (an on-box monitor can't — it dies with the box). If a probe
+# fails, this workflow fails, and GitHub emails the repo owner. Free, no new account.
+# Adjust the URLs for your own domain; delete this file to turn it off.
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every ~10 min (GitHub's minimum is 5; may be delayed under load)
+  workflow_dispatch: {}       # also run on demand from the Actions tab
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: App — www.wolfhold.app is healthy
+        run: |
+          body=$(curl -fsS --max-time 20 --retry 2 --retry-delay 5 https://www.wolfhold.app/healthz)
+          echo "healthz: $body"
+          echo "$body" | grep -q '"status":"ok"' || { echo "::error::app /healthz not ok"; exit 1; }
+          echo "$body" | grep -q '"db":true'      || echo "::warning::app reachable but DB not connected"
+
+      - name: Auth — auth.wolfhold.app OIDC is up
+        run: |
+          curl -fsS --max-time 20 --retry 2 --retry-delay 5 \
+            https://auth.wolfhold.app/realms/kc-prd/.well-known/openid-configuration > /dev/null \
+            || { echo "::error::Keycloak (auth.wolfhold.app / kc-prd) is down"; exit 1; }
+
+      - name: Apex — wolfhold.app redirects to www
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://wolfhold.app)
+          [ "$code" = "301" ] || echo "::warning::apex returned $code (expected 301 -> www)"
