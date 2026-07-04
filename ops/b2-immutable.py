@@ -37,6 +37,11 @@ def main() -> int:
     bucket = env.get("B2_BUCKET", "").strip()
     lock_days = int(env.get("B2_LOCK_DAYS", "14") or 14)
     keep_days = int(env.get("B2_KEEP_DAYS", "30") or 30)
+    # governance = a bypass-capable key can still delete; compliance = NOBODY can delete
+    # a locked object until it expires (truly ransomware-proof, but irreversible).
+    lock_mode = (env.get("B2_LOCK_MODE", "governance").strip().lower() or "governance")
+    if lock_mode not in ("governance", "compliance"):
+        print(f"ERROR: B2_LOCK_MODE must be governance or compliance (got '{lock_mode}')"); return 1
     if not (kid and app_key and bucket):
         print("ERROR: B2_KEY_ID / B2_APP_KEY / B2_BUCKET must be set in .env"); return 1
     if keep_days <= lock_days:
@@ -61,7 +66,7 @@ def main() -> int:
     try:
         res = _post(f"{api_url}/b2api/v2/b2_update_bucket", a["authorizationToken"], {
             "accountId": account_id, "bucketId": bucket_id,
-            "defaultRetention": {"mode": "governance",
+            "defaultRetention": {"mode": lock_mode,
                                  "period": {"duration": lock_days, "unit": "days"}},
             "lifecycleRules": [{"fileNamePrefix": "",
                                 "daysFromUploadingToHiding": keep_days,
@@ -73,8 +78,8 @@ def main() -> int:
     # Read back the applied retention from the response (nested under fileLockConfiguration).
     dr = (((res.get("fileLockConfiguration") or {}).get("value") or {}).get("defaultRetention") or {})
     mode, period = dr.get("mode"), dr.get("period") or {}
-    if mode != "governance":
-        print("⚠️  retention not applied — is Object Lock enabled on the bucket?"); return 1
+    if mode != lock_mode:
+        print(f"⚠️  retention not applied as '{lock_mode}' (got '{mode}') — is Object Lock enabled?"); return 1
     print(f"✅ B2 '{bucket}': backups IMMUTABLE for {period.get('duration')} {period.get('unit')} "
           f"({mode}), auto-deleted ~{keep_days}d after upload (lifecycle).")
     print("   Cleanup is B2-side now — switch the backup key to write-only for full ransomware-proofing.")
