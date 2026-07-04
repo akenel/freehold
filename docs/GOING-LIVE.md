@@ -71,6 +71,19 @@ git pull  &&  python3 ops/deploy.py production
 to prove the SHA now serving is the one you shipped. Promotion is never a leap of
 faith.
 
+## Production hardening (baked into kc-prd)
+
+The `kc-prd` realm is already tightened for the open internet:
+- **No seeded users** — create your first admin via the Keycloak admin console
+  (`https://auth.wolfhold.app/admin`), then grant your account the `admin` realm
+  role. (Sandbox/staging keep the `demo`/`sam` test users.)
+- **`sslRequired: external`** — logins must come over HTTPS.
+- **Self-serve registration stays open** — new users sign themselves up and land
+  logged in with no roles until you promote them.
+- **Secrets** — work the checklist at the top of `deploy/production.env.example`;
+  nothing may stay `change_me`. The `kc-prd` client secret in Keycloak must match
+  `KC_CLIENT_SECRET` in `.env`.
+
 ## One box now, three boxes later
 
 Today all five names point at one IP — one box runs the shared Keycloak *and* the

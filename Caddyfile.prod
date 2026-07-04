@@ -24,6 +24,14 @@
 	}
 }
 
+# ---- apex → canonical www redirect -----------------------------------------
+# Production sets APEX_DOMAIN=wolfhold.app so bare wolfhold.app 301s to www.
+# Boxes without an apex leave it unset — it defaults to an inert in-container
+# loopback address (never published, never hit), so this block stays valid.
+{$APEX_DOMAIN:http://localhost:2020} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
+
 # ---- the shared Keycloak: the dedicated auth host --------------------------
 # Serve this block on whichever box runs Keycloak. The browser is sent here for
 # login (KC_PUBLIC_URL=https://auth.wolfhold.app), so the token issuer is stable.

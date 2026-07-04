@@ -16,6 +16,7 @@ services:
     environment:
       SITE_DOMAIN: ${SITE_DOMAIN}      # this box's app host, e.g. sandbox.wolfhold.app
       AUTH_DOMAIN: ${AUTH_DOMAIN}      # the shared Keycloak host, auth.wolfhold.app
+      APEX_DOMAIN: ${APEX_DOMAIN:-}    # prod only: wolfhold.app -> 301 to www (else inert)
     ports:
       # Defaults to the real 80/443. On a box where those are taken (e.g. an
       # existing Traefik), set CADDY_HTTP_PORT/CADDY_HTTPS_PORT to high ports and
