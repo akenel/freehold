@@ -30,6 +30,10 @@ idp:     ; python3 ops/set-idp.py
 # The one-command "make prod match .env" — run after `up` on a deployed box.
 apply:   ; python3 ops/prod-apply.py
 
+# Promote a git ref's code to ONE env (per-env images). ENV=sandbox|staging|production REF=<sha>
+# e.g. `make promote ENV=sandbox` then `make promote ENV=staging REF=<sha>` up the ladder.
+promote: ; python3 ops/promote.py $${ENV:-sandbox} $${REF:-HEAD}
+
 # --- secrets (SOPS + age) — see docs/SECRETS.md ---
 # Decrypt this env's secrets to .env AND load them into Keycloak (vault + IdPs).
 secrets:      ; python3 ops/secrets.py apply $${ENV:-sandbox}

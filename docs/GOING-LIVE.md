@@ -104,6 +104,27 @@ comes back exactly:
 `make apply` is **idempotent** — re-run it whenever `.env` changes (rotated a secret,
 added a provider); it reconciles live, no restart, no re-import, no data loss.
 
+## Per-env code promotion (sandbox ahead of prod)
+
+With the multi-env pack, each env runs its **own image** (`freehold-app:sbx` /
+`:stg` / `:prd`), so you can walk a change up the ladder and test at each step:
+
+```bash
+git commit -am "..." && git push
+make promote ENV=sandbox              # builds HEAD -> sandbox only; test at sandbox.<domain>
+make promote ENV=staging  REF=<sha>   # same ref -> staging; retest
+make promote ENV=production REF=<sha> # -> prod (backup gate runs first)
+```
+
+`ops/promote.py` builds the target env's image **from a git ref** (`git archive`,
+no working-tree checkout), stamps `/version`, recreates *only* that env's app
+container, and confirms the served SHA matches. Sandbox can sit on a newer commit
+than prod indefinitely — they're independent images.
+
+> ⚠️ On a shared multi-env box, deploy with `make promote` — **never `up --build`**,
+> which rebuilds *every* env's image from the working tree at once and erases the
+> per-env divergence.
+
 ## One box now, three boxes later
 
 Today all five names point at one IP — one box runs the shared Keycloak *and* the

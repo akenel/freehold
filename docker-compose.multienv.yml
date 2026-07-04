@@ -20,7 +20,7 @@ services:
       STAGING_DOMAIN: ${STAGING_DOMAIN:-}
 
   app-sandbox:
-    image: freehold-app          # reuse the image the base `app` service builds
+    image: freehold-app:sbx      # per-env tag; ops/promote.py builds it from a git ref
     build: ./app
     restart: unless-stopped
     env_file: [.env]
@@ -37,7 +37,7 @@ services:
     networks: [freehold]
 
   app-staging:
-    image: freehold-app
+    image: freehold-app:stg      # per-env tag; ops/promote.py builds it from a git ref
     build: ./app
     restart: unless-stopped
     env_file: [.env]

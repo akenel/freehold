@@ -94,6 +94,7 @@ services:
 
   app:
     build: ./app
+    image: freehold-app:prd     # per-env tag; ops/promote.py builds it from a git ref
     restart: unless-stopped
     env_file: [.env]
     environment:
