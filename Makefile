@@ -20,7 +20,7 @@ backup:  ; python3 ops/backup.py
 deploy:  ; python3 ops/deploy.py $${ENV:-sandbox}
 parity:  ; python3 ops/env-parity.py
 
-# Load the Resend key from .env into Keycloak's file vault (all realms).
+# Load the SMTP password from .env into Keycloak's vault + stamp the sender (all realms).
 smtp:    ; python3 ops/set-smtp.py
 
 # Turn on social logins (Google/GitHub/Facebook) from .env — see docs/SOCIAL-LOGIN.md

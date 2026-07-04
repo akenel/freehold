@@ -6,7 +6,7 @@
 What it does, in order:
   1. sops -d secrets/<env>.enc.yaml   ->  writes .env  (needs the age key at
      ~/.config/sops/age/keys.txt — from KeePass; perms 600).
-  2. ops/set-smtp.py                  ->  Resend key into the file vault.
+  2. ops/set-smtp.py                  ->  SMTP password into the file vault.
   3. ops/set-idp.py                   ->  social-login secrets vaulted + enabled.
 
 Secrets never sit in plaintext in git: the encrypted secrets/<env>.enc.yaml is
@@ -47,9 +47,9 @@ def main() -> int:
     (REPO / ".env").write_text(dec.stdout)
     print(f"      wrote .env ({len(dec.stdout.splitlines())} lines)")
 
-    print("[2/3] loading the Resend key into the vault ...")
+    print("[2/3] loading the SMTP password into the vault ...")
     if subprocess.run([sys.executable, str(REPO / "ops" / "set-smtp.py")]).returncode != 0:
-        print("      (skipped — RESEND_API_KEY not set)")
+        print("      (skipped — SMTP_PASSWORD not set)")
     print("[3/3] enabling configured social logins ...")
     subprocess.run([sys.executable, str(REPO / "ops" / "set-idp.py")])
 

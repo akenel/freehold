@@ -51,7 +51,7 @@ docker compose up -d                    # fresh box; or down && up to re-import 
 ```
 
 `make secrets` runs `ops/secrets.py`: `sops -d` → writes `.env`, then
-`ops/set-smtp.py` (Resend key → vault) and `ops/set-idp.py` (social-login secrets
+`ops/set-smtp.py` (SMTP password → vault) and `ops/set-idp.py` (social-login secrets
 → vault, providers enabled). One command from encrypted-in-git to live-in-Keycloak.
 
 ## Rotating a secret
