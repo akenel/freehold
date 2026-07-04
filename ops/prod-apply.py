@@ -65,15 +65,8 @@ def api(method, path, data=None, tok=None, form=False):
         return e.code, e.read().decode()
 
 
-def main():
-    env = load_env()
-    realm = env.get("KC_REALM", "kc-prd")
-    print(f"reconciling realm '{realm}' to .env ...")
-    tok = json.loads(api("POST", "/realms/master/protocol/openid-connect/token", {
-        "client_id": "admin-cli", "grant_type": "password",
-        "username": env["KC_BOOTSTRAP_ADMIN_USERNAME"], "password": env["KC_BOOTSTRAP_ADMIN_PASSWORD"],
-    }, form=True)[1])["access_token"]
-
+def reconcile(realm, env, tok):
+    print(f"\nrealm '{realm}':")
     # 1) client secret
     clients = json.loads(api("GET", f"/admin/realms/{realm}/clients?clientId=freehold-web", tok=tok)[1])
     if clients and real(env.get("KC_CLIENT_SECRET", "")):
@@ -119,7 +112,20 @@ def main():
             {"id": ev[0]["id"], "requirement": "DISABLED"}, tok=tok)
     print("  ✓ account-linking verifies by password re-auth (email step disabled)")
 
-    print(f"\n✅ realm '{realm}' reconciled to .env. Rebuildable: restore .env, `up`, run this.")
+
+def main():
+    env = load_env()
+    # Which realms this box owns. One-box-all-envs: REALMS=kc-sbx,kc-stg,kc-prd.
+    # Single-env box: defaults to just KC_REALM (never touches other envs' realms).
+    realms = [r.strip() for r in env.get("REALMS", env.get("KC_REALM", "kc-prd")).split(",") if r.strip()]
+    print(f"reconciling {realms} to .env ...")
+    tok = json.loads(api("POST", "/realms/master/protocol/openid-connect/token", {
+        "client_id": "admin-cli", "grant_type": "password",
+        "username": env["KC_BOOTSTRAP_ADMIN_USERNAME"], "password": env["KC_BOOTSTRAP_ADMIN_PASSWORD"],
+    }, form=True)[1])["access_token"]
+    for realm in realms:
+        reconcile(realm, env, tok)
+    print(f"\n✅ reconciled {realms} to .env. Rebuildable: restore .env, `up`, run this.")
     return 0
 
 

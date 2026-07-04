@@ -24,6 +24,29 @@
 	}
 }
 
+# ---- sandbox + staging apps (multi-env pack, same box) ---------------------
+# Only active when SANDBOX_DOMAIN/STAGING_DOMAIN are set AND the app-sandbox/
+# app-staging containers exist (docker-compose.multienv.yml). Otherwise they
+# default to inert in-container loopback addresses and serve nothing.
+{$SANDBOX_DOMAIN:http://localhost:2021} {
+	handle /media/* {
+		uri strip_prefix /media
+		reverse_proxy minio:9000
+	}
+	handle {
+		reverse_proxy app-sandbox:8000
+	}
+}
+{$STAGING_DOMAIN:http://localhost:2022} {
+	handle /media/* {
+		uri strip_prefix /media
+		reverse_proxy minio:9000
+	}
+	handle {
+		reverse_proxy app-staging:8000
+	}
+}
+
 # ---- apex → canonical www redirect -----------------------------------------
 # Production sets APEX_DOMAIN=wolfhold.app so bare wolfhold.app 301s to www.
 # Boxes without an apex leave it unset — it defaults to an inert in-container

@@ -1,0 +1,54 @@
+# Freehold — MULTI-ENV pack: run sandbox + staging apps next to prod on ONE box.
+#
+# They SHARE the box's Keycloak (all three realms already live there), Postgres
+# (their own app DBs), MinIO, and Caddy — only a separate app container each. This
+# is the cheap "full ladder on one box" option; for true isolation, give each env
+# its own box + IP later (the config is identical, just a different SITE_DOMAIN).
+#
+# Prereqs: create the app DBs once —
+#   docker compose exec -T postgres psql -U $POSTGRES_USER -d postgres \
+#     -c 'CREATE DATABASE freehold_sbx;' -c 'CREATE DATABASE freehold_stg;'
+# Then launch WITH prod:
+#   CADDYFILE=./Caddyfile.prod docker compose \
+#     -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.multienv.yml up -d
+#
+# .env must set SANDBOX_DOMAIN, STAGING_DOMAIN (and REALMS=kc-sbx,kc-stg,kc-prd for `make apply`).
+services:
+  caddy:
+    environment:
+      SANDBOX_DOMAIN: ${SANDBOX_DOMAIN:-}
+      STAGING_DOMAIN: ${STAGING_DOMAIN:-}
+
+  app-sandbox:
+    image: freehold-app          # reuse the image the base `app` service builds
+    build: ./app
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      APP_ENV: sandbox
+      KC_REALM: kc-sbx
+      APP_BASE_URL: https://${SANDBOX_DOMAIN}
+      KC_PUBLIC_URL: https://${AUTH_DOMAIN}
+      KC_INTERNAL_URL: http://keycloak:8080
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/freehold_sbx
+    depends_on:
+      postgres: { condition: service_healthy }
+      minio: { condition: service_started }
+    networks: [freehold]
+
+  app-staging:
+    image: freehold-app
+    build: ./app
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      APP_ENV: staging
+      KC_REALM: kc-stg
+      APP_BASE_URL: https://${STAGING_DOMAIN}
+      KC_PUBLIC_URL: https://${AUTH_DOMAIN}
+      KC_INTERNAL_URL: http://keycloak:8080
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/freehold_stg
+    depends_on:
+      postgres: { condition: service_healthy }
+      minio: { condition: service_started }
+    networks: [freehold]
