@@ -36,7 +36,9 @@ decision, a console, or a cost), 🤝 = both.
 ## 🟠 Tier 3 — structural / your call
 - [ ] **7. Feature triage** — 🐺→🐯 — robot / DuckDNS / money / i18n: which are core
       vs demo? You decide what stays; I prune the grab-bag so "what you get" is honest.
-- [ ] **8. Break up `main.py`** — 🐯 — 505-line kitchen sink; split routers by concern.
+- [x] **8. `main.py` broke up** — 516 → 29 lines. deps.py (config + templates + guards)
+      + routers/{base,door,loop,profile,extras,robot_panel}.py. Route surface proven
+      identical (before/after diff empty); 25 tests green.
 - [ ] **9. True env isolation** — 🐺 — sandbox/staging/prod share one Postgres +
       Keycloak + box (a shared SPOF). Real isolation = separate boxes. *Cost decision:
       keep one-box-pragmatic, or pay for 1–2 more small VPS.*

@@ -3,6 +3,7 @@ and admit the admin. Infra-free: we monkeypatch the session user."""
 import pytest
 from fastapi.testclient import TestClient
 
+import deps
 import main
 
 client = TestClient(main.app, follow_redirects=False)
@@ -10,9 +11,9 @@ client = TestClient(main.app, follow_redirects=False)
 
 @pytest.fixture
 def as_user(monkeypatch):
-    """Pretend a given user is logged in (or None)."""
+    """Pretend a given user is logged in (or None) — patched where the routes read it."""
     def _set(user):
-        monkeypatch.setattr(main, "current_user", lambda request: user)
+        monkeypatch.setattr(deps, "current_user", lambda request: user)
     return _set
 
 
