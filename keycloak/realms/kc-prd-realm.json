@@ -1,6 +1,8 @@
 {
   "realm": "kc-prd",
   "enabled": true,
+  "displayName": "Wolfhold",
+  "displayNameHtml": "Wolfhold",
   "sslRequired": "external",
   "registrationAllowed": true,
   "resetPasswordAllowed": true,

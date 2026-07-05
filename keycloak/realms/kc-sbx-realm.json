@@ -1,6 +1,8 @@
 {
   "realm": "kc-sbx",
   "enabled": true,
+  "displayName": "Wolfhold Sandbox",
+  "displayNameHtml": "Wolfhold Sandbox",
   "sslRequired": "none",
   "registrationAllowed": true,
   "resetPasswordAllowed": true,

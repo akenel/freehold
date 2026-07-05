@@ -1,6 +1,8 @@
 {
   "realm": "kc-stg",
   "enabled": true,
+  "displayName": "Wolfhold Staging",
+  "displayNameHtml": "Wolfhold Staging",
   "sslRequired": "none",
   "registrationAllowed": true,
   "resetPasswordAllowed": true,
