@@ -42,9 +42,9 @@ deadline. We **validate price, the workflow gap, and DATEV lock-in with real fir
 
 ## How to use it with the boss
 
-Hand him **[00-brief.md](00-brief.md)** and the scorecard in
-**[02-app-portfolio.md](02-app-portfolio.md)**. The rest is the working-out that proves
-we didn't guess.
+Hand him **[BOSS-BRIEF.md](BOSS-BRIEF.md)** — the one-page, decision-first summary. If he
+wants the evidence, **[00-brief.md](00-brief.md)** and the scorecard in
+**[02-app-portfolio.md](02-app-portfolio.md)** are the working-out that proves we didn't guess.
 
 ---
 *Status: complete, re-anchored UK → Switzerland/DACH. Grounded in two deep-research
