@@ -70,6 +70,18 @@
 	redir https://{$SITE_DOMAIN}{uri} permanent
 }
 
+# ---- public docs site (static, built by MkDocs) ----------------------------
+# Serves the pre-built ./site/ (mounted read-only at /srv/docs by the prod
+# overlay). Static files only — no app, no auth, no proxy. Set DOCS_DOMAIN in
+# .env (e.g. docs.wolfhold.app) to publish; unset, it defaults to an inert
+# in-container loopback address and serves nothing. Build with `make docs-build`
+# BEFORE deploy so ./site/ exists.
+{$DOCS_DOMAIN:http://localhost:2023} {
+	import sec
+	root * /srv/docs
+	file_server
+}
+
 # ---- the shared Keycloak: the dedicated auth host --------------------------
 # Serve this block on whichever box runs Keycloak. The browser is sent here for
 # login (KC_PUBLIC_URL=https://auth.wolfhold.app), so the token issuer is stable.

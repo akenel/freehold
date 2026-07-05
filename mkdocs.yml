@@ -1,0 +1,49 @@
+# Freehold — PUBLIC docs site.
+#
+# The security boundary is `docs_dir` below: MkDocs can only see files under
+# docs/public/. The sensitive docs (HARDENING, SECRETS, studio/, runbooks) live
+# at docs/ root — physically OUTSIDE docs_dir — so there is no path from this
+# build to them. Publishing a new page is a deliberate act: move a file into
+# docs/public/ AND list it in `nav:`. Nothing leaks by accident.
+#
+#   Local preview : make docs-serve   (http://127.0.0.1:8000)
+#   Build static  : make docs-build    -> ./site/  (served by Caddy in prod)
+
+site_name: Freehold
+site_url: https://docs.wolfhold.app
+site_description: Freehold — public documentation.
+
+# ONLY this directory is visible to the build. Do not point this at docs/.
+docs_dir: docs/public
+site_dir: site
+
+theme:
+  name: material
+  palette:
+    # Light / dark toggle — respects the reader's choice.
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: { icon: material/weather-night, name: Switch to dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: { icon: material/weather-sunny, name: Switch to light mode }
+  features:
+    - navigation.instant
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+# Explicit allowlist. A page not listed here is not published, even if it
+# somehow lands in docs/public/. Keep this list tight.
+nav:
+  - Overview: index.md
+  - Getting started: getting-started.md

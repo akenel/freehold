@@ -1,0 +1,5 @@
+# Freehold — public docs site toolchain (separate from the app's requirements).
+# Pinned, like everything else in this repo. Bump deliberately.
+#   pip install -r docs/requirements.txt
+mkdocs==1.6.1
+mkdocs-material==9.6.9

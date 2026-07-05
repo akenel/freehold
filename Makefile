@@ -1,7 +1,7 @@
 # Freehold — the whole kit, in a few words.
-.PHONY: up down logs ps restart nuke backup deploy promote apply parity secrets help
+.PHONY: up down logs ps restart nuke backup deploy promote apply parity secrets help docs-serve docs-build
 
-help:    ; @echo "up | down | logs | ps | restart | nuke | trust | test | backup | deploy [ENV=] | promote ENV=.. REF=.. | apply | secrets ENV=.. | parity"
+help:    ; @echo "up | down | logs | ps | restart | nuke | trust | test | backup | deploy [ENV=] | promote ENV=.. REF=.. | apply | secrets ENV=.. | parity | docs-serve | docs-build"
 
 # Run the test suite in a throwaway app container (no infra needed).
 test:    ; docker compose run --rm --no-deps app python -m pytest -q tests/
@@ -34,6 +34,12 @@ apply:   ; python3 ops/prod-apply.py
 # Promote a git ref's code to ONE env (per-env images). ENV=sandbox|staging|production REF=<sha>
 # e.g. `make promote ENV=sandbox` then `make promote ENV=staging REF=<sha>` up the ladder.
 promote: ; python3 ops/promote.py $${ENV:-sandbox} $${REF:-HEAD}
+
+# --- public docs (MkDocs Material) — see mkdocs.yml ---
+# Only docs/public/ is ever published; the rest of docs/ stays internal.
+# One-time: pip install -r docs/requirements.txt
+docs-serve: ; mkdocs serve            # live preview at http://127.0.0.1:8000
+docs-build: ; mkdocs build --strict   # -> ./site/ (Caddy serves it in prod)
 
 # --- secrets (SOPS + age) — see docs/SECRETS.md ---
 # Decrypt this env's secrets to .env (then `up` + `make apply` load them into Keycloak).
