@@ -23,5 +23,5 @@ Freehold's own operational docs:
 - [EMAIL.md](EMAIL.md) — SMTP / forgot-password wiring
 
 ---
-*Public, outside-reader docs live in [`../public/`](../public/) and are the only thing
-the deployed site publishes.*
+*Public, outside-reader docs live in `docs/public/` and are the only thing the deployed
+site publishes.*

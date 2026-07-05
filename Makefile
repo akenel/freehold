@@ -24,16 +24,13 @@ b2-lock: ; python3 ops/b2-immutable.py
 # Deploy — TWO tools, pick by topology:
 #   deploy  : single-env box, rebuild the whole stack from the working tree (+ backup gate).
 #   promote : multi-env ladder — build ONE env's image from a git ref (test-gated, per-env code).
+#             e.g. `make promote ENV=sandbox` then `make promote ENV=staging REF=<sha>` up the ladder.
 deploy:  ; python3 ops/deploy.py $${ENV:-sandbox}
 promote: ; python3 ops/promote.py $${ENV:-sandbox} $${REF:-HEAD}
 
 # The ONE config path: reconcile a RUNNING Keycloak to .env — client secret, SMTP,
 # social IdPs, and the no-email account-link flow. Run after `up`. Idempotent.
 apply:   ; python3 ops/prod-apply.py
-
-# Promote a git ref's code to ONE env (per-env images). ENV=sandbox|staging|production REF=<sha>
-# e.g. `make promote ENV=sandbox` then `make promote ENV=staging REF=<sha>` up the ladder.
-promote: ; python3 ops/promote.py $${ENV:-sandbox} $${REF:-HEAD}
 
 # --- public docs (MkDocs Material) — see mkdocs.yml ---
 # Only docs/public/ is ever published; the rest of docs/ stays internal.
