@@ -4,6 +4,10 @@
   "sslRequired": "external",
   "registrationAllowed": true,
   "resetPasswordAllowed": true,
+  "bruteForceProtected": true,
+  "failureFactor": 10,
+  "maxFailureWaitSeconds": 900,
+  "permanentLockout": false,
   "smtpServer": {
     "host": "mail.smtp2go.com",
     "port": "587",

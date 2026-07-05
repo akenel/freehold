@@ -11,8 +11,20 @@
 # app AND Keycloak. Separate auth box later: keep the {$AUTH_DOMAIN} block only on
 # the box that runs Keycloak, and drop it from the app boxes.
 
+# Security headers, applied to every site via `import sec`.
+(sec) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "SAMEORIGIN"
+		-Server
+	}
+}
+
 # ---- the app: this environment's own subdomain -----------------------------
 {$SITE_DOMAIN} {
+	import sec
 	# Public media (avatars, banners) from MinIO
 	handle /media/* {
 		uri strip_prefix /media
@@ -29,6 +41,7 @@
 # app-staging containers exist (docker-compose.multienv.yml). Otherwise they
 # default to inert in-container loopback addresses and serve nothing.
 {$SANDBOX_DOMAIN:http://localhost:2021} {
+	import sec
 	handle /media/* {
 		uri strip_prefix /media
 		reverse_proxy minio:9000
@@ -38,6 +51,7 @@
 	}
 }
 {$STAGING_DOMAIN:http://localhost:2022} {
+	import sec
 	handle /media/* {
 		uri strip_prefix /media
 		reverse_proxy minio:9000
@@ -52,6 +66,7 @@
 # Boxes without an apex leave it unset — it defaults to an inert in-container
 # loopback address (never published, never hit), so this block stays valid.
 {$APEX_DOMAIN:http://localhost:2020} {
+	import sec
 	redir https://{$SITE_DOMAIN}{uri} permanent
 }
 
@@ -59,5 +74,6 @@
 # Serve this block on whichever box runs Keycloak. The browser is sent here for
 # login (KC_PUBLIC_URL=https://auth.wolfhold.app), so the token issuer is stable.
 {$AUTH_DOMAIN} {
+	import sec
 	reverse_proxy keycloak:8080
 }
