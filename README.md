@@ -27,7 +27,7 @@ use, wired up right, with the **why** in plain Lego language.
 - 🎫 **Feedback + QA loop** · 🌗 **light/dark** · 🌍 **i18n (EN + हिन्दी)** · ℹ️ **an honest build/SHA status bar**.
 - 🤖 **Optional pack:** a Raspberry-Pi robot control panel (sim-first) — a bolt-on demo, not core; delete `app/robot.py` + `app/routers/robot_panel.py` + `robot-sim/` to drop it.
 
-Full requirements are in [`docs/FREEHOLD-SPEC.md`](docs/FREEHOLD-SPEC.md).
+Full requirements are in [`docs/private/FREEHOLD-SPEC.md`](docs/private/FREEHOLD-SPEC.md).
 
 ---
 
@@ -115,17 +115,17 @@ if a backup can't be proven), restarts, and confirms the *served* SHA matches.
    in your `.env`), **Users → you → Role mapping → assign `admin`**.
 3. **Log out and back in** so your token carries the new role.
 
-More detail + the shared-auth topology: [`docs/GOING-LIVE.md`](docs/GOING-LIVE.md).
+More detail + the shared-auth topology: [`docs/private/GOING-LIVE.md`](docs/private/GOING-LIVE.md).
 
 ---
 
 ## 🔌 Turn on the optional packs
 
-- **Social login (Google/GitHub/Facebook)** — [`docs/SOCIAL-LOGIN.md`](docs/SOCIAL-LOGIN.md).
+- **Social login (Google/GitHub/Facebook)** — [`docs/private/SOCIAL-LOGIN.md`](docs/private/SOCIAL-LOGIN.md).
   Register an OAuth app, add the redirect URIs, drop the creds in `.env`, `make apply`.
-- **Email (forgot-password)** — [`docs/EMAIL.md`](docs/EMAIL.md). Any SMTP; SMTP2GO
+- **Email (forgot-password)** — [`docs/private/EMAIL.md`](docs/private/EMAIL.md). Any SMTP; SMTP2GO
   free by default, Gmail app-password works instantly. `make apply`.
-- **Secrets (SOPS + age)** — [`docs/SECRETS.md`](docs/SECRETS.md). Encrypt `.env` into
+- **Secrets (SOPS + age)** — [`docs/private/SECRETS.md`](docs/private/SECRETS.md). Encrypt `.env` into
   git, hold one key in your password manager. `make secrets ENV=production`.
 
 ---
@@ -188,9 +188,9 @@ make secrets ENV=<env>           # decrypt SOPS secrets -> .env
 ```
 
 ## 📚 Docs
-- [`FREEHOLD-SPEC.md`](docs/FREEHOLD-SPEC.md) — what it is and what it deliberately says *no* to
-- [`GOING-LIVE.md`](docs/GOING-LIVE.md) — production, shared auth, the promotion ladder
-- [`SOCIAL-LOGIN.md`](docs/SOCIAL-LOGIN.md) · [`EMAIL.md`](docs/EMAIL.md) · [`SECRETS.md`](docs/SECRETS.md)
+- [`FREEHOLD-SPEC.md`](docs/private/FREEHOLD-SPEC.md) — what it is and what it deliberately says *no* to
+- [`GOING-LIVE.md`](docs/private/GOING-LIVE.md) — production, shared auth, the promotion ladder
+- [`SOCIAL-LOGIN.md`](docs/private/SOCIAL-LOGIN.md) · [`EMAIL.md`](docs/private/EMAIL.md) · [`SECRETS.md`](docs/private/SECRETS.md)
 
 ---
 

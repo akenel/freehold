@@ -1,0 +1,50 @@
+# Freehold — INTERNAL docs reader.  LOCAL PREVIEW ONLY — NEVER deployed.
+#
+# The public site is built from mkdocs.yml (docs_dir: docs/public) and served by
+# Caddy in prod. THIS config renders docs/private/ — ALL the internal docs (business
+# strategy in studio/, plus the ops runbooks: HARDENING, SECRETS, etc.) — so they're
+# pleasant to READ in a browser instead of raw .md. Run it in a throwaway container:
+#   make docs-read   ->   http://127.0.0.1:8001
+#
+# SAFETY: site_dir points at /tmp (outside the repo), NOT ./site — so an accidental
+# `mkdocs build` with this config can never overwrite the public ./site or leak the
+# internal docs into anything Caddy serves. Nothing here is committed to the site.
+
+site_name: "Freehold · Internal docs"
+site_description: "Internal ops + product strategy — not for publication."
+
+docs_dir: docs/private
+site_dir: /tmp/freehold-private-site   # deliberately outside the repo; never served
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: { icon: material/weather-night, name: Switch to dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: { icon: material/weather-sunny, name: Switch to light mode }
+  features:
+    - navigation.instant   # fast page switches
+    - navigation.top       # back-to-top button
+    - navigation.sections  # group folders in the sidebar
+    - navigation.indexes   # README.md acts as each section's landing page
+    - toc.integrate        # table of contents in the left sidebar
+    - content.code.copy    # copy button on code blocks
+    - search.suggest
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables               # our docs are table-heavy
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+
+# No `nav:` on purpose — the sidebar auto-builds from the docs/private/ file tree, so
+# new files show up automatically with zero maintenance. (The public site keeps an
+# explicit allowlist; this internal reader doesn't need one.)

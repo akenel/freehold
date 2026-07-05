@@ -14,7 +14,7 @@ carry the same crew-simple workflow into **Germany** ahead of the 2028 deadline.
 
 **Goal:** turn five unknowns into answers. No product code.
 
-> 🧰 Runnable pack: [phase-0/](phase-0/) — interview guide, competitor teardown,
+> 🧰 Runnable pack: [phase-0/](phase-0/README.md) — interview guide, competitor teardown,
 > and the decision scorecard. Built for a junior pair to run Monday.
 
 | Task | Unknown it kills | Owner | Done when |

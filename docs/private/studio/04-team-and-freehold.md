@@ -98,4 +98,4 @@ That's a solid footing to hit the ground running Monday — on paper first, code
 Phase 0 says go.
 
 ---
-*Back to [README](README.md) · [00-brief](00-brief.md) · [01](01-pain-landscape.md) · [02](02-app-portfolio.md) · [03](03-roadmap.md) · [phase-0/](phase-0/)*
+*Back to [README](README.md) · [00-brief](00-brief.md) · [01](01-pain-landscape.md) · [02](02-app-portfolio.md) · [03](03-roadmap.md) · [phase-0/](phase-0/README.md)*

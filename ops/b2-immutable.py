@@ -10,7 +10,7 @@ backup key never needs delete rights). Reads B2 creds from .env. Idempotent.
     python3 ops/b2-immutable.py
 
 Governance mode is reversible/adjustable. For attacker-proof immutability, ALSO use a
-write-only B2 key (no deleteFiles / no bypassGovernance) — see docs/HARDENING.md.
+write-only B2 key (no deleteFiles / no bypassGovernance) — see docs/private/HARDENING.md.
 """
 import base64
 import json

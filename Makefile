@@ -1,7 +1,7 @@
 # Freehold — the whole kit, in a few words.
-.PHONY: up down logs ps restart nuke backup deploy promote apply parity secrets help docs-serve docs-build
+.PHONY: up down logs ps restart nuke backup deploy promote apply parity secrets help docs-serve docs-build docs-read
 
-help:    ; @echo "up | down | logs | ps | restart | nuke | trust | test | backup | deploy [ENV=] | promote ENV=.. REF=.. | apply | secrets ENV=.. | parity | docs-serve | docs-build"
+help:    ; @echo "up | down | logs | ps | restart | nuke | trust | test | backup | deploy [ENV=] | promote ENV=.. REF=.. | apply | secrets ENV=.. | parity | docs-serve | docs-build | docs-read"
 
 # Run the test suite in a throwaway app container (no infra needed).
 test:    ; docker compose run --rm --no-deps app python -m pytest -q tests/
@@ -41,7 +41,14 @@ promote: ; python3 ops/promote.py $${ENV:-sandbox} $${REF:-HEAD}
 docs-serve: ; mkdocs serve            # live preview at http://127.0.0.1:8000
 docs-build: ; mkdocs build --strict   # -> ./site/ (Caddy serves it in prod)
 
-# --- secrets (SOPS + age) — see docs/SECRETS.md ---
+# --- INTERNAL docs reader (LOCAL ONLY — never deployed) — see mkdocs.private.yml ---
+# Renders ALL internal docs (docs/private: strategy + runbooks) in a browser with the
+# Material theme, from a throwaway container (no local install). First run pulls the
+# image. Ctrl-C to stop.
+#   make docs-read   ->   http://127.0.0.1:8001
+docs-read: ; docker run --rm -it -p 8001:8000 -v "$$PWD:/docs" squidfunk/mkdocs-material:9.6.9 serve -f mkdocs.private.yml -a 0.0.0.0:8000
+
+# --- secrets (SOPS + age) — see docs/private/SECRETS.md ---
 # Decrypt this env's secrets to .env (then `up` + `make apply` load them into Keycloak).
 secrets:      ; python3 ops/secrets.py apply $${ENV:-sandbox}
 # Edit an env's encrypted secrets in $EDITOR (re-encrypts on save).

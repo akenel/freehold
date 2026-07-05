@@ -27,7 +27,7 @@ sources, not a demo we can't back up.
 3. **[02-app-portfolio.md](02-app-portfolio.md)** — candidate apps scored; the beachhead wedge and the bet.
 4. **[03-roadmap.md](03-roadmap.md)** — 30/90/180 days with a two-test validation gate.
 5. **[04-team-and-freehold.md](04-team-and-freehold.md)** — junior execution + the Freehold gaps (multi-tenancy, DE/FR/IT).
-6. **[phase-0/](phase-0/)** — the runnable validation pack. **This is the Monday work.**
+6. **[phase-0/](phase-0/README.md)** — the runnable validation pack. **This is the Monday work.**
 
 ## The one-paragraph version
 

@@ -57,4 +57,4 @@ biggest unknowns, and it tells us — with evidence, not opinion — whether thi
 building. That's the responsible way to bet a junior team.
 
 ---
-*Detail: [00-brief](00-brief.md) · [01-pain-landscape](01-pain-landscape.md) · [02-app-portfolio](02-app-portfolio.md) · [03-roadmap](03-roadmap.md) · [phase-0/](phase-0/)*
+*Detail: [00-brief](00-brief.md) · [01-pain-landscape](01-pain-landscape.md) · [02-app-portfolio](02-app-portfolio.md) · [03-roadmap](03-roadmap.md) · [phase-0/](phase-0/README.md)*
