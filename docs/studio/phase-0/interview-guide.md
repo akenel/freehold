@@ -1,44 +1,39 @@
-# Phase 0 · Workstream 1 — Customer interview guide
+# Phase 0 · Workstreams 1 & 2 — Customer interview guide
 
-*How to talk to 10 small construction firms and come away with the truth about the
-CIS pain — not a chorus of polite "sounds useful." Built on one principle: **ask about
-what they already do and already pay, never about what they might do.***
+*How to talk to Swiss trades firms (home) and German Handwerk firms (scale) and come
+away with the truth — not a chorus of polite "sounds useful." One principle: **ask
+about what they already do and already pay, never about what they might do.***
 
 ---
 
-## Who to talk to (and how to find them)
+## Who to talk to
 
-**Target:** UK construction/trade firms, **4–15 people** (the sweet spot from
-[../01-pain-landscape.md](../01-pain-landscape.md)), who **engage subcontractors** —
-because those are the firms CIS actually bites. The person to reach is whoever
-**does the CIS return**: often the owner, an office manager, or their bookkeeper.
+**Workstream 1 — Switzerland (10 firms, your home turf).** Small construction/trades
+firms, **4–15 people**, who **invoice regularly** (so QR-bill + admin pain is live).
+The person who **does the invoicing** — owner, office manager, or their Treuhänder.
 
-**Where to find 10 fast:**
-1. **The company's own network first** — we're in construction. Suppliers, subs,
-   past clients, the guv'nor's contacts. Warm intros convert.
-2. Local builders' merchants, trade counters, FMB / trade-association contacts.
-3. LinkedIn: search "director" at small construction firms in your region.
-4. Ask every interviewee for **two more names** at the end (the referral loop).
+**Workstream 2 — Germany (5 firms).** Handwerk firms, **1–10 people** (the micro band
+the 2028 e-invoicing deadline hits). Harder to reach cold from Switzerland — use trade
+forums, LinkedIn, suppliers, and any cross-border contacts.
 
-Aim to *book* 12–15 to land 10 real conversations. 20–30 minutes each. Phone or in
-person beats a form — you're listening for tone and hesitation, not ticking boxes.
+**Where to find them fast:** the company's own network first (suppliers, subs, past
+clients, the guv'nor's contacts — warm intros convert). Builders' merchants, trade
+associations (Baumeisterverband / Handwerkskammer), LinkedIn. Ask each interviewee for
+**two more names**. Book 12–15 to land 10. 20–30 min each, phone or in person.
 
 ---
 
 ## The mindset (read before every call)
 
-You are a **researcher, not a salesperson.** You have nothing to sell today. Your only
-job is to understand their world. If you leave a call and they *don't know you have a
-product idea*, you did it right.
+You are a **researcher, not a salesperson.** You have nothing to sell today. If you
+leave a call and they *don't know you have a product idea*, you did it right.
 
-**The traps that ruin an interview:**
-
-| ❌ Leading question (gets you lies) | ✅ Grounded question (gets you truth) |
+| ❌ Leading question (gets lies) | ✅ Grounded question (gets truth) |
 |---|---|
-| "Would you pay for a tool that handles CIS?" | "What do you spend on getting CIS done today — accountant, software, your own time?" |
-| "Is CIS a real pain for you?" | "Walk me through the last return you filed. What happened?" |
-| "Wouldn't it be great if…" | "Last time it went wrong, what did it cost you?" |
-| "Do you think the April 2026 changes are a problem?" | "What have you changed, if anything, for the April rules?" |
+| "Would you pay for an easier invoicing app?" | "What do you use to invoice today, and what does it cost you?" |
+| "Is admin a pain for you?" | "Walk me through the last invoice you sent. Start to finish." |
+| "Wouldn't it be great if…" | "Last time an invoice bounced or a payment was late, what happened?" |
+| "Do you know about the 2028 e-invoice rule?" (DE) | "Has anything changed about how you have to invoice? Who told you?" |
 
 If you hear yourself describing a feature, **stop and ask another question about them.**
 
@@ -46,84 +41,82 @@ If you hear yourself describing a feature, **stop and ask another question about
 
 ## The script (a spine, not a reading)
 
-Let it breathe — follow interesting threads. But cover all six blocks.
-
 ### 0. Frame (30 sec, no pitch)
-> "I'm looking into how small construction firms handle their admin and compliance —
-> I'm **not selling anything**, I just want to understand how it really works for you.
-> Mind if I ask how you do a few things? There are no wrong answers."
+> "I'm researching how small trades firms handle their invoicing and admin — I'm **not
+> selling anything**, just trying to understand how it really works. Mind if I ask how
+> you do a few things? No wrong answers."
 
 ### 1. Their setup (warm-up, and it's data)
-- How many people? How many subcontractors in a typical month?
-- Who does the books and the CIS return — you, someone in the office, an accountant?
-- What tools are you on today? (Xero? Sage? Paper? A spreadsheet? A trade app?)
+- How many people? How many invoices in a typical month?
+- Who does the invoicing and the books — you, the office, a Treuhänder/Steuerberater?
+- What tools today? (Bexio? Abacus? Word/Excel? Paper? A trade app? Which?)
 
 ### 2. The current process — make them re-live it
-- "**Walk me through the last CIS return you filed.** Start to finish."
-- Where does the info come from? How long did it take? What's fiddly?
-- When was the last time something was wrong or late? What happened?
-- *Listen for:* verification, labour/materials splits, chasing sub details, nil returns.
+- "**Walk me through the last invoice you sent.** Start to finish."
+- Where does the info come from — quote, hours, materials? How long did it take? What's fiddly?
+- On site vs in the office — where does the paperwork actually happen?
+- *Listen for:* double-entry, re-typing job notes into invoices, the phone-vs-desk gap.
 
-### 3. The cost of the pain (this is the WTP signal)
-- What does this cost you today — **£ to the accountant, £ on software, and hours of
-  your own time**?
-- If the return is late or wrong, what's the consequence for you?
-- *We're mapping existing spend. That budget is what a product would redirect.*
+### 3. The cost of the pain (the WTP signal)
+- What does invoicing + admin cost you today — **CHF/€ to software, CHF/€ to the
+  Treuhänder, and hours of your own time**?
+- When an invoice is wrong/late, what's the consequence?
+- *We're mapping existing spend — that budget is what a product redirects.*
 
 ### 4. What they've already tried (behaviour = truth)
-- Have you ever **paid for** software to help with this? Which? Do you still use it?
-  If you dropped it — why?
-- What made you buy it (or not)? Who decided?
-- *A past purchase is the strongest possible signal. A past cancellation tells you the gap.*
+- Have you ever **paid for** invoicing/job software? Which? Still using it? If you
+  dropped it — why?
+- What made you buy it (or not)? **Who decided — you or your Treuhänder/Steuerberater?**
+  *(This answers the DATEV/accountant-lock-in question — critical.)*
 
-### 5. The April 2026 changes (awareness + urgency test)
-- "Are you aware anything's changing with CIS / tax filing this year?"
-- If yes: what have you done about it? Who told you?
-- If no: *don't lecture.* Note it — low awareness = an education cost *and* a wide-open field.
-- *Listen for:* monthly nil returns, verification/monitoring, "my accountant handles it."
+### 5. The compliance trigger
+- **Switzerland:** "Have your invoices/bank changed anything recently — the QR-bill
+  address rules?" (the 30 Sept 2026 cutoff). What did you have to do?
+- **Germany:** "Has anything changed about how you must invoice going forward?"
+  (the 2025→2028 e-invoicing switch). Who told you — your Steuerberater, software, a letter?
+  *Don't lecture if they're unaware — note it: low awareness = education cost AND open field.*
 
 ### 6. Close + referral
-- "Who else should I talk to who wrestles with this?"  → **get two names.**
-- "Can I come back to you if I learn something useful?" (permission to return as a design partner later.)
+- "Who else should I talk to who wrestles with this?" → **two names.**
+- "Can I come back if I learn something useful?" (permission to return as a design partner.)
 - Thank them. **Still no pitch.**
 
 ---
 
-## Score each interview (fill this in the same day)
+## Score each interview (same day)
 
-Copy this block into [decision-scorecard.md](decision-scorecard.md) per firm.
+Copy into [decision-scorecard.md](decision-scorecard.md) per firm.
 
 ```
-Firm:                          Size:        Subs/month:
-Interviewer:                   Date:
-Who does CIS:                  Tools today:
+Firm:                       Country: CH / DE     Size:      Invoices/month:
+Interviewer:                Date:
+Who does invoicing:         Tools today:
+Who CHOOSES the software:   self / Treuhänder / Steuerberater   <-- lock-in signal
 
-Pain is REAL (0–3):    __   (0 = shrugs / accountant fully owns it & they're happy
-                             3 = visible stress, real time sink, past errors)
-Existing SPEND (0–3):  __   (0 = £0, all their own unbilled time
-                             3 = pays accountant AND/OR software specifically for this)
-Awareness of 2026 (0–2): __ (0 = unaware, 2 = aware & actively worried)
-Would engage as design partner (Y/N): __
+Pain is REAL (0–3):     __  (0 = shrugs / fully outsourced & happy; 3 = visible time sink, errors, stress)
+Existing SPEND (0–3):   __  (0 = CHF/€0, own unbilled time; 3 = pays for software AND/OR bookkeeper for this)
+Compliance awareness (0–2): __  (QR-bill CH / 2028 DE — 0 unaware, 2 aware & acting)
+On-site vs desk gap (0–2):  __  (0 = all desk; 2 = clearly does job on site, invoices later at desk = our wedge)
+Design partner? (Y/N): __
 
 Best verbatim quote:
 Biggest surprise:
 ```
 
-**A firm "counts toward the gate" (a GO vote) if Pain ≥ 2 AND Existing Spend ≥ 2.**
-That's the test: real pain *plus* real money already moving. Six of ten clears it.
+**Counts toward Gate Test 1 (a GO vote) if Pain ≥ 2 AND Existing Spend ≥ 2.** Six of
+ten Swiss firms clears it. The **"who chooses the software"** answers tell you whether
+the Steuerberater is a wall (most say *they* choose) or not (most say *the firm* chooses).
 
 ---
 
 ## What good and bad look like
 
-- **Strong GO signal:** "I pay my bookkeeper £X a month and I *still* spend a Sunday
-  every month on the CIS return, and I got a penalty letter last year." (Pain + spend + stakes.)
-- **NO-GO signal:** "Honestly my accountant just does it, I never think about it, costs
-  me forty quid." (No pain owned by them, no capturable budget, happy incumbent.)
-
-The second answer isn't failure — it's the market telling you the *contractor* isn't
-the buyer, the **accountant** might be. That would reshape the plan, which is exactly
-what Phase 0 is for.
+- **Strong GO:** "I pay Bexio *and* I still spend every Friday evening turning job notes
+  into invoices, and I re-type everything from the site into the office PC." (Pain +
+  spend + the on-site/desk gap = our wedge.)
+- **NO-GO:** "My Treuhänder does all of it, I never think about it, costs me a fixed
+  monthly fee." (No owned pain, no capturable budget, and the *Treuhänder* is the real
+  buyer — which would reshape the plan, exactly what Phase 0 is for.)
 
 ---
 *Next: [competitor-teardown.md](competitor-teardown.md).*

@@ -1,96 +1,101 @@
 # 03 · Roadmap (30 / 90 / 180 days)
 
-*The phased plan to get from "good idea on paper" to "paying customers" without
-betting the team on an unvalidated guess. Phase 0 exists precisely because a hard-ass
-boss should never see us spend build budget before we've de-risked the unknowns from
-[01](01-pain-landscape.md) §5.*
+*From "sourced strategy" to "paying customers" without betting the team on the claims
+that failed fact-checking. Phase 0 exists because the boss should never see build
+budget spent before the commercial unknowns from [01](01-pain-landscape.md) Part D are
+de-risked.*
+
+**Shape:** land at **home in Switzerland** (small, dated, low-risk beachhead), then
+carry the same crew-simple workflow into **Germany** ahead of the 2028 deadline.
 
 ---
 
 ## Phase 0 — Validate before you build (Week 1–2) · **do this first**
 
-**Goal:** convert the four unknowns into answers. No product code yet.
+**Goal:** turn five unknowns into answers. No product code.
 
-> 🧰 **Runnable pack:** [phase-0/](phase-0/) — interview guide, competitor teardown,
-> certification brief, and the decision scorecard. Everything a junior pair needs to
-> execute this on Monday.
+> 🧰 Runnable pack: [phase-0/](phase-0/) — interview guide, competitor teardown,
+> and the decision scorecard. Built for a junior pair to run Monday.
 
-| Task | Answers which unknown | Owner | Done when |
+| Task | Unknown it kills | Owner | Done when |
 |---|---|---|---|
-| Interview **10 small construction firms** on CIS pain + what they'd pay | WTP + real pain | Lead | 10 conversations logged |
-| Hands-on trial of **Tradify, Commusoft, Xero** — where does CIS actually break? | Competitor gap | Junior pair | Gap memo written |
-| Pin down **HMRC recognition + Peppol Access Point** process, cost, lead time | Certification barrier | Lead | 1-page cost/time answer |
-| Confirm **reported pricing** (£15–50/user/mo) against live vendor pages | Price anchor | Junior | Verified pricing table |
+| Interview **10 Swiss trades firms** (home, warm intros) on invoicing + QR-bill pain + spend | WTP + pain reality | Lead | 10 scored interviews |
+| Interview / survey **5 German Handwerk firms** on the 2028 e-invoicing switch | DE demand + DATEV lock-in | Lead | 5 logged |
+| **Teardown** plancraft, ToolTime, TAIFUN — is the *workflow* for a 2-person crew actually bad? | The workflow gap (our whole thesis) | Junior pair | Gap memo + verified pricing |
+| Ask 5 firms: who chose your software — you or your **Steuerberater**? | DATEV/accountant lock-in | Junior | Clear answer |
+| Confirm: do these firms want **hosted or on-prem/Swiss-data**? | Stack fit | Junior | Preference noted |
 
-**Gate:** if ≥6 of 10 contractors say the CIS burden is real *and* would pay for a
-tool that keeps them audit-ready → proceed. If not → revisit the portfolio, don't
-throw good money after a hunch. **This gate is the thing that covers you.**
-
----
-
-## Phase 1 — First slice (Day 15–45): `CIS Companion` MVP on Freehold
-
-**Goal:** one narrow, real, demoable feature the boss can click — built on the
-Freehold starter so infra is free.
-
-Scope (deliberately tiny):
-- **Subcontractor register** — add a sub, store UTR/verification reference, status.
-- **Verification & monitoring log** — record each verification + ongoing checks, timestamped → the *evidence trail* the 2026 rules demand.
-- **Monthly return prep view** — labour/materials split per sub, flags the three common error modes *before* they file.
-- **Audit-ready export** — clean PDF/CSV a contractor (or HMRC) can inspect.
-
-Explicitly **out of scope for v1:** filing to HMRC (certification gate), payments,
-full accounting. Integrate/export, don't rebuild.
-
-**Freehold does the heavy lifting:** auth + roles (Keycloak), data + backups
-(Postgres + backup-gated deploy), HTTPS (Caddy). Team writes domain CRUD + exports.
+**Gate — two tests, both must pass:**
+> 1. **Pain + spend:** ≥ **6 of 10** Swiss firms show real invoicing/compliance pain
+>    **and** already spend money on it (software, bookkeeper, or their own hours).
+> 2. **The gap is real:** the teardown finds a *genuine workflow gap* for tiny crews —
+>    i.e. we can point to something plancraft/ToolTime make painful that we'd make simple.
+>
+> **If test 2 fails** (incumbents already nail crew-simplicity), **stop** — the format
+> is commoditized and there's no wedge. Better to learn that now, free, than post-launch.
 
 ---
 
-## Phase 2 — First paying customers (Day 45–90)
+## Phase 1 — Beachhead ship (Day 15–45): the QR-bill fixer, at home
 
-- Onboard **3–5 of the Phase 0 contractors** as design partners (free/discounted).
-- Add the **Reverse-Charge VAT helper** and a minimal **Job Hub** (jobs the subs
-  attach to) so it's daily-useful, not just monthly.
-- **Stand up multi-tenancy** on Freehold (the one real infra gap — see
-  [04](04-team-and-freehold.md)). Until then, one isolated deploy per design partner
-  is an acceptable stopgap.
-- Instrument: are they *using* the monitoring log weekly? That's the retention signal.
+**Goal:** one narrow, dated, real product live in Switzerland — earn trust + first revenue.
 
-**Gate:** ≥3 firms using it in anger and ≥1 willing to pay list price → scale.
+Scope (deliberately tiny, tied to the **30 Sept 2026** bank cutoff):
+- Import/enter customer + invoice data → validate & fix to **structured QR-bill addresses**.
+- Generate compliant QR-bills; flag non-conformant records before the bank rejects them.
+- Clean, mobile-friendly, German-first (FR/IT ready — see [04](04-team-and-freehold.md)).
 
----
-
-## Phase 3 — Scale the wedge + open the second act (Day 90–180)
-
-- Turn on **self-serve signup + billing**; publish real pricing (validated, not guessed).
-- Pursue **HMRC recognition** so `CIS Companion` can file directly — the upsell.
-- Scope the **Peppol/ViDA e-invoicing connector** (portfolio #5): the durable,
-  EU-wide, 2029–2030 play with a certification moat that protects us once we're through it.
-- Decide on the second vertical only *after* construction is repeatable.
+**Freehold does the heavy lifting** (auth, DB, HTTPS, backups). Team writes domain CRUD
++ validation + PDF/QR generation. A junior-shaped build with a real deadline behind it.
 
 ---
 
-## What ships when (one-glance)
+## Phase 2 — The bet, validated (Day 45–90): Handwerk life raft MVP
+
+Only if Phase 0 test 2 passed.
+- Build the **mobile job → capture → structured e-invoice → GoBD archive** flow for
+  1–10-person crews. Win on *simplicity*, not format.
+- Onboard **3–5 design-partner firms** (start Swiss, add 1–2 German trades).
+- Add **#5 site report / Rapport** as the daily-use hook so it's a habit, not a chore.
+- **Stand up multi-tenancy** on Freehold (the one real infra gap — [04](04-team-and-freehold.md)).
+  Per-customer deploys are an acceptable stopgap for the first few partners.
+
+**Gate:** ≥3 firms using it weekly and ≥1 paying list price → scale into Germany.
+
+---
+
+## Phase 3 — Scale on the 2028 deadline (Day 90–180)
+
+- Turn on **self-serve signup + billing**; publish *validated* pricing (not guessed).
+- Push into the **German Handwerk** market — the 1M-firm pool — with the 2028 e-invoicing
+  deadline as the marketing engine. Address **DATEV/Steuerberater** as a channel, not a wall
+  (integrate/export to their world rather than fight it).
+- Scope the **next compliance module** (the ratchet: whatever mandate lands next becomes
+  expansion revenue on the same customer).
+
+---
+
+## What ships when (one glance)
 
 | Horizon | Deliverable | Proof it worked |
 |---|---|---|
-| **Week 2** | Validation memo + go/no-go | 10 interviews, certification cost known |
-| **Day 45** | `CIS Companion` MVP on Freehold | Boss clicks a real audit-ready export |
-| **Day 90** | 3–5 design partners live, multi-tenant | Weekly active use |
-| **Day 180** | Paid self-serve + HMRC-recognition in progress | First list-price revenue |
+| **Week 2** | Validation memo + go/no-go (both gate tests) | 10 CH + 5 DE interviews; workflow-gap confirmed |
+| **Day 45** | QR-bill fixer live in Switzerland | Paying Swiss users before 30 Sept 2026 |
+| **Day 90** | Handwerk life-raft MVP, 3–5 design partners, multi-tenant | Weekly active use |
+| **Day 180** | Paid self-serve, German go-to-market on 2028 | First German list-price revenue |
 
 ---
 
 ## Risks & how the plan absorbs them
 
-| Risk | Mitigation baked into the plan |
+| Risk | Mitigation baked in |
 |---|---|
-| Nobody will pay | Phase 0 gate — validate WTP before building |
-| Certification blocks us | v1 is workflow/evidence, no filing licence needed |
-| Peppol timeline shifts (Nov 2026 Budget) | It's the *second act*, not the first bet — we're not exposed to its date |
-| Junior team over-reaches | Scope is CRUD + exports on finished infra; no exotic tech |
-| Incumbent adds CIS depth | We're faster and domain-native; and we own the customer relationship early |
+| Format is commoditized, no wedge | Phase 0 **test 2** stops us before we build if the gap isn't real |
+| Nobody will pay | Phase 0 **test 1** — validate spend before building |
+| DATEV/Steuerberater lock-in | Tested in Phase 0; treated as a channel in Phase 3, not fought |
+| Germany is far / not our network | We **land in Switzerland first** — revenue + proof before the big market |
+| Junior team over-reaches | Phase 1 is tiny CRUD on finished infra; the bet waits for validation |
+| Swiss deadline is "soft" (QR-bill) | It's the *beachhead*, not the foundation; the hard deadline (DE 2028) is the scale engine |
 
 ---
-*Next: [04-team-and-freehold.md](04-team-and-freehold.md) — how the juniors execute, and the one thing Freehold must grow.*
+*Next: [04-team-and-freehold.md](04-team-and-freehold.md) — junior execution + the Freehold gaps (multi-tenancy, i18n).*

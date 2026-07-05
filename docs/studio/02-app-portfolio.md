@@ -5,96 +5,89 @@ the page you put in front of the boss next to [00-brief](00-brief.md).*
 
 ## The scoring
 
-Each concept is scored 1–5 on three axes:
+Each concept scored 1–5 on:
+- **Pull** — how *compelled* the demand is. Hard legal deadline = 5; "nice to have" = 2.
+- **Reach** — size of the buyer pool in our target band (micro/small German-speaking trades).
+- **Ease** — buildable by a **junior team on Freehold**, *including competitive room* —
+  a commoditized space lowers Ease because the build is easy but winning isn't.
 
-- **Pull** — how *compelled* the demand is. A legal deadline = 5. "Would be nice" = 2.
-- **Reach** — size of the buyer pool in our domain.
-- **Ease** — how buildable by a **junior team on Freehold**, *including the regulatory
-  barrier to entry* (certification lowers Ease).
-
-**Score = Pull × Reach × Ease** (higher = better first bet). Certification barriers
-are called out explicitly because they can sink a junior team's timeline.
+**Score = Pull × Reach × Ease.** Certification/commoditization risks are called out.
 
 ---
 
-## The one insight that shapes everything
+## The insight that shapes everything
 
-> **Sell the compliance *workflow and evidence layer*, not the *filing engine* — at least for v1.**
+> **The e-invoice format is solved. The wedge is the *workflow for the smallest crew*.**
 
-Filing tax returns or e-invoices to government requires **HMRC recognition / Peppol
-Access Point certification** (unknown cost + lead time — see [01](01-pain-landscape.md) §5).
-That's a heavy, slow gate for a new junior team.
+Germany's 2028 deadline forces ~1M micro Handwerk firms to issue structured e-invoices
+— but a dozen incumbents already *generate* XRechnung/ZUGFeRD, some with cheap solo
+tiers ([01](01-pain-landscape.md) Part A). So "we make e-invoices" is a dead product.
 
-But the **new 2026 CIS burden is mostly *record-keeping and workflow*** — verifying
-subcontractors, **proving ongoing monitoring**, keeping an **audit trail**, and
-*preparing* the monthly return. None of that requires filing certification. A tool
-that makes a contractor **audit-ready and return-ready** — sitting *alongside*
-whatever they file with — is a genuine must-have that **sidesteps the certification
-gate entirely**. Add direct filing later, once recognised.
-
-This turns the scariest unknown into a phasing decision instead of a blocker.
+What is *not* solved (⚠️ our hypothesis, Phase-0-critical): the **last mile** — the
+firms still on Word/Excel/paper who are too small and non-technical for DATEV-grade
+setups, who need the **whole job-to-cash flow** dead simple: *quote → do the job →
+snap materials/hours on site on a phone → structured e-invoice out → archived
+GoBD-compliant.* Win on **simplicity and mobile**, not on the format. That's the life raft.
 
 ---
 
 ## The scorecard
 
-| # | Concept | Segment | Pull | Reach | Ease | **Score** | Verdict |
+| # | Concept | Market | Pull | Reach | Ease | **Score** | Verdict |
 |---|---|---|:-:|:-:|:-:|:-:|---|
-| 1 | **CIS Companion** — sub verification + monitoring log + audit trail + monthly-return *prep* | Construction 4–50 | 5 | 5 | 4 | **100** | 🥇 **Build first** |
-| 2 | **Site Diary + Timesheets** — daily logs, labour/materials capture, feeds CIS splits | Construction 4–50 | 3 | 5 | 5 | **75** | 🥈 Bundle with #1 |
-| 3 | **Small-crew Job Hub** — jobs, quotes, scheduling (the original PM idea) | Construction 3–30 | 3 | 5 | 4 | **60** | 🥉 The platform #1 & #2 live on |
-| 4 | **Reverse-Charge VAT helper** — correct DRC invoices for construction | Construction 3–50 | 4 | 4 | 4 | **64** | Fold into #1/#3 |
-| 5 | **Peppol / ViDA e-invoicing connector** | UK+EU SMB 16–50 | 5 | 4 | 2 | **40** | Second act (needs cert) |
-| 6 | **MTD quarterly filing** | All UK sole traders | 5 | 5 | 1 | **25** | ❌ Skip — commoditised + cert-heavy |
-| 7 | **Golden-thread doc vault** (Building Safety Act) | HRB owners only | 4 | 1 | 3 | **12** | ❌ Too narrow |
-| 8 | **Generic GDPR record-keeping** | Any SMB | 2 | 4 | 4 | **32** | Weak pull, crowded |
-| 9 | **Subcontractor onboarding/compliance packs** | Construction 10–50 | 3 | 3 | 4 | **36** | Feature of #1, not a product |
-| 10 | **Payment-chasing / cashflow** for trades | Trades 1–15 | 3 | 5 | 3 | **45** | Real pain, crowded — later |
+| 1 | **Handwerk life raft** — mobile job→e-invoice→GoBD archive for 1–10-person crews | 🇩🇪 scale | 5 | 5 | 3 | **75** | 🥇 **The bet** (win on workflow, not format) |
+| 2 | **QR-bill fixer** — structured-address invoicing, beat the 30 Sept 2026 bank cutoff | 🇨🇭 beachhead | 4 | 5 | 4 | **80** | 🥈 **Beachhead wedge** — ship first, small & dated |
+| 3 | **LMV time & wage tracker** — mobile crew clock-in, working-time recording | 🇨🇭 construction | 4 | 4 | 4 | **64** | 🥉 Strong home add-on; founder knows the rules |
+| 4 | **Meldeverfahren helper** — 8-day posted-worker notification filing | 🇨🇭 construction | 3 | 3 | 5 | **45** | Neat niche; feature, not a company |
+| 5 | **Site report / Rapport** — photo + daily log for small crews | 🇨🇭🇩🇪 | 3 | 5 | 5 | **75** | The daily-use hook that carries #1/#2 |
+| 6 | **Cantonal e-permit assembler** — prep/submit to eBaugesucheZH-style platforms | 🇨🇭 construction | 4 | 3 | 2 | **24** | ❌ 26-canton fragmentation sinks Ease |
+| 7 | **Manufacturing (MEM / ERP / MDR)** | 🇨🇭🇩🇪 | 3 | 2 | 1 | **6** | ❌ Macro pain (CH) / ERP-scale (DE) |
+| 8 | **nFADP privacy-register generator** | 🇨🇭 all | 2 | 4 | 4 | **32** | Weak pull (SME exemption); commodity |
+| 9 | **Austria e-invoicing** | 🇦🇹 | 1 | 3 | 3 | **9** | ❌ No mandate — later follow-on |
 
-*(Scores use unverified Reach/pull estimates from [01](01-pain-landscape.md); the
-CIS pull=5 and construction Reach=5 rest on **verified** findings, which is why #1 is
-the confident pick.)*
+*(Pull=5 for #1 and the Reach figures rest on **verified** market data; the Ease=3 on #1
+reflects the **unverified** competitive gap — the risk, not the demand.)*
 
 ---
 
 ## The recommendation
 
-**Lead product: `CIS Companion` (#1), built on top of a minimal `Job Hub` (#3),
-with `Site Diary` (#2) as the daily-use hook.**
+**Build the beachhead wedge (#2) first, to earn trust and revenue at home; build the
+bet (#1) as the scale product, with #5 as the daily hook that makes both sticky.**
 
-Why this wins as a *new lead's first bet*:
+Sequencing logic:
 
-- **Pull is legally compelled and dated** — April 2026 CIS reforms are live. This is
-  the rare B2B product with a *deadline doing your marketing for you.*
-- **It's our domain** — construction, the biggest UK SME sector. We can find ten real
-  customers to talk to this week because the company already lives here.
-- **It routes around the certification gate** — v1 is workflow + evidence, not filing.
-- **It's junior-buildable on Freehold** — auth, DB, deploy, backups already exist. The
-  team builds *forms, records, a monitoring log, exports, and a clean audit trail* —
-  well-scoped CRUD with real stakes, not distributed-systems heroics.
-- **It has a second act** — once trusted, add HMRC-recognised filing, then the
-  durable **Peppol/ViDA e-invoicing** play (#5) for the 2029–2030 wave. A roadmap
-  with a moat at the end, not a dead end.
+- **#2 QR-bill fixer is the ideal first ship** — small, dated (30 Sept 2026), touches
+  *every* invoicing Swiss firm, low competitive heat, and it's a two-week-ish scope on
+  Freehold. It gets us *live, in our home market, with paying users* fast. A beachhead,
+  not the empire.
+- **#1 Handwerk life raft is where the size is** — Germany's 2028 deadline + 1M micro
+  firms. But it's the **bet**, gated on proving (Phase 0) that we can out-simplify
+  plancraft/ToolTime on *workflow* and get past Steuerberater/DATEV lock-in. We don't
+  pour the team into it until that's validated.
+- **#5 Site report is the glue** — the thing a crew opens *every day*, so #1/#2 become
+  daily habits instead of once-a-month compliance chores. Retention.
 
-**What we deliberately skip:** direct MTD filing (#6) — every accounting incumbent
-already owns it and it's certification-gated. We *integrate with* Xero/QuickBooks
-rather than fight them.
+**What we deliberately skip:** another XRechnung generator (commoditized), manufacturing
+(#7), the permit assembler (#6, fragmentation), and leading in Austria (#9, no mandate).
 
 ---
 
 ## The 90-second pitch (for the boss)
 
-> "The government just made monthly compliance mandatory for the UK's biggest small-
-> business sector — construction — and is spending £1.7bn with AI to enforce it,
-> starting this April. We build the tool that keeps a small crew audit-ready and
-> return-ready, in the trade we already know, on infrastructure we already have. It
-> needs no tax-filing licence to start, a junior team can ship the first version, and
-> it opens onto the EU e-invoicing wave worth a decade of runway. We validate price
-> with ten real contractors before we scale a line of it."
+> "Governments are turning compliance into a permanent tax on small firms, and the
+> smallest can't afford enterprise tooling — so they need a life raft. Germany just put
+> a hard deadline on it: **every trades firm must issue digital invoices by 2028**,
+> and there are a million of them averaging six people. The big tools are too complex
+> for a two-man crew; nobody's made it *dead simple on a phone*. We start at **home in
+> Switzerland** with a small, dated tool every firm needs before a September-2026 bank
+> cutoff — real users, real revenue, low risk — then carry the same crew-simple workflow
+> into Germany ahead of 2028. We **don't build another invoice generator** — we build
+> the whole job-to-cash flow simple enough that a plumber actually switches. And we
+> validate price and the incumbent gap with real firms *before* we scale a line of it."
 
-The unknowns (price, exact competitor gap, certification cost) are named up front in
-[01](01-pain-landscape.md) §5 and scheduled as **Phase 0** in
-[03-roadmap.md](03-roadmap.md) — so we're validating, not guessing.
+The unknowns (price, the real workflow gap, DATEV lock-in) are named in
+[01](01-pain-landscape.md) Part D and scheduled as **Phase 0** in [03-roadmap.md](03-roadmap.md).
 
 ---
 *Next: [03-roadmap.md](03-roadmap.md) — the 30/90/180-day plan.*
