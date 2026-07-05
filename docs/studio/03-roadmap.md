@@ -11,6 +11,10 @@ boss should never see us spend build budget before we've de-risked the unknowns 
 
 **Goal:** convert the four unknowns into answers. No product code yet.
 
+> 🧰 **Runnable pack:** [phase-0/](phase-0/) — interview guide, competitor teardown,
+> certification brief, and the decision scorecard. Everything a junior pair needs to
+> execute this on Monday.
+
 | Task | Answers which unknown | Owner | Done when |
 |---|---|---|---|
 | Interview **10 small construction firms** on CIS pain + what they'd pay | WTP + real pain | Lead | 10 conversations logged |

@@ -25,6 +25,7 @@ the boss with sources, not a demo we can't back up.
 3. **[02-app-portfolio.md](02-app-portfolio.md)** — candidate apps scored on opportunity vs. difficulty. What to build, what to skip.
 4. **[03-roadmap.md](03-roadmap.md)** — the phased plan: what ships in 30 / 90 / 180 days.
 5. **[04-team-and-freehold.md](04-team-and-freehold.md)** — how a junior team executes this on top of Freehold, and what Freehold has to grow to get there.
+6. **[phase-0/](phase-0/)** — the runnable validation pack: interview guide, competitor teardown, certification brief, decision scorecard. **This is the Monday work.**
 
 ## How to use it with the boss
 
