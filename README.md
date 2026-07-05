@@ -68,7 +68,7 @@ Open **https://localhost:8443** and log in with a seeded sandbox user:
 
 That's the whole stack — app, Postgres, Keycloak, MinIO, Caddy, robot-sim — running
 on your machine. Poke around: `/dashboard`, `/qa` (admin), `/pulse`, `/robot`,
-`/profile`, `/money`. Run the tests any time with `make test` (14, no infra needed).
+`/profile`. Run the tests any time with `make test` (22, no infra needed).
 
 ---
 

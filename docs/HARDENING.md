@@ -32,7 +32,7 @@ decision, a console, or a cost), 🤝 = both.
       (multi-env ladder). 10 scripts → 7.
 
 ## 🟡 Tier 2 — the real safety net
-- [x] **5. Test coverage (14→25)** — auth-helper units + RBAC gates added, run in the deploy gate. Deeper integration (OIDC
+- [x] **5. Test coverage (14→22)** — auth-helper units + RBAC gates added, run in the deploy gate. Deeper integration (OIDC
       login flow, RBAC gating (admin-only routes), profile + ticket CRUD, and an
       `ops/` smoke. Then the CI gate is a net, not a speed bump.
 - [x] **6. Observability (uptime)** — .github/workflows/uptime.yml: external GitHub-cron
