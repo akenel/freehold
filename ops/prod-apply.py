@@ -74,12 +74,29 @@ def reconcile(realm, env, tok):
         api("PUT", f"/admin/realms/{realm}/clients/{cid}", c, tok=tok)
         print("  ✓ freehold-web client secret aligned to KC_CLIENT_SECRET")
 
-    # 1b) open-webui client secret (only the realm that has it, i.e. kc-prd)
-    ow = json.loads(api("GET", f"/admin/realms/{realm}/clients?clientId=open-webui", tok=tok)[1])
-    if ow and real(env.get("OPENWEBUI_CLIENT_SECRET", "")):
-        oid = ow[0]["id"]; c = ow[0]; c["secret"] = env["OPENWEBUI_CLIENT_SECRET"]
-        api("PUT", f"/admin/realms/{realm}/clients/{oid}", c, tok=tok)
-        print("  ✓ open-webui client secret aligned to OPENWEBUI_CLIENT_SECRET")
+    # 1b) open-webui client (kc-prd only): ensure it EXISTS, then align secret +
+    # redirects to OPENWEBUI_DOMAIN. Idempotent — realm JSON seeds it on a fresh
+    # box; here we create-or-update it live so an already-running Keycloak gets it
+    # too (realm JSON only imports on first boot).
+    if realm == "kc-prd" and real(env.get("OPENWEBUI_CLIENT_SECRET", "")) and real(env.get("OPENWEBUI_DOMAIN", "")):
+        dom = env["OPENWEBUI_DOMAIN"]
+        client = {
+            "clientId": "open-webui", "name": "Open WebUI (AI — bring your own brain)",
+            "enabled": True, "publicClient": False, "clientAuthenticatorType": "client-secret",
+            "secret": env["OPENWEBUI_CLIENT_SECRET"], "standardFlowEnabled": True,
+            "directAccessGrantsEnabled": False, "protocol": "openid-connect",
+            "redirectUris": [f"https://{dom}/oauth/oidc/callback"],
+            "webOrigins": [f"https://{dom}"],
+            "attributes": {"post.logout.redirect.uris": f"https://{dom}/*"},
+        }
+        ow = json.loads(api("GET", f"/admin/realms/{realm}/clients?clientId=open-webui", tok=tok)[1])
+        if ow:
+            client["id"] = ow[0]["id"]
+            api("PUT", f"/admin/realms/{realm}/clients/{ow[0]['id']}", client, tok=tok)
+            print(f"  ✓ open-webui client updated (secret + redirects -> {dom})")
+        else:
+            code, _ = api("POST", f"/admin/realms/{realm}/clients", client, tok=tok)
+            print(f"  ✓ open-webui client created in {realm} ({code}) -> {dom}")
 
     # 2) SMTP (optional)
     vault = REPO / "keycloak" / "vault"; vault.mkdir(exist_ok=True)
