@@ -1,0 +1,70 @@
+# =============================================================
+# Freehold — OPT-IN overlay: Open WebUI (self-hosted AI chat)
+#
+# The "bring your own brain" showcase: a ChatGPT-style UI at
+# ai.wolfhold.app, SSO'd to the SAME Keycloak that gates Freehold, with
+# the *brain hosted off-box* on Ollama Turbo (https://ollama.com). The
+# box stays light — it only relays API calls; no GPU, no local model.
+#
+# Add this file ONLY on a box that wants it — it never forces onto the
+# others (the Nextcloud-note "separate profile" discipline):
+#
+#   CADDYFILE=./Caddyfile.prod \
+#     docker compose -f docker-compose.yml \
+#                    -f docker-compose.prod.yml \
+#                    -f docker-compose.openwebui.yml up -d
+#
+# Needs in .env (see deploy/production.env.example):
+#   OPENWEBUI_DOMAIN, OPENWEBUI_CLIENT_SECRET, OPENWEBUI_SECRET_KEY,
+#   OLLAMA_API_KEY, AUTH_DOMAIN
+# =============================================================
+services:
+  # Teach the shared Caddy this env's hostname. Unset elsewhere -> the
+  # Caddyfile block defaults inert, so non-AI boxes are unaffected.
+  caddy:
+    environment:
+      OPENWEBUI_DOMAIN: ${OPENWEBUI_DOMAIN:-}
+
+  open-webui:
+    # Pinned via env so prod never rides :latest. Bump OPENWEBUI_IMAGE in
+    # .env to a dated release once you've confirmed the tag exists.
+    image: ${OPENWEBUI_IMAGE:-ghcr.io/open-webui/open-webui:main}
+    restart: unless-stopped
+    # Backstop so a runaway Open WebUI can't OOM-kill Keycloak on the 4 GB
+    # box. Brain is remote, so it idles ~300-500 MB; 1.5 GB is comfortable.
+    mem_limit: 1536m
+    environment:
+      # --- the brain: Ollama Turbo (hosted; the box just calls it) --------
+      OLLAMA_BASE_URL: https://ollama.com
+      # Attach the Turbo Bearer key to backend #0 (index-keyed, field `key`).
+      OLLAMA_API_CONFIGS: '{"0":{"enable":true,"key":"${OLLAMA_API_KEY}"}}'
+      ENABLE_OPENAI_API: "false"          # Ollama-only; no stray OpenAI calls
+      # --- one login: SSO to Freehold's Keycloak (kc-prd realm) -----------
+      WEBUI_URL: https://${OPENWEBUI_DOMAIN}
+      WEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
+      ENABLE_OAUTH_SIGNUP: "true"         # let Freehold users provision on 1st login
+      OAUTH_MERGE_ACCOUNTS_BY_EMAIL: "true"   # a Freehold user IS the same person
+      OAUTH_CLIENT_ID: open-webui
+      OAUTH_CLIENT_SECRET: ${OPENWEBUI_CLIENT_SECRET}
+      OPENID_PROVIDER_URL: https://${AUTH_DOMAIN}/realms/kc-prd/.well-known/openid-configuration
+      OPENID_REDIRECT_URI: https://${OPENWEBUI_DOMAIN}/oauth/oidc/callback
+      OAUTH_PROVIDER_NAME: Freehold
+      OAUTH_SCOPES: openid email profile
+      # env is law on every boot -> rebuildable in one command, no DB drift
+      ENABLE_PERSISTENT_CONFIG: "false"
+    volumes:
+      - openwebui_data:/app/backend/data
+    ports:
+      - "127.0.0.1:8090:8080"     # direct peek for debugging (box-local only)
+    depends_on:
+      - keycloak
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks: [freehold]
+
+volumes:
+  openwebui_data:

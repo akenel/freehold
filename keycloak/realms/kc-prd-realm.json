@@ -58,6 +58,27 @@
       "attributes": {
         "post.logout.redirect.uris": "https://localhost:8443/*##https://www.wolfhold.app/*##https://wolfhold.app/*"
       }
+    },
+    {
+      "clientId": "open-webui",
+      "name": "Open WebUI (AI — bring your own brain)",
+      "description": "Self-hosted chat UI at ai.wolfhold.app; brain lives off-box (Ollama Turbo). SSO'd to Freehold. The dev secret below is a placeholder — prod-apply.py aligns it to OPENWEBUI_CLIENT_SECRET from .env.",
+      "enabled": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "openwebui-dev-secret-change-me",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "https://ai.wolfhold.app/oauth/oidc/callback"
+      ],
+      "webOrigins": [
+        "https://ai.wolfhold.app"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "https://ai.wolfhold.app/*"
+      }
     }
   ],
   "identityProviders": [

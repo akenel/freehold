@@ -82,6 +82,17 @@
 	file_server
 }
 
+# ---- Open WebUI: the "bring your own brain" AI showcase --------------------
+# One login (Freehold Keycloak) -> your own ChatGPT, brain hosted off-box on
+# Ollama Turbo. Only active when OPENWEBUI_DOMAIN is set AND the open-webui
+# container exists (docker-compose.openwebui.yml). Otherwise it defaults to an
+# inert in-container loopback address and serves nothing. Caddy proxies the
+# streaming/websocket traffic transparently.
+{$OPENWEBUI_DOMAIN:http://localhost:2024} {
+	import sec
+	reverse_proxy open-webui:8080
+}
+
 # ---- the shared Keycloak: the dedicated auth host --------------------------
 # Serve this block on whichever box runs Keycloak. The browser is sent here for
 # login (KC_PUBLIC_URL=https://auth.wolfhold.app), so the token issuer is stable.

@@ -74,6 +74,13 @@ def reconcile(realm, env, tok):
         api("PUT", f"/admin/realms/{realm}/clients/{cid}", c, tok=tok)
         print("  ✓ freehold-web client secret aligned to KC_CLIENT_SECRET")
 
+    # 1b) open-webui client secret (only the realm that has it, i.e. kc-prd)
+    ow = json.loads(api("GET", f"/admin/realms/{realm}/clients?clientId=open-webui", tok=tok)[1])
+    if ow and real(env.get("OPENWEBUI_CLIENT_SECRET", "")):
+        oid = ow[0]["id"]; c = ow[0]; c["secret"] = env["OPENWEBUI_CLIENT_SECRET"]
+        api("PUT", f"/admin/realms/{realm}/clients/{oid}", c, tok=tok)
+        print("  ✓ open-webui client secret aligned to OPENWEBUI_CLIENT_SECRET")
+
     # 2) SMTP (optional)
     vault = REPO / "keycloak" / "vault"; vault.mkdir(exist_ok=True)
     if real(env.get("SMTP_PASSWORD", "")):
