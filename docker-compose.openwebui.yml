@@ -28,9 +28,10 @@ services:
       OPENWEBUI_DOMAIN: ${OPENWEBUI_DOMAIN:-http://localhost:2024}
 
   open-webui:
-    # Pinned via env so prod never rides :latest. Bump OPENWEBUI_IMAGE in
-    # .env to a dated release once you've confirmed the tag exists.
-    image: ${OPENWEBUI_IMAGE:-ghcr.io/open-webui/open-webui:main}
+    # Pinned to a digest so prod never drifts (this is the exact image verified
+    # live on 2026-07-06). To bump: pull a newer tag, confirm it, then swap the
+    # digest here (or override OPENWEBUI_IMAGE in .env).
+    image: ${OPENWEBUI_IMAGE:-ghcr.io/open-webui/open-webui@sha256:a26effeb220e132482bf7e0560b3404843e7bc40d23051144e062960df8df6b0}
     restart: unless-stopped
     # Backstop so a runaway Open WebUI can't OOM-kill Keycloak on the 4 GB
     # box. Brain is remote, so it idles ~300-500 MB; 1.5 GB is comfortable.
@@ -54,6 +55,12 @@ services:
       OAUTH_SCOPES: openid email profile
       # env is law on every boot -> rebuildable in one command, no DB drift
       ENABLE_PERSISTENT_CONFIG: "false"
+      # --- keep the box lean --------------------------------------------------
+      # Brain is remote, so don't let Open WebUI phone HuggingFace to fetch/update
+      # local models at boot. Sets HF_HUB_OFFLINE=1 + skips embedding/reranker/
+      # whisper auto-updates. The RAG embedding model is cached in the data
+      # volume, so local doc-search still works; chat + login are unaffected.
+      OFFLINE_MODE: "true"
     volumes:
       - openwebui_data:/app/backend/data
     ports:
