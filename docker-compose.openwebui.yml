@@ -23,7 +23,9 @@ services:
   # Caddyfile block defaults inert, so non-AI boxes are unaffected.
   caddy:
     environment:
-      OPENWEBUI_DOMAIN: ${OPENWEBUI_DOMAIN:-}
+      # Inert loopback default, not "" — a set-but-empty {$VAR} crashes Caddy's
+      # config parse. Must match the {$OPENWEBUI_DOMAIN:...} fallback in Caddyfile.prod.
+      OPENWEBUI_DOMAIN: ${OPENWEBUI_DOMAIN:-http://localhost:2024}
 
   open-webui:
     # Pinned via env so prod never rides :latest. Bump OPENWEBUI_IMAGE in

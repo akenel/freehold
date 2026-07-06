@@ -16,8 +16,13 @@ services:
     environment:
       SITE_DOMAIN: ${SITE_DOMAIN}      # this box's app host, e.g. sandbox.wolfhold.app
       AUTH_DOMAIN: ${AUTH_DOMAIN}      # the shared Keycloak host, auth.wolfhold.app
-      APEX_DOMAIN: ${APEX_DOMAIN:-}    # prod only: wolfhold.app -> 301 to www (else inert)
-      DOCS_DOMAIN: ${DOCS_DOMAIN:-}    # optional: docs.wolfhold.app -> static ./site (else inert)
+      # Default to the Caddyfile's inert loopback addresses (NOT empty): Caddy
+      # treats a set-but-empty {$VAR} as an empty key and crashes the whole
+      # config ("server block without any key must be first"). An unset var uses
+      # the Caddyfile default, but compose passing "" defeats that — so default
+      # here too. Must match the {$VAR:...} fallbacks in Caddyfile.prod.
+      APEX_DOMAIN: ${APEX_DOMAIN:-http://localhost:2020}   # prod: wolfhold.app -> 301 www (else inert)
+      DOCS_DOMAIN: ${DOCS_DOMAIN:-http://localhost:2023}   # optional: docs.wolfhold.app -> ./site (else inert)
     volumes:
       # Pre-built public docs (make docs-build). Read-only; empty until built.
       - ./site:/srv/docs:ro
