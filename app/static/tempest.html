@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TIG · TEMPEST — flippers</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; cursor: crosshair; }
+  canvas { display: block; }
+  #hud {
+    position: fixed; top: 14px; left: 16px; right: 16px;
+    display: flex; justify-content: space-between;
+    font: 14px/1.5 "Courier New", monospace; color: #22d3ee;
+    letter-spacing: 2px; text-shadow: 0 0 8px #22d3ee88; pointer-events: none;
+  }
+  #hint {
+    position: fixed; bottom: 14px; left: 0; right: 0; text-align: center;
+    font: 12px/1.4 "Courier New", monospace; color: #64748b; letter-spacing: 2px;
+    pointer-events: none;
+  }
+  #buildbar {
+    position: fixed; bottom: 12px; right: 14px;
+    font: 11px/1.4 "Courier New", monospace; color: #22d3ee; opacity: .55;
+    letter-spacing: 1px; text-shadow: 0 0 6px #22d3ee55;
+    pointer-events: none; user-select: none;
+  }
+  #devbar {
+    position: fixed; bottom: 12px; left: 14px; display: none;
+    font: 11px/1.4 "Courier New", monospace; color: #f59e0b; opacity: .95;
+    letter-spacing: 1px; text-shadow: 0 0 6px #f59e0b88;
+    background: rgba(20,14,2,.55); padding: 3px 8px; border-radius: 6px;
+    border: 1px solid #f59e0b44; pointer-events: none; user-select: none;
+  }
+  #cheat {
+    position: fixed; top: 44px; left: 0; right: 0; text-align: center;
+    font: 20px/1.2 "Courier New", monospace; color: #f59e0b; letter-spacing: 3px;
+    text-shadow: 0 0 12px #f59e0baa; pointer-events: none; opacity: 0;
+    transition: opacity .2s; user-select: none;
+  }
+  #who {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    font: 12px/1.4 "Courier New", monospace; color: #22d3ee; letter-spacing: 1px;
+    text-shadow: 0 0 6px #22d3ee55; user-select: none; z-index: 5;
+  }
+  #who a { color: #f59e0b; text-decoration: none; }
+</style>
+</head>
+<body>
+<div id="hud"><span id="score">SCORE 000000</span><span id="zap">ZAP ×2</span><span id="lives">LIVES ♦ ♦ ♦</span></div>
+<canvas id="game"></canvas>
+<div id="hint">MOVE MOUSE — RIDE THE RIM · CLICK/HOLD — FIRE · SPACE — SUPERZAPPER · M — MUTE</div>
+<div id="buildbar">BUILD dev</div>
+<div id="devbar"></div>
+<div id="cheat"></div>
+<div id="who"></div>
+<script>
+  // Build bar — the running build's number · SHA · date, from the app's /version
+  // endpoint (freehold-style branding, always visible incl. the title screen).
+  // Served by the app → shows the real stamp; opened as a bare file with no
+  // endpoint → stays "BUILD dev", honestly.
+  fetch("/version").then((r) => (r.ok ? r.json() : null)).then((v) => {
+    if (!v) return;
+    const parts = [v.version, v.sha, v.date].filter(Boolean).join("  ·  ");
+    const env = v.env && v.env !== "production" ? "  ·  " + String(v.env).toUpperCase() : "";
+    document.getElementById("buildbar").textContent = "BUILD " + parts + env;
+  }).catch(() => {});
+</script>
+<script>
+(() => {
+  "use strict";
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const scoreEl = document.getElementById("score");
+  const zapEl = document.getElementById("zap");
+  const livesEl = document.getElementById("lives");
+  const hudEl = document.getElementById("hud");
+  const hintEl = document.getElementById("hint");
+
+  const LANES = 16;         // segments of the well
+  let cx = 0, cy = 0;       // centre / vanishing point
+  let R = 0, r = 0;         // rim radius, far-end radius
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cx = canvas.width / 2;
+    cy = canvas.height / 2;
+    R = Math.min(canvas.width, canvas.height) * 0.42; // rim
+    r = R * 0.14;                                     // far end (well depth)
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  // --- geometry helpers -------------------------------------------------
+  // depth d: 0 = rim (near, where the player sits), 1 = far end (deep)
+  const laneAngle = (i) => (i / LANES) * Math.PI * 2 - Math.PI / 2; // spoke i angle
+  const laneMidAngle = (i) => laneAngle(i) + Math.PI / LANES;        // middle of lane i
+  function ptAt(angle, d) {
+    const rad = R + (r - R) * d;
+    return { x: cx + Math.cos(angle) * rad, y: cy + Math.sin(angle) * rad };
+  }
+  const mod = (n, m) => ((n % m) + m) % m;
+
+  // --- state ------------------------------------------------------------
+  let playerLane = 0;
+  let mouseAngle = -Math.PI / 2;
+  let bullets = [];         // { lane, d }   d grows 0 -> 1 (rim to deep)
+  let enemies = [];         // flippers: { lane, d, flipCd }  d shrinks 1 -> 0 (deep to rim)
+  let score = 0;
+  let lives = 3;
+  let mode = "title";           // "title" | "play" | "over"
+  // Dev/test cheats — ON only on localhost, dev-/stg- hosts, or ?dev=1.
+  // OFF on production (tempest.wolfhold.app) and GitHub Pages, so real players never see them.
+  const dev = {
+    on: /[?&]dev=1\b/.test(location.search) ||
+        /^(localhost$|127\.|dev-|stg-)/.test(location.hostname),
+    god: false,                 // toggled invincible (key 0)
+  };
+  let ticks = 0;                // global frame counter (blink / spin)
+  let muted = false;
+  let lastRank = -1;            // rank of the just-finished run in the high-score table
+  let spawnTimer = 60;
+  let firing = false;           // mouse button held?
+  let fireCd = 0;               // frames until next auto-shot
+  let zaps = 2;                 // superzappers left
+  let zapFlash = 0;             // white-flash frames after a zap
+  let level = 1;                // current level
+  let toSpawn = 0;              // enemies left to spawn this wave
+  let zooming = false;          // diving down the tube between levels?
+  let zoomT = 0;                // zoom progress 0 -> 1
+  let spikes = [];              // per-lane spike tip depth (1 = none, smaller = taller)
+  let clearHold = 0;            // "STAND BY" breather frames after a wave clears
+  let hurtFlash = 0;            // red flash frames when the player takes a hit
+
+  const ENEMY_SPEED = 0.0040;   // climb per frame (bumped up vs rapid-fire)
+  const BULLET_SPEED = 0.02;
+  const HIT_DEPTH = 0.06;       // depth tolerance for a bullet/enemy hit
+  const MAX_SHOTS = 8;          // authentic cap: only a handful of bolts on screen
+  const FIRE_INTERVAL = 7;      // frames between auto-shots while held
+  const START_ZAPS = 2;         // superzappers granted at the start of each level
+  const ZOOM_FRAMES = 110;      // length of the between-level tube dive (longer = calmer)
+  const CLEAR_HOLD = 75;        // "STAND BY" breather after a wave clears
+  const WAVE_SIZE = (lvl) => 5 + lvl * 2;   // enemies in the wave for a level
+  const SPIKE_ERODE = 0.09;     // how much of a spike a single bolt knocks back
+  const SPIKE_DANGER = 0.45;    // spike tip below this depth is lethal on the dive
+
+  let account = null;            // {username, name, ...} from /me when signed in, else null
+  let gameStartMs = 0;           // for run duration
+
+  function startGame() {
+    score = 0; lives = 3; firing = false; fireCd = 0;
+    zapFlash = 0; hurtFlash = 0; level = 1; zooming = false; zoomT = 0;
+    lastRank = -1; mode = "play"; gameStartMs = Date.now();
+    startWave();
+    sfx.start();
+  }
+
+  function endGame() {
+    mode = "over"; firing = false;
+    recordScore(score, level);
+    submitScore(score, level, Date.now() - gameStartMs);   // to the leaderboard, if signed in
+    sfx.gameover();
+  }
+
+  // --- high scores (saved in the browser) -------------------------------
+  const HS_KEY = "tig_tempest_highscores";
+  function loadScores() {
+    try { return JSON.parse(localStorage.getItem(HS_KEY)) || []; } catch (e) { return []; }
+  }
+  let highScores = loadScores();
+  function recordScore(s, lvl) {
+    const entry = { s, lvl };
+    highScores.push(entry);
+    highScores.sort((a, b) => b.s - a.s);
+    highScores = highScores.slice(0, 8);
+    lastRank = highScores.indexOf(entry);          // -1 if it didn't make the table
+    try { localStorage.setItem(HS_KEY, JSON.stringify(highScores)); } catch (e) {}
+  }
+  const topScore = () => (highScores[0] ? highScores[0].s : 0);
+
+  // --- sound (synthesized, no assets) -----------------------------------
+  let actx = null;
+  function tone(freq, dur, type, vol, slideTo) {
+    if (muted) return;
+    try {
+      if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === "suspended") actx.resume();
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+      o.type = type || "square";
+      o.frequency.setValueAtTime(freq, t);
+      if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+      g.gain.setValueAtTime(vol || 0.06, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(actx.destination);
+      o.start(t); o.stop(t + dur);
+    } catch (e) {}
+  }
+  const sfx = {
+    fire:     () => tone(720, 0.07, "square", 0.04, 240),
+    hit:      () => tone(200, 0.12, "sawtooth", 0.07, 70),
+    zap:      () => { tone(880, 0.35, "sawtooth", 0.10, 90); tone(440, 0.35, "square", 0.06, 60); },
+    dive:     () => tone(180, 0.5, "sine", 0.08, 900),
+    hurt:     () => tone(320, 0.3, "square", 0.10, 70),
+    start:    () => { tone(440, 0.1, "square", 0.07); tone(660, 0.1, "square", 0.07); },
+    gameover: () => { tone(300, 0.5, "sawtooth", 0.09, 60); },
+  };
+
+  // begin the wave for the current `level`
+  function startWave() {
+    bullets = []; enemies = [];
+    spikes = new Array(LANES).fill(1);   // fresh tube, no spikes
+    clearHold = 0;
+    toSpawn = WAVE_SIZE(level);
+    spawnTimer = 70;                     // a beat before the first enemy
+    zaps = START_ZAPS;                   // per-level refill — authentic
+  }
+
+  function startZoom() {
+    // crashing into a tall spike on your lane costs a life
+    if (spikes[playerLane] < SPIKE_DANGER && !dev.god) {
+      lives--; hurtFlash = 12; sfx.hurt();
+      if (lives <= 0) { endGame(); return; }
+    }
+    zooming = true; zoomT = 0; firing = false; bullets = [];
+    level++;                      // display the new level during the dive
+    sfx.dive();
+  }
+
+  function finishZoom() {
+    zooming = false;
+    startWave();
+  }
+
+  // tube hue shifts each level (start cyan-ish), enemies/player/bolts stay distinct
+  function tubeColor(light) {
+    return "hsl(" + ((190 + (level - 1) * 45) % 360) + ", 85%, " + light + "%)";
+  }
+
+  function tryFire() {
+    if (bullets.length >= MAX_SHOTS) return;   // shot cap — must let bolts clear
+    bullets.push({ lane: playerLane, d: 0 });
+    fireCd = FIRE_INTERVAL;
+    sfx.fire();
+  }
+
+  function superzap() {
+    if (zaps <= 0 || !enemies.length) return;  // precious — don't waste on an empty screen
+    zaps--;
+    enemies = [];                              // wipe everything climbing the well
+    zapFlash = 14;
+    sfx.zap();
+  }
+
+  // --- input ------------------------------------------------------------
+  window.addEventListener("mousemove", (e) => {
+    mouseAngle = Math.atan2(e.clientY - cy, e.clientX - cx);
+  });
+  window.addEventListener("mousedown", () => {
+    if (mode === "title") { startGame(); return; }
+    if (mode === "over") { mode = "title"; return; }
+    firing = true; fireCd = 0; tryFire();   // instant first shot, then auto-repeat
+  });
+  window.addEventListener("mouseup", () => { firing = false; });
+  window.addEventListener("blur", () => { firing = false; });
+  window.addEventListener("keydown", (e) => {
+    if (dev.on) {
+      const d = e.code;
+      if (d >= "Digit1" && d <= "Digit9") {              // jump straight to level N (test without grinding)
+        if (mode !== "play") startGame();
+        level = +d.slice(5); startWave(); cheatToast("LEVEL " + level); renderDevBar(); return;
+      }
+      if (d === "Equal" || d === "NumpadAdd") { lives++; cheatToast("+1 LIFE  ×" + lives); return; }
+      if (d === "Digit0") { dev.god = !dev.god; cheatToast(dev.god ? "GOD MODE ON" : "GOD MODE OFF"); renderDevBar(); return; }
+      if (d === "Backslash") { if (mode === "play") { endGame(); cheatToast("FORCE GAME OVER"); } return; }
+      if (mode === "play") {                              // spawn one of a specific enemy, on demand
+        const spawn = { KeyF: "flipper", KeyS: "spiker", KeyT: "tanker", KeyB: "fuseball", KeyP: "pulsar" }[d];
+        if (spawn) { spawnEnemy(spawn); cheatToast("SPAWN " + spawn.toUpperCase()); return; }
+      }
+    }
+    if (e.code === "KeyM") { muted = !muted; return; }   // mute toggle
+    if (e.code === "Space") {
+      e.preventDefault();
+      if (mode === "title") { startGame(); return; }
+      if (mode === "over") { mode = "title"; return; }
+      superzap();
+    }
+  });
+
+  function nearestLane(angle) {
+    let best = 0, bestDiff = Infinity;
+    for (let i = 0; i < LANES; i++) {
+      const diff = Math.abs(mod(laneMidAngle(i) - angle + Math.PI, Math.PI * 2) - Math.PI);
+      if (diff < bestDiff) { bestDiff = diff; best = i; }
+    }
+    return best;
+  }
+
+  function spawnEnemy(forceType) {
+    let type = forceType || "flipper";
+    if (!forceType) {
+      const r = Math.random();
+      if (level >= 5) {
+        if (r < 0.14) type = "pulsar";
+        else if (r < 0.28) type = "fuseball";
+        else if (r < 0.44) type = "tanker";
+        else if (r < 0.64) type = "spiker";
+      } else if (level >= 4) {
+        if (r < 0.16) type = "fuseball";
+        else if (r < 0.34) type = "tanker";
+        else if (r < 0.56) type = "spiker";
+      } else if (level >= 3) {
+        if (r < 0.20) type = "tanker";
+        else if (r < 0.48) type = "spiker";
+      } else if (level >= 2 && r < 0.30) {
+        type = "spiker";
+      }
+    }
+    const e = { type, lane: Math.floor(Math.random() * LANES), d: 1, flipCd: 40 + Math.random() * 40 };
+    if (type === "fuseball") { e.driftCd = 18 + Math.random() * 22; e.armored = false; e.armorCd = 30 + Math.random() * 20; }
+    if (type === "pulsar") { e.pulse = Math.random() * Math.PI * 2; e.zappedThisPulse = false; }
+    enemies.push(e);
+  }
+
+  // a shot tanker cracks open into two flippers
+  function splitTanker(list, e) {
+    const d = Math.min(0.85, e.d + 0.02);
+    list.push({ type: "flipper", lane: e.lane, d, flipCd: 12 + Math.random() * 20 });
+    list.push({ type: "flipper", lane: mod(e.lane + 1, LANES), d, flipCd: 12 + Math.random() * 20 });
+  }
+
+  // --- draw -------------------------------------------------------------
+  function ring(d) {
+    ctx.beginPath();
+    for (let i = 0; i <= LANES; i++) {
+      const p = ptAt(laneAngle(i % LANES), d);
+      i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath(); ctx.stroke();
+  }
+
+  function drawWell() {
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "#1e3a8a";
+    ctx.shadowColor = "#3b82f6"; ctx.shadowBlur = 6;
+    for (let i = 0; i < LANES; i++) {
+      const a = laneAngle(i);
+      const o = ptAt(a, 0), inn = ptAt(a, 1);
+      ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(inn.x, inn.y); ctx.stroke();
+    }
+    ctx.strokeStyle = "#1e40af"; ring(1);
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = tubeColor(60); ctx.shadowColor = tubeColor(60); ctx.shadowBlur = 12; ring(0);
+    ctx.shadowBlur = 0;
+  }
+
+  // between-level tube dive: rings rush outward from the centre past the rim
+  function drawZoom(t) {
+    const COUNT = 16;
+    ctx.lineWidth = 2;
+    for (let k = 0; k < COUNT; k++) {
+      const d = 1 - (((t * 1.6 + k / COUNT) % 1) * 1.4);   // 1 (far) -> -0.4 (past rim)
+      const intensity = Math.max(0.08, 1 - Math.abs(d) * 0.7);
+      ctx.strokeStyle = "hsla(" + ((190 + (level - 1) * 45) % 360) + ", 85%, 60%, " + intensity.toFixed(3) + ")";
+      ctx.shadowColor = tubeColor(60); ctx.shadowBlur = 6;
+      ring(d);
+    }
+    ctx.shadowBlur = 0;
+    ctx.textAlign = "center"; ctx.fillStyle = tubeColor(70);
+    ctx.font = "28px 'Courier New', monospace";
+    ctx.shadowColor = tubeColor(60); ctx.shadowBlur = 16;
+    ctx.fillText("LEVEL " + level, cx, cy);
+    ctx.shadowBlur = 0;
+  }
+
+  function drawPlayer() {
+    const a0 = laneAngle(playerLane), a1 = laneAngle(playerLane + 1);
+    const o0 = ptAt(a0, 0), o1 = ptAt(a1, 0);
+    const i0 = ptAt(a0, 0.12), i1 = ptAt(a1, 0.12);
+    ctx.lineWidth = 3; ctx.strokeStyle = "#facc15";
+    ctx.shadowColor = "#facc15"; ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.moveTo(i0.x, i0.y); ctx.lineTo(o0.x, o0.y);
+    ctx.lineTo(o1.x, o1.y); ctx.lineTo(i1.x, i1.y);
+    ctx.stroke(); ctx.shadowBlur = 0;
+  }
+
+  function drawBullets() {
+    ctx.lineWidth = 3; ctx.strokeStyle = "#f0abfc";
+    ctx.shadowColor = "#e879f9"; ctx.shadowBlur = 10;
+    for (const b of bullets) {
+      const a = laneMidAngle(b.lane);
+      const p1 = ptAt(a, b.d), p2 = ptAt(a, Math.min(1, b.d + 0.06));
+      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  // green zig-zag spikes growing up the lanes from the deep end
+  function drawSpikes() {
+    ctx.lineWidth = 2; ctx.strokeStyle = "#a3e635";
+    ctx.shadowColor = "#84cc16"; ctx.shadowBlur = 8;
+    for (let i = 0; i < LANES; i++) {
+      const top = spikes[i];
+      if (top >= 1) continue;                       // no spike here
+      const a = laneMidAngle(i), tip = Math.max(0, top), steps = 7;
+      ctx.beginPath();
+      for (let s = 0; s <= steps; s++) {
+        const d = 1 + (tip - 1) * (s / steps);
+        const p = ptAt(a + (s % 2 ? 0.035 : -0.035), d);
+        s === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  function drawEnemies() {
+    for (const e of enemies) {
+      const a0 = laneAngle(e.lane), a1 = laneAngle(e.lane + 1), w = 0.05;
+      if (e.type === "spiker") {
+        // bright green diamond
+        const top = ptAt(laneMidAngle(e.lane), Math.max(0, e.d - w));
+        const bot = ptAt(laneMidAngle(e.lane), Math.min(1, e.d + w));
+        const lft = ptAt(a0, e.d), rgt = ptAt(a1, e.d);
+        ctx.fillStyle = "#4ade80"; ctx.shadowColor = "#22c55e"; ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.moveTo(top.x, top.y); ctx.lineTo(rgt.x, rgt.y);
+        ctx.lineTo(bot.x, bot.y); ctx.lineTo(lft.x, lft.y); ctx.closePath();
+        ctx.fill(); ctx.shadowBlur = 0;
+      } else if (e.type === "tanker") {
+        // chunky amber block — cracks into two flippers when shot
+        const tw = 0.07;
+        const n0 = ptAt(a0, Math.max(0, e.d - tw)), n1 = ptAt(a1, Math.max(0, e.d - tw));
+        const f0 = ptAt(a0, Math.min(1, e.d + tw)), f1 = ptAt(a1, Math.min(1, e.d + tw));
+        ctx.fillStyle = "#f59e0b"; ctx.strokeStyle = "#fde68a"; ctx.lineWidth = 2;
+        ctx.shadowColor = "#f59e0b"; ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.moveTo(n0.x, n0.y); ctx.lineTo(n1.x, n1.y);
+        ctx.lineTo(f1.x, f1.y); ctx.lineTo(f0.x, f0.y); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.beginPath();                                   // split seam down the middle
+        const mn = ptAt(laneMidAngle(e.lane), Math.max(0, e.d - tw));
+        const mf = ptAt(laneMidAngle(e.lane), Math.min(1, e.d + tw));
+        ctx.moveTo(mn.x, mn.y); ctx.lineTo(mf.x, mf.y); ctx.stroke();
+        ctx.shadowBlur = 0;
+      } else if (e.type === "fuseball") {
+        // crackling energy ball — bright when vulnerable, dim purple when armoured
+        const c = ptAt(laneMidAngle(e.lane), e.d);
+        const col = e.armored ? "#7c3aed" : "#f0abfc";
+        ctx.strokeStyle = col; ctx.shadowColor = col; ctx.shadowBlur = e.armored ? 6 : 16; ctx.lineWidth = 2;
+        const spokes = 6, len = R * 0.035;
+        ctx.beginPath();
+        for (let s = 0; s < spokes; s++) {
+          const ang = (s / spokes) * Math.PI * 2 + e.d * 12;
+          const r2 = len * (0.5 + 0.7 * Math.abs(Math.sin(e.d * 22 + s)));
+          ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + Math.cos(ang) * r2, c.y + Math.sin(ang) * r2);
+        }
+        ctx.stroke(); ctx.shadowBlur = 0;
+      } else if (e.type === "pulsar") {
+        const a = laneMidAngle(e.lane), s = Math.sin(e.pulse);
+        if (s > 0.3) {                                     // electrified lane — warn the player
+          const inten = (s - 0.3) / 0.7;
+          ctx.strokeStyle = "rgba(56,189,248," + (0.3 + 0.6 * inten).toFixed(2) + ")";
+          ctx.shadowColor = "#38bdf8"; ctx.shadowBlur = 12 * inten; ctx.lineWidth = 2;
+          ctx.beginPath();
+          for (let k = 0; k <= 8; k++) {
+            const p = ptAt(a + (k % 2 ? 0.045 : -0.045), k / 8);
+            k === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+          }
+          ctx.stroke(); ctx.shadowBlur = 0;
+        }
+        const body = ptAt(a, e.d);
+        ctx.fillStyle = s > 0.75 ? "#e0f2fe" : "#0ea5e9";
+        ctx.shadowColor = "#38bdf8"; ctx.shadowBlur = 14;
+        ctx.beginPath(); ctx.arc(body.x, body.y, R * 0.022, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+      } else {
+        // red flipper "bowtie" spanning its lane
+        const near0 = ptAt(a0, Math.max(0, e.d - w)), near1 = ptAt(a1, Math.max(0, e.d - w));
+        const far0 = ptAt(a0, Math.min(1, e.d + w)), far1 = ptAt(a1, Math.min(1, e.d + w));
+        ctx.lineWidth = 2.5; ctx.strokeStyle = "#ef4444";
+        ctx.shadowColor = "#f87171"; ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.moveTo(near0.x, near0.y); ctx.lineTo(far1.x, far1.y);
+        ctx.moveTo(near1.x, near1.y); ctx.lineTo(far0.x, far0.y);
+        ctx.moveTo(near0.x, near0.y); ctx.lineTo(near1.x, near1.y);
+        ctx.moveTo(far0.x, far0.y);  ctx.lineTo(far1.x, far1.y);
+        ctx.stroke(); ctx.shadowBlur = 0;
+      }
+    }
+  }
+
+  function drawStandBy() {
+    ctx.textAlign = "center"; ctx.fillStyle = tubeColor(70);
+    ctx.font = "20px 'Courier New', monospace";
+    ctx.shadowColor = tubeColor(60); ctx.shadowBlur = 12;
+    ctx.fillText("STAND BY", cx, cy - R * 0.62);
+    ctx.font = "13px 'Courier New', monospace"; ctx.fillStyle = "#a3e635";
+    ctx.fillText("SHOOT ANY SPIKES ON YOUR LANE", cx, cy - R * 0.62 + 22);
+    ctx.shadowBlur = 0;
+  }
+
+  function drawTitle() {
+    ctx.save();                                  // slowly spinning attract well behind the title
+    ctx.translate(cx, cy); ctx.rotate(ticks * 0.0025); ctx.translate(-cx, -cy);
+    drawWell();
+    ctx.restore();
+    ctx.fillStyle = "#000a"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = "#22d3ee"; ctx.shadowColor = "#22d3ee"; ctx.shadowBlur = 24;
+    ctx.font = "bold 60px 'Courier New', monospace";
+    ctx.fillText("T E M P E S T", cx, cy - 66);
+    ctx.font = "15px 'Courier New', monospace"; ctx.shadowBlur = 0; ctx.fillStyle = "#64748b";
+    ctx.fillText("T I G   ·   an arcade tribute", cx, cy - 36);
+
+    if (Math.floor(ticks / 30) % 2 === 0) {      // blinking coin prompt
+      ctx.fillStyle = "#facc15"; ctx.shadowColor = "#facc15"; ctx.shadowBlur = 16;
+      ctx.font = "24px 'Courier New', monospace";
+      ctx.fillText("CLICK TO INSERT COIN", cx, cy + 12);
+      ctx.shadowBlur = 0;
+    }
+    ctx.fillStyle = "#94a3b8"; ctx.font = "13px 'Courier New', monospace";
+    ctx.fillText("MOVE — MOUSE     FIRE — CLICK/HOLD     SUPERZAP — SPACE", cx, cy + 52);
+    ctx.fillStyle = "#475569";
+    ctx.fillText("M — MUTE" + (muted ? "  [OFF]" : ""), cx, cy + 72);
+    if (topScore() > 0) {
+      ctx.fillStyle = "#22d3ee"; ctx.font = "14px 'Courier New', monospace";
+      ctx.fillText("HIGH SCORE   " + String(topScore()).padStart(6, "0"), cx, cy + 104);
+    }
+  }
+
+  function drawScoreTable(topY) {
+    ctx.textAlign = "center"; ctx.font = "15px 'Courier New', monospace";
+    ctx.fillStyle = "#64748b"; ctx.fillText("— HIGH SCORES —", cx, topY);
+    for (let i = 0; i < highScores.length; i++) {
+      const h = highScores[i], isNew = i === lastRank;
+      ctx.fillStyle = isNew ? "#facc15" : "#94a3b8";
+      ctx.fillText(
+        String(i + 1).padStart(2, " ") + ".   " + String(h.s).padStart(6, "0") + "   LVL " + h.lvl + (isNew ? "  <" : ""),
+        cx, topY + 26 + i * 20);
+    }
+  }
+
+  function drawGameOver() {
+    ctx.fillStyle = "#000c"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ef4444"; ctx.shadowColor = "#ef4444"; ctx.shadowBlur = 20;
+    ctx.font = "46px 'Courier New', monospace";
+    ctx.fillText("GAME OVER", cx, cy - 132);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#e2e8f0"; ctx.font = "20px 'Courier New', monospace";
+    ctx.fillText("SCORE " + String(score).padStart(6, "0") + "   ·   LEVEL " + level, cx, cy - 98);
+    if (lastRank === 0) {
+      ctx.fillStyle = "#facc15"; ctx.font = "16px 'Courier New', monospace";
+      ctx.fillText("★  NEW HIGH SCORE  ★", cx, cy - 74);
+    }
+    drawScoreTable(cy - 44);
+    if (Math.floor(ticks / 30) % 2 === 0) {
+      ctx.fillStyle = "#64748b"; ctx.font = "14px 'Courier New', monospace";
+      ctx.fillText("CLICK TO CONTINUE", cx, cy + 150);
+    }
+  }
+
+  // --- update -----------------------------------------------------------
+  function updateHud() {
+    scoreEl.textContent = "LVL " + level + "  SCORE " + String(score).padStart(6, "0");
+    zapEl.textContent = "ZAP " + (zaps > 0 ? "×" + zaps : "—");
+    livesEl.textContent = "LIVES " + (lives <= 0 ? "—" : lives > 5 ? "♦ ×" + lives : "♦ ".repeat(lives).trim());
+  }
+
+  function fireAndMoveBullets() {
+    if (firing && --fireCd <= 0) tryFire();          // hold-to-fire, gated by cap + interval
+    for (const b of bullets) b.d += BULLET_SPEED;
+  }
+
+  // bolts travelling down a lane knock back any spike they reach
+  function erodeSpikes() {
+    for (const b of bullets) {
+      if (b.d > 1) continue;
+      const top = spikes[b.lane];
+      if (top < 1 && b.d >= top) { spikes[b.lane] = Math.min(1, top + SPIKE_ERODE); b.d = 2; }
+    }
+  }
+
+  function update() {
+    playerLane = nearestLane(mouseAngle);
+    updateHud();
+    if (mode !== "play") return;
+
+    if (zooming) {                                   // diving to the next level
+      zoomT += 1 / ZOOM_FRAMES;
+      if (zoomT >= 1) finishZoom();
+      return;
+    }
+
+    if (clearHold > 0) {                             // STAND BY breather: move + shoot spikes
+      fireAndMoveBullets();
+      erodeSpikes();
+      bullets = bullets.filter((b) => b.d < 1);
+      if (--clearHold <= 0) startZoom();
+      return;
+    }
+
+    if (toSpawn > 0 && --spawnTimer <= 0) {          // feed the wave
+      spawnEnemy(); toSpawn--;
+      spawnTimer = Math.max(24, 60 - level * 3) + Math.random() * 35;
+    }
+
+    fireAndMoveBullets();
+
+    const climb = ENEMY_SPEED * (1 + (level - 1) * 0.12);   // faster each level
+    const SPEED = { spiker: 0.75, tanker: 0.85, fuseball: 0.5, pulsar: 0.7 };
+    for (const e of enemies) {
+      e.d -= climb * (SPEED[e.type] || 1);
+      if (e.type === "spiker") {
+        spikes[e.lane] = Math.min(spikes[e.lane], e.d);      // extend spike behind it
+      } else if (e.type === "fuseball") {
+        if (--e.driftCd <= 0) {                              // skate to a neighbouring lane
+          e.lane = mod(e.lane + (Math.random() < 0.5 ? -1 : 1), LANES);
+          e.driftCd = 18 + Math.random() * 22;
+        }
+        if (--e.armorCd <= 0) {                              // flicker between armoured / vulnerable
+          e.armored = !e.armored;
+          e.armorCd = (e.armored ? 25 : 40) + Math.random() * 15;
+        }
+      } else if (e.type === "pulsar") {
+        e.pulse = (e.pulse + 0.06) % (Math.PI * 2);          // charge toward the next zap
+        if (--e.flipCd <= 0) {
+          e.lane = mod(e.lane + (Math.random() < 0.5 ? -1 : 1), LANES);
+          e.flipCd = 50 + Math.random() * 40;
+        }
+      } else if (e.type === "flipper" && --e.flipCd <= 0) {
+        e.lane = mod(e.lane + (Math.random() < 0.5 ? -1 : 1), LANES);
+        e.flipCd = 40 + Math.random() * 40;
+      }
+    }
+
+    // pulsar electrifies its lane — lethal if you're standing on it at the peak
+    for (const e of enemies) {
+      if (e.type !== "pulsar") continue;
+      const hot = Math.sin(e.pulse) > 0.75;
+      if (hot && !e.zappedThisPulse && playerLane === e.lane) {
+        e.zappedThisPulse = true;
+        if (!dev.god) { lives--; hurtFlash = 12; sfx.hurt(); if (lives <= 0) endGame(); }
+      }
+      if (!hot) e.zappedThisPulse = false;
+    }
+
+    // bullet vs enemy (same lane, overlapping depth)
+    const POINTS = { spiker: 200, tanker: 100, fuseball: 250, pulsar: 300, flipper: 150 };
+    const born = [];                                   // flippers spawned by cracked tankers
+    for (const e of enemies) {
+      for (const b of bullets) {
+        if (!e.dead && b.d <= 1 && b.lane === e.lane && Math.abs(b.d - e.d) < HIT_DEPTH) {
+          if (e.type === "fuseball" && e.armored) continue;   // invulnerable while armoured
+          e.dead = true; b.d = 2; sfx.hit();
+          score += POINTS[e.type] || 150;
+          if (e.type === "tanker") splitTanker(born, e);
+        }
+      }
+    }
+    // enemy reached the rim -> costs a life
+    for (const e of enemies) {
+      if (e.d <= 0 && !e.dead) {
+        e.dead = true;
+        if (!dev.god) { lives--; hurtFlash = 12; sfx.hurt(); if (lives <= 0) endGame(); }
+      }
+    }
+
+    erodeSpikes();
+    enemies = enemies.filter((e) => !e.dead);
+    if (born.length) enemies.push(...born);
+    bullets = bullets.filter((b) => b.d < 1);
+
+    // wave cleared (all spawned, none left) -> breather, then dive
+    if (mode === "play" && toSpawn <= 0 && enemies.length === 0) clearHold = CLEAR_HOLD;
+  }
+
+  function frame() {
+    ticks++;
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    update();
+
+    hudEl.style.display = mode === "title" ? "none" : "";
+    hintEl.style.display = mode === "play" ? "" : "none";
+    const whoEl = document.getElementById("who");
+    if (whoEl) whoEl.style.display = mode === "title" ? "" : "none";   // sign-in prompt: attract screen only
+
+    if (mode === "title") { drawTitle(); requestAnimationFrame(frame); return; }
+
+    if (zooming) {
+      drawZoom(zoomT);
+    } else {
+      drawWell();
+      drawSpikes();
+      drawEnemies();
+      drawBullets();
+      drawPlayer();
+      if (clearHold > 0) drawStandBy();
+    }
+    if (zapFlash > 0) {
+      ctx.fillStyle = "rgba(255,255,255," + (zapFlash / 14 * 0.6).toFixed(3) + ")";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      zapFlash--;
+    }
+    if (hurtFlash > 0) {
+      ctx.fillStyle = "rgba(255,40,40," + (hurtFlash / 12 * 0.5).toFixed(3) + ")";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      hurtFlash--;
+    }
+    if (mode === "over") drawGameOver();
+    requestAnimationFrame(frame);
+  }
+  // --- account / server sync (Phase 4) ----------------------------------
+  function renderWho() {
+    const el = document.getElementById("who");
+    if (!el) return;
+    el.innerHTML = account
+      ? 'PLAYER <b>' + account.name + '</b> · <a href="/dashboard">DASHBOARD</a> · <a href="/leaderboard">LEADERBOARD</a>'
+      : '<a href="/login">▶ SIGN IN</a> to save your scores · <a href="/leaderboard">LEADERBOARD</a>';
+  }
+  function pingPresence() {
+    fetch("/api/ping", { method: "POST", credentials: "same-origin" }).catch(() => {});
+  }
+  function submitScore(points, level, durationMs) {
+    if (!account) return;                       // anonymous run — local high score only
+    fetch("/api/scores", {
+      method: "POST", credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ points, level, waves: level, duration_ms: durationMs }),
+    }).catch(() => {});
+  }
+  fetch("/me", { credentials: "same-origin" }).then((r) => (r.ok ? r.json() : Promise.reject())).then((d) => {
+    account = d && d.user ? d.user : null;
+    renderWho();                                // signed in → greet; signed out → SIGN IN link
+    if (account) { pingPresence(); setInterval(pingPresence, 20000); }  // heartbeat while the tab is open
+  }).catch(() => {});                           // no /me endpoint (static hosting) → no account UI
+
+  function cheatToast(msg) {
+    const el = document.getElementById("cheat");
+    if (!el) return;
+    el.textContent = msg; el.style.opacity = "1";
+    clearTimeout(el._t); el._t = setTimeout(() => { el.style.opacity = "0"; }, 900);
+  }
+  function renderDevBar() {
+    const el = document.getElementById("devbar");
+    if (!el) return;
+    if (!dev.on) { el.style.display = "none"; return; }
+    el.style.display = "";
+    el.textContent = "DEV  1-9 LEVEL · = LIFE · 0 GOD" + (dev.god ? " ✦ON" : "") +
+                     " · F/S/T/B/P SPAWN · \\ OVER";
+  }
+  renderDevBar();
+  frame();
+})();
+</script>
+</body>
+</html>
