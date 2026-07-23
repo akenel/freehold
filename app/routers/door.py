@@ -44,7 +44,14 @@ async def auth_callback(request: Request):
     saved = request.session.get("oauth") or {}
     code = request.query_params.get("code")
     if not code or request.query_params.get("state") != saved.get("state"):
-        return HTMLResponse("Login failed: bad or missing state.", status_code=400)
+        # Almost always a Back-button replay of an already-consumed callback (a
+        # successful login pops the one-time state below), or a stale tab. The
+        # spent state is the anti-forgery check doing its job — no session is
+        # minted here. So don't show a scary error: if they're already in, send
+        # them home; otherwise start a clean login.
+        if deps.current_user(request):
+            return RedirectResponse("/dashboard", status_code=303)
+        return RedirectResponse("/login", status_code=303)
     redirect_uri = f"{APP_BASE_URL}/auth/callback"
     try:
         tokens = await auth.exchange_code(code, redirect_uri, saved["cv"])
