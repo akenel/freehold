@@ -48,6 +48,24 @@ class BusinessHubRun(Base):
     run_by: Mapped[str] = mapped_column(String(80), default="anonymous")
 
 
+class AuditEvent(Base):
+    """Append-only trail of who did what, when — logins, Business Hub syncs, ticket
+    moves, admin actions. Cousin of BusinessHubRun, generalized: one honest row per
+    meaningful action. NEVER updated, NEVER deleted — that's the whole point of an
+    audit log. Written via audit.record(), which swallows its own errors so logging
+    can never roll back the real action it's recording."""
+    __tablename__ = "audit_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+    actor: Mapped[str] = mapped_column(String(80), default="system", index=True)  # who ('system'/'anonymous' if none)
+    action: Mapped[str] = mapped_column(String(60), default="", index=True)         # dotted verb: user.login, ticket.close…
+    target: Mapped[str] = mapped_column(String(200), default="")                    # human 'what': "Ticket #12", source name
+    detail: Mapped[dict | None] = mapped_column(JSON, nullable=True)                # structured extras {count, status, …}
+
+
 class Ticket(Base):
     __tablename__ = "tickets"
 

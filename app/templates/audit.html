@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audit cockpit — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .facets{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+    .facets .lbl{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;opacity:.55;align-self:center;margin-right:2px}
+    .chip{font-size:.8rem;padding:4px 11px;border-radius:999px;border:1px solid var(--line);color:var(--muted);text-decoration:none;white-space:nowrap}
+    .chip:hover{background:var(--panel2)}
+    .chip.on{background:var(--bone);color:var(--bg,#15120d);border-color:var(--bone);font-weight:600}
+    .feed{margin-top:14px}
+    .ev{display:flex;gap:14px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:9px}
+    .ev .em{font-size:1.35rem;line-height:1;flex:none;margin-top:1px}
+    .ev .mid{min-width:0;flex:1}
+    .ev .head{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+    .ev .what{font-weight:600;color:var(--bone)}
+    .ev .tgt{color:var(--muted);font-size:.9rem;word-break:break-word}
+    .ev .sub{font-size:.8rem;opacity:.65;margin-top:3px;font-family:var(--mono)}
+    .ev .sub .who{color:var(--bone);opacity:.85}
+    .ev .det{margin-top:7px;font-size:.8rem;font-family:var(--mono);color:var(--muted);word-break:break-word}
+    .ev .det b{color:var(--bone);opacity:.8;font-weight:600}
+    .ev time{white-space:nowrap;font-size:.78rem;opacity:.6;font-family:var(--mono);flex:none;margin-top:2px}
+    .empty{opacity:.6;padding:18px 0}
+    .caveat{margin-top:18px;font-size:.85rem;opacity:.7;border-left:3px solid var(--line);padding-left:12px}
+  </style>
+</head>
+<body>
+  {% set EMOJI = {'user.login':'🔓','user.logout':'🚪','business_hub.sync':'🔌','ticket.create':'🎫','ticket.status':'🔀','ticket.close':'✅'} %}
+  {% set LABEL = {'user.login':'Logged in','user.logout':'Logged out','business_hub.sync':'Ran a Business Hub sync','ticket.create':'Opened a ticket','ticket.status':'Moved a ticket','ticket.close':'Closed a ticket'} %}
+  <div class="wrap">
+    {% include "_topbar.html" %}
+
+    <main class="card">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <h1 style="margin:0">🕵️ Audit cockpit.</h1>
+        <span class="overall">{{ events|length }} event{{ '' if events|length == 1 else 's' }}</span>
+      </div>
+      <p class="lede" style="margin-top:10px">Every meaningful action, who did it, and when — logins, syncs,
+        ticket moves. Append-only: rows are written, never edited or erased. Your record, your server.</p>
+
+      {% if facets.action or facets.actor or f_action or f_actor %}
+      <div class="facets">
+        <span class="lbl">What</span>
+        <a class="chip {{ 'on' if not f_action }}" href="/audit{{ ('?actor=' ~ f_actor) if f_actor else '' }}">All</a>
+        {% for a in facets.action %}
+        <a class="chip {{ 'on' if f_action == a }}"
+           href="/audit?action={{ a }}{{ ('&actor=' ~ f_actor) if f_actor else '' }}">{{ EMOJI.get(a, '•') }} {{ LABEL.get(a, a) }}</a>
+        {% endfor %}
+      </div>
+      <div class="facets">
+        <span class="lbl">Who</span>
+        <a class="chip {{ 'on' if not f_actor }}" href="/audit{{ ('?action=' ~ f_action) if f_action else '' }}">Everyone</a>
+        {% for a in facets.actor %}
+        <a class="chip {{ 'on' if f_actor == a }}"
+           href="/audit?actor={{ a }}{{ ('&action=' ~ f_action) if f_action else '' }}">👤 {{ a }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="feed">
+        {% for e in events %}
+        <div class="ev">
+          <div class="em">{{ EMOJI.get(e.action, '•') }}</div>
+          <div class="mid">
+            <div class="head">
+              <span class="what">{{ LABEL.get(e.action, e.action) }}</span>
+              {% if e.target %}<span class="tgt">— {{ e.target }}</span>{% endif %}
+            </div>
+            <div class="sub"><span class="who">👤 {{ e.actor }}</span></div>
+            {% if e.detail %}
+            <div class="det">{% for k, v in e.detail.items() %}<b>{{ k }}:</b> {{ v }}{{ '   ' if not loop.last }}{% endfor %}</div>
+            {% endif %}
+          </div>
+          <time datetime="{{ e.at.isoformat() if e.at }}">{{ e.at.strftime('%Y-%m-%d %H:%M:%S') if e.at else '—' }}</time>
+        </div>
+        {% else %}
+        <p class="empty">Nothing logged yet. Sign in, run a sync, or move a ticket — it lands here.</p>
+        {% endfor %}
+      </div>
+
+      <p class="caveat">🐺 This is the honest paper trail a client asks for: provable, self-hosted history of
+        who touched what. Same table logs a real integration's every run — no vendor to subpoena.</p>
+
+      <div class="row" style="margin-top:16px">
+        <a class="btn ghost" href="/console">← Admin console</a>
+        <a class="btn ghost" href="/dashboard">Dashboard</a>
+      </div>
+    </main>
+  </div>
+  {% include "_footer.html" %}
+</body>
+</html>

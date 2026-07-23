@@ -49,6 +49,12 @@ def test_console_ok_for_admin(as_user):
     assert client.get("/console").status_code == 200
 
 
+def test_audit_forbidden_for_staff(as_user):
+    # /audit is admin-only; the guard denies before any DB read (infra-free safe).
+    as_user(STAFF)
+    assert client.get("/audit").status_code == 403
+
+
 def test_robot_drive_requires_admin(as_user):
     # POST /robot/drive is operator-only (admin role) — staff gets 403 JSON
     as_user(STAFF)

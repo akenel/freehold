@@ -3,6 +3,7 @@ requires the WHY."""
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
+import audit
 import deps
 import tickets
 from deps import admin_or_deny, require_admin, templates
@@ -31,12 +32,14 @@ async def feedback_submit(request: Request):
             {"request": request, "user": user, "error": "A short title is required."},
             status_code=400,
         )
+    kind = form.get("kind", "feedback")
     await tickets.create_ticket(
-        kind=form.get("kind", "feedback"),
+        kind=kind,
         title=title,
         body=(form.get("body") or "").strip(),
         created_by=user["username"],
     )
+    await audit.record(user["username"], audit.TICKET_NEW, title, kind=kind)
     return RedirectResponse("/backlog", status_code=303)
 
 
@@ -64,10 +67,13 @@ async def qa(request: Request):
 
 @router.post("/qa/{ticket_id}/status")
 async def qa_set_status(request: Request, ticket_id: int):
-    if not require_admin(request):
+    user = require_admin(request)
+    if not user:
         return RedirectResponse("/login")
     form = await request.form()
-    await tickets.set_status(ticket_id, form.get("status", "open"))
+    status = form.get("status", "open")
+    await tickets.set_status(ticket_id, status)
+    await audit.record(user["username"], audit.TICKET_STATUS, f"Ticket #{ticket_id}", status=status)
     return RedirectResponse("/qa", status_code=303)
 
 
@@ -86,4 +92,5 @@ async def qa_close(request: Request, ticket_id: int):
             "error": f"Ticket #{ticket_id}: a resolution note is required to close (capture the why).",
         }, status_code=400)
     await tickets.close_ticket(ticket_id, resolution, user["username"])
+    await audit.record(user["username"], audit.TICKET_CLOSE, f"Ticket #{ticket_id}", resolution=resolution)
     return RedirectResponse("/qa", status_code=303)

@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+import audit
 import auth
 import deps
 import i18n
@@ -70,12 +71,16 @@ async def auth_callback(request: Request):
     prof = await profiles.get(request.session["user"]["username"])
     request.session["user"]["avatar"] = media.url(prof.avatar_key) if prof else ""
     request.session["id_token"] = tokens["id_token"]
+    await audit.record(request.session["user"]["username"], audit.LOGIN, roles=roles)
     return RedirectResponse("/dashboard", status_code=303)
 
 
 @router.get("/logout")
 async def logout(request: Request):
     id_token = request.session.get("id_token")
+    user = deps.current_user(request)
+    if user:
+        await audit.record(user.get("username"), audit.LOGOUT)
     request.session.clear()
     if id_token:
         return RedirectResponse(auth.logout_redirect(id_token, f"{APP_BASE_URL}/"))

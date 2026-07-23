@@ -10,7 +10,7 @@ library — the battle-tested house standard.*
 
 | # | Gate | Catches | Tool |
 |---|------|---------|------|
-| 1 | **Machine** | dead endpoints, regressions, broken auth wiring | `make test` (22 tests, no infra) + `alembic upgrade head` on boot |
+| 1 | **Machine** | dead endpoints, regressions, broken auth wiring | `make test` (23 tests, no infra) + `alembic upgrade head` on boot |
 | 2 | **Human sanity check** | "it runs but feels wrong" — UX, copy, the real flow | the **fillable HTML sheets** in this folder |
 
 **Flow:** build locally → green on Gate 1 → **run the sandbox sheet on `sandbox.wolfhold.app`**
@@ -26,6 +26,7 @@ library — the battle-tested house standard.*
 | **`TEST-SHEET-TEMPLATE.html`** | The **golden template**. Copy it per feature. Live progress %, timer, one-tap PASS/FAIL per row, 🎤 voice notes, autosave, Copy/Download results. No dependencies — open in Chrome/Edge. |
 | **`TEST-business-hub-sandbox.html`** | Ready-to-run **sandbox** sheet: SSO login, core screens, and the Business Hub pull→transform→store→record. Run this before promoting to prod. |
 | **`HYPERCARE-PROD.html`** | The **prod hypercare** sheet: run right after every prod deploy — HTTPS, all three logins, the back-button fix, Business Hub, health, `/register`. |
+| **`TEST-audit-log-local.html`** | **Local human-green** sheet for the audit log: every honest action (login · sync · ticket create/move/close · logout) lands in `/audit`, filters work, nothing's editable. Run on `localhost:8443` before committing + promoting. |
 | `archive/` | Signed PDFs of completed runs live here. |
 
 ---

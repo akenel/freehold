@@ -17,6 +17,7 @@ import httpx
 from minio import Minio
 from sqlalchemy import select
 
+import audit
 from db import async_session
 from models import BusinessHubRun
 
@@ -87,7 +88,12 @@ async def run_sync(run_by: str) -> BusinessHubRun:
         s.add(run)
         await s.commit()
         await s.refresh(run)
-        return run
+
+    # 5. AUDIT the action (best-effort; never blocks the run it records).
+    await audit.record(
+        run_by, audit.SYNC, SOURCE_NAME, count=len(contacts), report_key=key
+    )
+    return run
 
 
 async def recent_runs(limit: int = 20) -> list[BusinessHubRun]:
