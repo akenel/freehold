@@ -1,15 +1,28 @@
-# Freehold — PRODUCTION front door (shared-auth model).
+# Freehold — PRODUCTION front door, WILDCARD edition.
 #
-# Two real hostnames, real auto-renewing HTTPS (Let's Encrypt), $0:
-#   {$SITE_DOMAIN}  — THIS box's app (e.g. sandbox.wolfhold.app / www.wolfhold.app)
-#   {$AUTH_DOMAIN}  — the ONE shared Keycloak, all three realms (auth.wolfhold.app)
+# ONE  *.{$BASE_DOMAIN}  certificate (obtained via Porkbun DNS-01) covers EVERY
+# subdomain — www · auth · sandbox · staging · ai · docs · any future one — so we
+# never hit Let's Encrypt's per-host rate limits again. The bare apex
+# ({$APEX_DOMAIN}, e.g. wolfhold.app) is not covered by a wildcard, so it gets its
+# own small cert (also via DNS-01).
 #
-# Because these are real hostnames (not `localhost`) and there's no `tls internal`,
-# Caddy fetches + renews genuine certs on its own. Both vars come from .env.
+# REQUIRES:
+#   1. A Caddy build with the caddy-dns/porkbun plugin  ->  ./caddy/Dockerfile
+#      (the prod overlay builds it as image freehold-caddy:prd).
+#   2. Porkbun API access ENABLED for the domain, and in .env:
+#        PORKBUN_API_KEY=pk1_...
+#        PORKBUN_SECRET_KEY=sk1_...
+#        BASE_DOMAIN=wolfhold.app        # the registrable domain (no subdomain)
 #
-# Co-located (one box, today): keep BOTH site blocks here — one Caddy serves the
-# app AND Keycloak. Separate auth box later: keep the {$AUTH_DOMAIN} block only on
-# the box that runs Keycloak, and drop it from the app boxes.
+# Why DNS-01 for everything: it proves domain control via a TXT record instead of
+# a reachable :80/:443, so certs (incl. wildcards) mint even before a host is live.
+{
+	# Answer the ACME DNS-01 challenge for EVERY cert through Porkbun's API.
+	acme_dns porkbun {
+		api_key {env.PORKBUN_API_KEY}
+		api_secret_key {env.PORKBUN_SECRET_KEY}
+	}
+}
 
 # Security headers, applied to every site via `import sec`.
 (sec) {
@@ -22,81 +35,66 @@
 	}
 }
 
-# ---- the app: this environment's own subdomain -----------------------------
-{$SITE_DOMAIN} {
-	import sec
-	# Public media (avatars, banners) from MinIO
+# An app vhost body: public media from MinIO at /media/*, everything else to the
+# backend passed as the import arg (e.g. `import appsite app:8000`).
+(appsite) {
 	handle /media/* {
 		uri strip_prefix /media
 		reverse_proxy minio:9000
 	}
-	# The app (everything else)
 	handle {
-		reverse_proxy app:8000
+		reverse_proxy {args[0]}
 	}
 }
 
-# ---- sandbox + staging apps (multi-env pack, same box) ---------------------
-# Only active when SANDBOX_DOMAIN/STAGING_DOMAIN are set AND the app-sandbox/
-# app-staging containers exist (docker-compose.multienv.yml). Otherwise they
-# default to inert in-container loopback addresses and serve nothing.
-{$SANDBOX_DOMAIN:http://localhost:2021} {
+# ---- ONE wildcard vhost: every *.{$BASE_DOMAIN} subdomain, routed by Host -----
+# Caddy mints a single *.{$BASE_DOMAIN} cert (DNS-01) and reuses it for all of
+# these. Add a subdomain by adding a matcher — no new certificate, ever. Hosts
+# left unset in .env fall to an inert *.disabled.invalid default that never matches.
+*.{$BASE_DOMAIN:wolfhold.app} {
 	import sec
-	handle /media/* {
-		uri strip_prefix /media
-		reverse_proxy minio:9000
+
+	# the shared Keycloak — auth.<domain>
+	@auth host {$AUTH_DOMAIN}
+	handle @auth {
+		reverse_proxy keycloak:8080
 	}
+
+	# sandbox app — sandbox.<domain>
+	@sandbox host {$SANDBOX_DOMAIN:sandbox.disabled.invalid}
+	handle @sandbox {
+		import appsite app-sandbox:8000
+	}
+
+	# staging app — staging.<domain>
+	@staging host {$STAGING_DOMAIN:staging.disabled.invalid}
+	handle @staging {
+		import appsite app-staging:8000
+	}
+
+	# public docs (static ./site) — docs.<domain>
+	@docs host {$DOCS_DOMAIN:docs.disabled.invalid}
+	handle @docs {
+		root * /srv/docs
+		file_server
+	}
+
+	# Open WebUI — ai.<domain>
+	@ai host {$OPENWEBUI_DOMAIN:ai.disabled.invalid}
+	handle @ai {
+		reverse_proxy open-webui:8080
+	}
+
+	# default: www.<domain> (and any other subdomain) -> the prod app
 	handle {
-		reverse_proxy app-sandbox:8000
-	}
-}
-{$STAGING_DOMAIN:http://localhost:2022} {
-	import sec
-	handle /media/* {
-		uri strip_prefix /media
-		reverse_proxy minio:9000
-	}
-	handle {
-		reverse_proxy app-staging:8000
+		import appsite app:8000
 	}
 }
 
-# ---- apex → canonical www redirect -----------------------------------------
-# Production sets APEX_DOMAIN=wolfhold.app so bare wolfhold.app 301s to www.
-# Boxes without an apex leave it unset — it defaults to an inert in-container
-# loopback address (never published, never hit), so this block stays valid.
+# ---- apex -> canonical www redirect ----------------------------------------
+# The wildcard does NOT cover the bare apex, so it gets its own DNS-01 cert.
+# Non-prod boxes leave APEX_DOMAIN unset -> inert loopback, serves nothing.
 {$APEX_DOMAIN:http://localhost:2020} {
 	import sec
 	redir https://{$SITE_DOMAIN}{uri} permanent
-}
-
-# ---- public docs site (static, built by MkDocs) ----------------------------
-# Serves the pre-built ./site/ (mounted read-only at /srv/docs by the prod
-# overlay). Static files only — no app, no auth, no proxy. Set DOCS_DOMAIN in
-# .env (e.g. docs.wolfhold.app) to publish; unset, it defaults to an inert
-# in-container loopback address and serves nothing. Build with `make docs-build`
-# BEFORE deploy so ./site/ exists.
-{$DOCS_DOMAIN:http://localhost:2023} {
-	import sec
-	root * /srv/docs
-	file_server
-}
-
-# ---- Open WebUI: the "bring your own brain" AI showcase --------------------
-# One login (Freehold Keycloak) -> your own ChatGPT, brain hosted off-box on
-# Ollama Turbo. Only active when OPENWEBUI_DOMAIN is set AND the open-webui
-# container exists (docker-compose.openwebui.yml). Otherwise it defaults to an
-# inert in-container loopback address and serves nothing. Caddy proxies the
-# streaming/websocket traffic transparently.
-{$OPENWEBUI_DOMAIN:http://localhost:2024} {
-	import sec
-	reverse_proxy open-webui:8080
-}
-
-# ---- the shared Keycloak: the dedicated auth host --------------------------
-# Serve this block on whichever box runs Keycloak. The browser is sent here for
-# login (KC_PUBLIC_URL=https://auth.wolfhold.app), so the token issuer is stable.
-{$AUTH_DOMAIN} {
-	import sec
-	reverse_proxy keycloak:8080
 }

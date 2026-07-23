@@ -13,9 +13,18 @@
 #  public URLs change. One stack, dev to prod.)
 services:
   caddy:
+    # Custom build = stock Caddy + caddy-dns/porkbun, so it can do DNS-01 (wildcard
+    # certs). Overrides the base image. First deploy builds it; `docker compose
+    # build caddy` to rebuild after a Caddy bump.
+    build: ./caddy
+    image: freehold-caddy:prd
     environment:
       SITE_DOMAIN: ${SITE_DOMAIN}      # this box's app host, e.g. sandbox.wolfhold.app
       AUTH_DOMAIN: ${AUTH_DOMAIN}      # the shared Keycloak host, auth.wolfhold.app
+      # --- Wildcard cert via Porkbun DNS-01 (see Caddyfile.prod + caddy/Dockerfile) ---
+      BASE_DOMAIN: ${BASE_DOMAIN:-wolfhold.app}     # registrable domain for *.<domain>
+      PORKBUN_API_KEY: ${PORKBUN_API_KEY:-}         # from Porkbun (API access ON per-domain)
+      PORKBUN_SECRET_KEY: ${PORKBUN_SECRET_KEY:-}
       # Default to the Caddyfile's inert loopback addresses (NOT empty): Caddy
       # treats a set-but-empty {$VAR} as an empty key and crashes the whole
       # config ("server block without any key must be first"). An unset var uses
