@@ -85,6 +85,12 @@
 		reverse_proxy open-webui:8080
 	}
 
+	# tempest dev instance — dev-tempest.<domain> (backend is external; may be down)
+	@devtempest host dev-tempest.{$BASE_DOMAIN:wolfhold.app}
+	handle @devtempest {
+		reverse_proxy tempest-app:8000
+	}
+
 	# default: www.<domain> (and any other subdomain) -> the prod app
 	handle {
 		import appsite app:8000
