@@ -27,6 +27,7 @@ library — the battle-tested house standard.*
 | **`TEST-business-hub-sandbox.html`** | Ready-to-run **sandbox** sheet: SSO login, core screens, and the Business Hub pull→transform→store→record. Run this before promoting to prod. |
 | **`HYPERCARE-PROD.html`** | The **prod hypercare** sheet: run right after every prod deploy — HTTPS, all three logins, the back-button fix, Business Hub, health, `/register`. |
 | **`TEST-audit-log-local.html`** | **Local human-green** sheet for the audit log: every honest action (login · sync · ticket create/move/close · logout) lands in `/audit`, filters work, nothing's editable. Run on `localhost:8443` before committing + promoting. |
+| **`HC-AUDIT-PROD-01.html`** | **Prod hypercare** for the audit log: run right after the prod promote — confirms `/audit` is live on `www.wolfhold.app`, events land, filters work, append-only holds, admin gate holds. |
 | `archive/` | Signed PDFs of completed runs live here. |
 
 ---
