@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Business Hub — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#15120d">
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .steps{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}
+    .step{flex:1 1 140px;padding:12px 14px;border:1px solid var(--line,#4443);border-radius:10px}
+    .step .n{font-size:.75rem;opacity:.6;letter-spacing:.08em;text-transform:uppercase}
+    .step .t{font-weight:600;margin-top:2px}
+    .step .d{font-size:.85rem;opacity:.75;margin-top:4px}
+    .runs{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
+    .runs th,.runs td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line,#4443)}
+    .runs th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;opacity:.6}
+    .runs .num{font-variant-numeric:tabular-nums}
+    .empty{opacity:.6;padding:14px 0}
+    .caveat{margin-top:18px;font-size:.85rem;opacity:.7;border-left:3px solid var(--line,#4443);padding-left:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    {% include "_topbar.html" %}
+
+    <main class="card">
+      <h1>🔌 Business Hub</h1>
+      <p class="lede">Two systems that used to talk by copy-paste, wired to talk by API —
+        on <strong>your</strong> server, with <strong>your</strong> login. Pull the data,
+        reshape it, store a report, log the run. That's a systems integration.</p>
+
+      <div class="steps">
+        <div class="step"><div class="n">1 · Pull</div><div class="t">From the source</div>
+          <div class="d">Read {{ source }} over its API.</div></div>
+        <div class="step"><div class="n">2 · Transform</div><div class="t">Reshape</div>
+          <div class="d">Into clean name · email · company records.</div></div>
+        <div class="step"><div class="n">3 · Store</div><div class="t">Your MinIO</div>
+          <div class="d">A JSON report in self-hosted object storage.</div></div>
+        <div class="step"><div class="n">4 · Record</div><div class="t">Your Postgres</div>
+          <div class="d">A row proving who ran it, and when.</div></div>
+      </div>
+
+      <form class="row" method="post" action="/business-hub/sync" style="margin-top:6px">
+        <button class="btn primary" type="submit">Run sync now</button>
+        <span style="align-self:center;opacity:.7;font-size:.9rem">Signed in as <strong>{{ user.username }}</strong></span>
+      </form>
+
+      <h2 style="margin-top:26px">Run log</h2>
+      {% if runs %}
+      <table class="runs">
+        <thead><tr><th>When</th><th>Source</th><th class="num">Records</th><th>Report</th><th>By</th></tr></thead>
+        <tbody>
+          {% for r in runs %}
+          <tr>
+            <td>{{ r.run_at.strftime('%Y-%m-%d %H:%M:%S') if r.run_at else '—' }}</td>
+            <td>{{ r.source }}</td>
+            <td class="num">{{ r.count }}</td>
+            <td>{% if r.report_key %}<a href="{{ report_url(r.report_key) }}" target="_blank" rel="noopener">{{ r.report_key }}</a>{% else %}—{% endif %}</td>
+            <td>{{ r.run_by }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="empty">No runs yet — hit <strong>Run sync now</strong> and watch a record appear here.</p>
+      {% endif %}
+
+      <p class="caveat">🐺 Honest caveat: the source here is a public demo API standing in for a
+        real client CRM. Swap that one URL for a live system and this exact pack becomes a
+        paid integration — same shape, real data. Nothing left your server.</p>
+
+      <div class="row" style="margin-top:18px">
+        <a class="btn ghost" href="/dashboard">← Dashboard</a>
+      </div>
+    </main>
+  </div>
+  {% include "_footer.html" %}
+</body>
+</html>

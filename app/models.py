@@ -33,6 +33,21 @@ class Profile(Base):
     )
 
 
+class BusinessHubRun(Base):
+    """One row per integration sync — the 'record' step of pull → transform →
+    store → record. Proves the job ran: who ran it, how many records moved, and
+    the key of the report we stashed in MinIO. Swap the source system and this
+    same table logs a real client integration."""
+    __tablename__ = "business_hub_runs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    source: Mapped[str] = mapped_column(String(120), default="")   # the system we pulled from
+    count: Mapped[int] = mapped_column(default=0)                    # records moved
+    report_key: Mapped[str] = mapped_column(String(200), default="") # object key in MinIO
+    run_by: Mapped[str] = mapped_column(String(80), default="anonymous")
+
+
 class Ticket(Base):
     __tablename__ = "tickets"
 
