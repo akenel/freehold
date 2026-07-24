@@ -85,9 +85,17 @@ def test_lists_index_renders():
     for needle in ("Every list is a table that never got a schema",
                    "/lists/upload", "enctype=\"multipart/form-data\"",
                    "Media agency call list", "/lists/recipe/agenturen-2024",
-                   "/lists/draft/" + "a" * 32, "Never the sheet",
+                   "/lists/draft/" + "a" * 32,
+                   # The disclosure must match what analyze.py actually sends.
+                   # This used to pin the phrase "Never the sheet", which was
+                   # false — profile_payload() ships the first three rows whole,
+                   # real cell values and all. A test that pins a wrong promise
+                   # is worse than no test: it defends the lie.
+                   "the first three rows in full",
+                   "nothing leaves at all",
                    "🐺 Honest caveat", "<!--topbar-->", "<!--footer-->"):
         assert needle in html, needle
+    assert "Never the sheet" not in html
 
 
 def test_lists_index_renders_its_empty_states():

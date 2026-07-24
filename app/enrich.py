@@ -85,6 +85,23 @@ def field(value, *, original=None, source="rule", model="",
     }
 
 
+def as_confidence(value) -> float:
+    """A confidence, clamped to 0..1, from whatever the model actually sent.
+
+    `float()` on raw model output is a live grenade: a model that answers
+    `"confidence": "high"` used to raise ValueError out of enrich(), through the
+    caller, and into a 500 — after the recipe was saved and the draft deleted.
+    Unnumberable means zero, which the gate then sends to a human. That is the
+    safe direction to fail."""
+    try:
+        c = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if c != c:                                  # NaN compares unequal to itself
+        return 0.0
+    return max(0.0, min(1.0, c))
+
+
 def gate(confidence: float) -> str:
     """Auto-apply, hand to a human, or bin it. The decision tree, in one line."""
     if confidence >= AUTO_ABOVE:
@@ -415,14 +432,14 @@ async def enrich(records: list[dict], model: str = DEFAULT_MODEL,
         rec["_enriched"][p.target] = field(
             res.get("label", ""), original=" / ".join(
                 str(rec.get(f, "")) for f in p.feed[:2] if rec.get(f)),
-            source="model", model=model, confidence=float(res.get("confidence", 0)),
+            source="model", model=model, confidence=as_confidence(res.get("confidence")),
             prompt_version=PROMPT_VERSION,
         )
         enriched_count += 1
         if res.get("phone_e164"):
             rec["_enriched"]["phone_e164"] = field(
                 res["phone_e164"], original=rec.get(p.phone_field, ""), source="model",
-                model=model, confidence=float(res.get("phone_confidence", 0)),
+                model=model, confidence=as_confidence(res.get("phone_confidence")),
                 prompt_version=PROMPT_VERSION,
             )
 

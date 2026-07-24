@@ -32,6 +32,10 @@ TICKET_CLOSE = "ticket.close"
 LIST_ANALYZE = "list.analyze"
 RECIPE_APPROVE = "recipe.approve"
 LIST_RUN = "list.run"
+# Downloading a customer's original workbook is not "analysing a list". Filing it
+# under LIST_ANALYZE made exports invisible in the cockpit's filter chips, which
+# is precisely the event a provable history most needs to keep separate.
+SOURCE_DOWNLOAD = "list.source_download"
 
 
 async def record(actor: str | None, action: str, target: str = "", **detail) -> None:

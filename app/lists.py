@@ -141,10 +141,27 @@ async def _make_draft(blob: bytes, src_key: str, filename: str, run_by: str,
     return draft
 
 
+def owner_key(src_key: str) -> str:
+    """Where we record who uploaded a source.
+
+    A source outlives its draft — the draft is discarded at approval, but the
+    .xlsx stays so a recipe can be re-run against it. So ownership cannot be read
+    off the draft; it needs its own record, or /lists/source/<key> degenerates
+    into "any logged-in user may download any customer's spreadsheet"."""
+    return f"{src_key}.owner.json"
+
+
+def source_owner(src_key: str) -> str:
+    """Who uploaded this original. Empty string means unknown — treat as denied."""
+    rec = vault.get_json(owner_key(src_key)) or {}
+    return str(rec.get("owner") or "")
+
+
 async def upload(blob: bytes, filename: str, run_by: str,
                  model: str = "", sheet: int = 0) -> dict:
     """Store the original privately, then analyse tab `sheet`. Returns the draft."""
     src_key = vault.put(blob, vault.new_key(vault.SRC, "xlsx"), XLSX_TYPE)
+    vault.put_json({"owner": run_by, "filename": filename}, owner_key(src_key))
     token = secrets.token_hex(16)
     return await _make_draft(blob, src_key, filename, run_by, model, sheet, token)
 
@@ -153,13 +170,18 @@ async def analyze_draft(token: str, sheet: int, model: str, run_by: str) -> dict
     """Re-read a different tab of the SAME stored original, and re-analyse it.
 
     The original is never re-uploaded, so this is also the cheapest honest way to
-    compare two brains on one file: same bytes, same X-ray, different namer."""
+    compare two brains on one file: same bytes, same X-ray, different namer.
+
+    Keeps the ORIGINAL owner. Re-analysing rebuilds the draft from scratch, and
+    stamping the caller as owner let anyone who could POST here take a draft away
+    from the person who uploaded it — and with it the download link to their
+    workbook. The route checks ownership too; this is the second lock."""
     old = draft_load(token)
     if not old:
         return None
     blob = vault.get(old["src_key"])
-    return await _make_draft(blob, old["src_key"], old["filename"], run_by,
-                             model, sheet, token)
+    return await _make_draft(blob, old["src_key"], old["filename"],
+                             old.get("owner") or run_by, model, sheet, token)
 
 
 # --- running an approved recipe -------------------------------------------

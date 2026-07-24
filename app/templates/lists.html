@@ -63,8 +63,10 @@
         </form>
       </div>
       <p style="font-size:.85rem;opacity:.7;margin-top:8px">
-        Only column names, counts and up to five sample values per column ever leave
-        this box. <b>Never the sheet.</b> Pick <em>Rules only</em> and nothing leaves at all —
+        To name your list, the brain you picked is sent the column names, the counts,
+        up to five sample values per column, and <b>the first three rows in full</b> —
+        real cell values, including anything personal that sits in them. The rest of
+        the sheet never leaves. Pick <em>Rules only</em> and <b>nothing leaves at all</b> —
         the page still works, it just names things less gracefully.
       </p>
 
@@ -141,10 +143,11 @@
       {% endif %}
 
       <p class="caveat">🐺 Honest caveat: your file is stored in a private bucket on your own
-        MinIO — no public URL, ever, and the sheet itself is never sent to a model. It has no
-        expiry date and nothing deletes it yet; that's on the list, not done. Any logged-in
-        Freehold user can download an original if they learn its key — this is a
-        single-tenant box, and per-file ownership is phase two.</p>
+        MinIO — no public URL, ever. Only the person who uploaded it can download it, open
+        its draft, re-read it or throw it away; to anyone else the key does not exist. It has
+        no expiry date and nothing deletes it yet — that's on the list, not done. The first
+        three rows do go to the brain you picked when you ask it to read the list; see the
+        note by the upload box.</p>
 
       <div class="row" style="margin-top:18px">
         <a class="btn ghost" href="/business-hub">← Business Hub</a>

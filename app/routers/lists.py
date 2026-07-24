@@ -35,11 +35,29 @@ TOO_BIG = "That file is over 10 MB. Trim it, or split the tabs into two uploads.
 SLOW_ROWS = 1000
 
 
+def _owned(draft, user) -> bool:
+    """One place, so every draft route agrees. A missing draft counts as owned —
+    the caller then renders its own "that draft is gone", which leaks nothing.
+
+    This exists because four routes touch drafts and only two checked. The two
+    that didn't let any logged-in user re-analyse a stranger's draft (which also
+    rewrote the owner, handing over the download link to their workbook) or
+    delete it outright."""
+    if not draft:
+        return True
+    owner = draft.get("owner")
+    return not owner or owner == user.get("username")
+
+
 def _index_context(request: Request, user, error: str = ""):
     return {
         "request": request, "user": user, "error": error,
         "models": enrich.MODELS, "default_model": enrich.DEFAULT_MODEL,
-        "recipes": recipes.index(), "drafts": lists.open_drafts(),
+        # open_drafts() takes an owner and filters on it — calling it bare listed
+        # EVERY user's drafts, and the row template renders the token as a link,
+        # so the page handed out other people's draft tokens to anyone logged in.
+        "recipes": recipes.index(),
+        "drafts": lists.open_drafts(user.get("username", "")),
         "runs": [], "row_limit": recipes.ROW_LIMIT,
         "max_mb": lists.MAX_UPLOAD // (1024 * 1024),
     }
@@ -147,6 +165,9 @@ async def reanalyze(request: Request, token: str, sheet: int = Form(0),
     user = deps.current_user(request)
     if not user:
         return RedirectResponse("/login")
+    if not _owned(lists.draft_load(token), user):
+        return templates.TemplateResponse(
+            "forbidden.html", {"request": request, "user": user}, status_code=403)
     got = await lists.analyze_draft(token, sheet, model, user.get("username", "anonymous"))
     if not got:
         return RedirectResponse("/lists", status_code=303)
@@ -158,6 +179,9 @@ async def discard(request: Request, token: str):
     user = deps.current_user(request)
     if not user:
         return RedirectResponse("/login")
+    if not _owned(lists.draft_load(token), user):
+        return templates.TemplateResponse(
+            "forbidden.html", {"request": request, "user": user}, status_code=403)
     lists.draft_discard(token)
     return RedirectResponse("/lists", status_code=303)
 
@@ -202,12 +226,24 @@ async def approve(request: Request, token: str,
         proposed_by=d.get("stats", {}).get("model", "none"),
         overrides=len(warnings),
     )
-    lists.draft_discard(token)
-
+    # Run FIRST, discard the draft only once it worked. The other order looks
+    # tidier and is quietly destructive: any failure in the run — a model that
+    # answers "confidence": "high", MinIO hiccuping, Postgres away — left the
+    # user with a 500, no draft to retry from, and a saved recipe version they
+    # never saw execute. The draft is cheap; losing it is not.
     if run == "1":
-        blob = vault.get(d["src_key"])
-        await lists.run_recipe(spec, version, blob, d["filename"], who, model)
+        try:
+            blob = vault.get(d["src_key"])
+            await lists.run_recipe(spec, version, blob, d["filename"], who, model)
+        except Exception:  # noqa: BLE001 — keep the draft so the human can retry
+            return templates.TemplateResponse("list_draft.html", _draft_context(
+                request, user, d,
+                f"Recipe {spec['key']} v{version} was saved, but the run failed. "
+                "Your draft is still here — try again, or run it from the recipe page."))
+        lists.draft_discard(token)
         return RedirectResponse("/business-hub", status_code=303)
+
+    lists.draft_discard(token)
     return RedirectResponse(f"/lists/recipe/{spec['key']}", status_code=303)
 
 
@@ -268,18 +304,24 @@ async def rerun(request: Request, key: str):
 
 @router.get("/lists/source/{key:path}")
 async def source(request: Request, key: str):
-    """Download an original. Login required, key allowlisted by regex, audited.
+    """Download an original. Login required, OWNER required, audited.
 
-    The regex is the whole access-control story for the path: an allowlist of the
-    exact shape we mint, not a hunt for '..' in a string. Anything else 404s
-    through the branded handler and tells an attacker nothing."""
+    The regex allowlists the exact key shape we mint rather than hunting for
+    '..', but a shape check is not an access check: this streams back a
+    customer's whole spreadsheet, so it has to know *whose* it is. Ownership is
+    recorded beside the source at upload (lists.owner_key) because the source
+    outlives the draft — the draft is discarded at approval, the .xlsx stays."""
     user = deps.current_user(request)
     if not user:
         return RedirectResponse("/login")
     if not vault.SRC_KEY.fullmatch(key or "") or not vault.exists(key):
         raise HTTPException(status_code=404)
+    owner = lists.source_owner(key)
+    if owner != user.get("username"):
+        # 404, not 403: to anyone but the owner this key does not exist.
+        raise HTTPException(status_code=404)
 
-    await audit.record(user.get("username", "anonymous"), audit.LIST_ANALYZE,
+    await audit.record(user.get("username", "anonymous"), audit.SOURCE_DOWNLOAD,
                        f"downloaded {key}", kind="source_download")
     resp = vault.stream(key)
 

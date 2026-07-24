@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#15120d">
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .empty{opacity:.6;padding:14px 0}
+    .caveat{margin-top:18px;font-size:.85rem;opacity:.7;border-left:3px solid var(--line,#4443);padding-left:12px}
+    .scroll{overflow-x:auto}
+    .facts{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+    .fact{padding:6px 10px;border:1px solid var(--line,#4443);border-radius:999px;font-size:.82rem}
+    .fact b{font-variant-numeric:tabular-nums}
+    .brain{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:6px}
+    .brain select{padding:9px 10px;border-radius:9px;border:1px solid var(--line,#4443);
+      background:transparent;color:inherit;font:inherit;max-width:100%}
+    .runs{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
+    .runs th,.runs td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line,#4443)}
+    .runs th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;opacity:.6}
+    .runs .num{font-variant-numeric:tabular-nums;white-space:nowrap}
+    .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.72rem;
+      letter-spacing:.04em;border:1px solid currentColor;white-space:nowrap}
+    .by-rule{color:#7aa2f7}.by-model{color:#bb9af7}.by-source{opacity:.6}
+    .act{border:1px solid var(--line,#4443);border-radius:10px;padding:12px 14px;margin:8px 0}
+    .find{margin:6px 0;padding-left:2px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <script>
+  // Apply the saved theme immediately (before paint) to avoid a flash.
+  (function(){try{var t=localStorage.getItem('fh-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+  function fhTheme(){var d=document.documentElement,c=d.getAttribute('data-theme')==='light'?'dark':'light';d.setAttribute('data-theme',c);try{localStorage.setItem('fh-theme',c);}catch(e){}var b=document.getElementById('theme-btn');if(b)b.textContent=(c==='light'?'☾':'☀');}
+  document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('theme-btn');if(b)b.textContent=(document.documentElement.getAttribute('data-theme')==='light'?'☾':'☀');});
+</script>
+<header class="nav" id="nav">
+  <a class="brand" href="/"><img src="/static/favicon.svg" alt="">Freehold</a>
+
+  <button class="burger" aria-label="Menu" aria-expanded="false"
+    onclick="var n=document.getElementById('nav');this.setAttribute('aria-expanded',n.classList.toggle('open'))">☰</button>
+
+  <nav class="nav-links">
+    
+    <a href="/tempest">🕹️ Tempest</a>
+    <a href="/sitemap">Map</a>
+    <a href="/manifesto">Manifesto</a>
+  </nav>
+
+  <div class="nav-right">
+    <button id="theme-btn" class="btn ghost sm theme-btn" onclick="fhTheme()" aria-label="Toggle light/dark theme" title="Light / dark">☀</button>
+    <span class="lang"><b>English</b> · <a href="/lang/hi">हिन्दी</a></span>
+    
+      <a class="btn ghost sm" href="/register">Sign up</a>
+      <a class="btn primary sm" href="/login">Log in</a>
+    
+  </div>
+</header>
+
+    <main class="card">
+      <h1>🧾 SAP call campaign</h1>
+      <p class="lede">sap-call-campaign · v1 (current) —
+        approved by <b>angel</b> on 2026-07-24,
+        “first pass”. Spec sha <code>4ac1cdbc93cb</code>.</p>
+
+      
+      <p class="caveat">⚠ What you ticked and what got saved are not identical.
+        <br>• &#39;dedupe&#39; can only run once per recipe — kept the first, dropped the one on why_them<br>• &#39;normalize_phone&#39; can only run once per recipe — kept the first, dropped the one on phone_2</p>
+      
+
+      <div class="facts">
+        <span class="fact">🧱 Actions <b>8</b></span>
+        <span class="fact">🗂 Versions <b>1</b></span>
+        <span class="fact">▶ Runs <b>1</b></span>
+        <span class="fact">🧠 Proposed by <b>none</b></span>
+      </div>
+
+      <h2 style="margin-top:26px">Run it again</h2>
+      <div class="act">
+        <form class="brain" method="post" action="/lists/recipe/sap-call-campaign/run"
+              enctype="multipart/form-data">
+          
+          <div style="flex:1 1 100%;font-size:.9rem">
+            <label style="text-transform:none;letter-spacing:0">
+              <input type="radio" name="src_key" value="src/adf925c6d16d1de0c7739b5e9a870eb1.xlsx" checked>
+              the file this recipe was built from</label>
+          </div>
+          
+          <div style="flex:1 1 100%">
+            <label for="file">…or a new file</label>
+            <input id="file" type="file" name="file" accept=".xlsx">
+          </div>
+          <div style="flex:1 1 100%">
+            <label for="version">Version</label>
+            <select id="version" name="version">
+              
+              <option value="1" selected>
+                v1 (current)</option>
+              
+            </select>
+          </div>
+          <div style="flex:1 1 100%">
+            <label for="model">🧠 Brain</label>
+            <select id="model" name="model">
+              
+              <option value="none" >Rules only (no AI) — the honest baseline</option>
+              
+              <option value="gpt-oss:20b" >gpt-oss 20B — fast, cheap, good enough for tagging</option>
+              
+              <option value="gpt-oss:120b" selected>gpt-oss 120B — the default workhorse</option>
+              
+              <option value="deepseek-v3.1:671b" >DeepSeek V3.1 — heavyweight, slower, sharper</option>
+              
+              <option value="qwen3-coder:480b" >Qwen3 Coder 480B — strong at structured output</option>
+              
+            </select>
+          </div>
+          <button class="btn primary" type="submit">Run</button>
+        </form>
+      </div>
+      <p style="font-size:.85rem;opacity:.7;margin-top:8px">
+        Re-running v1 with a different brain is a fair comparison by
+        construction: same mapping, same spec sha, and the X-ray is deterministic, so not
+        one number can move.
+      </p>
+
+      <h2 style="margin-top:26px">Versions</h2>
+      <div class="scroll">
+        <table class="runs">
+          <thead><tr><th class="num">Ver</th><th>When</th><th>By</th><th>Proposed by</th>
+            <th>Spec sha</th><th>Note</th></tr></thead>
+          <tbody>
+            
+            <tr>
+              <td class="num"><a href="/lists/recipe/sap-call-campaign?version=1">v1</a></td>
+              <td>2026-07-24</td>
+              <td>angel</td>
+              <td><span class="tag by-source">none</span></td>
+              <td><code style="font-size:.78rem">4ac1cdbc93cb</code></td>
+              <td>first pass</td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:.85rem;opacity:.7;margin-top:8px">
+        Two versions with the same spec sha have the <b>same mapping</b> — only the brain
+        that proposed it differed. Different shas mean the mapping itself changed.
+      </p>
+
+      <h2 style="margin-top:26px">The mapping (v1)</h2>
+      <div class="scroll">
+        <table class="runs">
+          <thead><tr><th>Action</th><th>Columns</th><th>Params</th><th>Runs on</th></tr></thead>
+          <tbody>
+            
+            <tr>
+              <td>normalize_phone</td>
+              <td>phone</td>
+              <td style="font-size:.85rem;opacity:.8">
+                —
+              </td>
+              <td><span class="tag by-rule">⚙ rule</span></td>
+            </tr>
+            
+            <tr>
+              <td>reconcile_phones</td>
+              <td>phone, phone_2</td>
+              <td style="font-size:.85rem;opacity:.8">
+                —
+              </td>
+              <td><span class="tag by-rule">⚙ rule</span></td>
+            </tr>
+            
+            <tr>
+              <td>score_quality</td>
+              <td>agency, market, phone</td>
+              <td style="font-size:.85rem;opacity:.8">
+                —
+              </td>
+              <td><span class="tag by-rule">⚙ rule</span></td>
+            </tr>
+            
+            <tr>
+              <td>classify</td>
+              <td>agency, market, lang</td>
+              <td style="font-size:.85rem;opacity:.8">
+                → market_class · 4 allowed values
+                
+              </td>
+              <td><span class="tag by-model">✨ model</span>
+                  </td>
+            </tr>
+            
+            <tr>
+              <td>split_multivalue</td>
+              <td>ask_for</td>
+              <td style="font-size:.85rem;opacity:.8">
+                sep “/”
+                
+              </td>
+              <td><span class="tag by-rule">⚙ rule</span></td>
+            </tr>
+            
+            <tr>
+              <td>split_multivalue</td>
+              <td>market</td>
+              <td style="font-size:.85rem;opacity:.8">
+                sep “/”
+                
+              </td>
+              <td><span class="tag by-rule">⚙ rule</span></td>
+            </tr>
+            
+            <tr>
+              <td>dedupe</td>
+              <td>website</td>
+              <td style="font-size:.85rem;opacity:.8">
+                —
+              </td>
+              <td><span class="tag by-rule">⚙ rule</span></td>
+            </tr>
+            
+            <tr>
+              <td>build_schema</td>
+              <td>—</td>
+              <td style="font-size:.85rem;opacity:.8">
+                sap_calls
+                
+              </td>
+              <td><span class="tag by-rule">⚙ rule</span></td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+
+      <h2 style="margin-top:26px">Runs of this recipe</h2>
+      
+      <div class="scroll">
+        <table class="runs">
+          <thead><tr><th>When</th><th>Brain</th><th class="num">Rows</th>
+            <th class="num">AI-written</th><th class="num">Tokens</th>
+            <th class="num">Review</th><th>Report</th></tr></thead>
+          <tbody>
+            
+            <tr>
+              <td>2026-07-24 18:09</td>
+              <td><span class="tag by-source">none</span></td>
+              <td class="num">45</td>
+              <td class="num">0</td>
+              <td class="num">0</td>
+              <td class="num">0</td>
+              <td><a href="/business-hub/report/abe820d2cc78a9e65a0ebcfaf539a39d.json" target="_blank" rel="noopener">JSON</a></td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+      
+
+      <p class="caveat">🐺 Honest caveat: this compares <b>runs</b>, not answers. Fewer rows held
+        for review is not the same as being more right — a confident model is not a correct
+        model. Open the before→after pane on the Business Hub to look at actual values. And a
+        recipe is never deleted here: the version chain is append-only, like the audit log,
+        because the mapping that ran last March is evidence.</p>
+
+      <div class="row" style="margin-top:18px">
+        <a class="btn ghost" href="/lists">← Lists</a>
+        <a class="btn ghost" href="/business-hub">Business Hub</a>
+      </div>
+    </main>
+  </div>
+  <footer class="site-foot">
+  <nav class="foot-links">
+    <a href="/manifesto">Manifesto</a>
+    <a href="/sitemap">Site map</a>
+    <a href="/terms">Terms</a>
+    <a href="/privacy">Privacy</a>
+    <a href="https://github.com/akenel/freehold" rel="noreferrer">GitHub&nbsp;↗</a>
+  </nav>
+  <div class="foot-status" title="build b5 · 950e92b · 2026-07-03 18:08Z">
+    <span class="pulse ok" id="health-dot"></span>
+    <span class="env">SANDBOX</span>
+    <span class="bld">⚙ b5 · 950e92b</span>
+    <span class="clock" id="clock">--:--:--</span>
+  </div>
+  <div class="foot-brand">🐺 Freehold — own your stack, owe no one · <a href="https://github.com/akenel/freehold" rel="noreferrer">MIT</a></div>
+  <script src="/static/nav.js" defer></script>
+</footer>
+
+
+</body>
+</html>
