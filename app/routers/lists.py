@@ -89,7 +89,13 @@ async def _picked_file(request: Request) -> tuple[bytes, str, dict]:
     picked = form.get("file")
     blob, filename = b"", ""
     if isinstance(picked, FormFile) and picked.filename:
-        blob, filename = await picked.read(), picked.filename
+        # Read at most one byte past the cap, never the whole part. `await
+        # picked.read()` materialises whatever was sent before anyone checks its
+        # size — the limit was applied sixteen lines later, which on a single
+        # worker is a limit that runs after the damage. The caller sees an
+        # over-cap blob and refuses it; we just never hold more than the cap+1.
+        blob = await picked.read(lists.MAX_UPLOAD + 1)
+        filename = picked.filename
     rest = {k: v for k, v in form.items() if k != "file"}
     return blob, filename, rest
 

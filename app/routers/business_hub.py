@@ -7,6 +7,7 @@ Mirrors the profile.py pattern: GET renders, POST acts then redirects back (303)
 so a refresh never re-runs the job.
 """
 import re
+from collections import Counter
 
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, StreamingResponse
@@ -21,6 +22,10 @@ router = APIRouter()
 # The only key shape we mint. An allowlist, not a "../" hunt — a report holds
 # every enriched record in a run, which is to say the customer's contact list.
 _REPORT_KEY = re.compile(r"^[0-9a-f]{32}\.json$")
+
+# Rows per page in the preview. A report can hold 5,000 records; rendering
+# them all is a slow page and an unreadable one.
+PAGE = 50
 
 
 @router.get("/business-hub")
@@ -54,8 +59,57 @@ async def sync(request: Request, model: str = Form(enrich.DEFAULT_MODEL)):
 
 
 @router.get("/business-hub/report/{key}")
+async def report_view(request: Request, key: str, gate: str = "", page: int = 1):
+    """The run report as a LIST, which is what it is.
+
+    It used to hand back raw JSON. That is the correct wire format and a terrible
+    answer to "what did it do to my spreadsheet?" — the one question the whole
+    product exists to answer. Same bytes, rendered: source columns as they came
+    in, enriched columns with the original struck through beside the new value,
+    and every AI-written cell carrying its model and confidence. The JSON is
+    still one click away at /raw for anyone who wants to diff or re-import it."""
+    user = deps.current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    if not _REPORT_KEY.fullmatch(key or ""):
+        raise HTTPException(status_code=404)
+    rep = business_hub.load_report(key)
+    if not rep:
+        raise HTTPException(status_code=404)
+
+    records = rep.get("records") or []
+    if gate in (enrich.AUTO, enrich.REVIEW, enrich.REJECTED):
+        records = [r for r in records if r.get("_gate") == gate]
+
+    page = max(1, page)
+    start = (page - 1) * PAGE
+    shown = records[start:start + PAGE]
+    # Source columns are whatever the records actually carry, minus our own
+    # underscore-prefixed bookkeeping. Order comes from meta.columns when the
+    # spreadsheet channel recorded it, so the preview matches the sheet.
+    enriched_names, source_names = [], list(rep.get("meta", {}).get("columns") or [])
+    for r in records:
+        for k in r:
+            if not k.startswith("_") and k not in source_names:
+                source_names.append(k)
+        for k in (r.get("_enriched") or {}):
+            if k not in enriched_names:
+                enriched_names.append(k)
+
+    counts = Counter(r.get("_gate", "") for r in (rep.get("records") or []))
+    return templates.TemplateResponse("report.html", {
+        "request": request, "user": user, "key": key,
+        "meta": rep.get("meta", {}), "records": shown,
+        "source_names": source_names, "enriched_names": enriched_names,
+        "counts": counts, "gate": gate, "page": page, "per_page": PAGE,
+        "total": len(records), "pages": max(1, (len(records) + PAGE - 1) // PAGE),
+        "auto_above": enrich.AUTO_ABOVE, "review_above": enrich.REVIEW_ABOVE,
+    })
+
+
+@router.get("/business-hub/report/{key}/raw")
 async def report(request: Request, key: str):
-    """The full run report, behind the login. Replaces the old public /media link.
+    """The full run report as JSON, behind the login. The machine-readable half.
 
     load_report() already read through the authenticated MinIO client, so nothing
     on the page ever needed the bucket to be world-readable — the public policy

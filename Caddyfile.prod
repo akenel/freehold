@@ -38,6 +38,14 @@
 # An app vhost body: public images from MinIO at /media/freehold/*, everything else to the
 # backend passed as the import arg (e.g. `import appsite app:8000`).
 (appsite) {
+	# Bound the request body at the front door. Starlette spools a multipart part
+	# to disk while parsing, BEFORE any handler sees its size — so a 10 GB POST
+	# fills the disk no matter how careful the app is. 12 MB leaves headroom over
+	# the app's own 10 MiB upload cap for the multipart envelope.
+	request_body {
+		max_size 12MB
+	}
+
 	# Scoped to the IMAGES bucket. A bare /media/* proxies ANY MinIO bucket with
 	# no auth, on every vhost that imports this snippet — which would put run
 	# reports and uploaded spreadsheets on the public internet. Both are now

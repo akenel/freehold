@@ -25,6 +25,14 @@ localhost {
 		reverse_proxy keycloak:8080
 	}
 
+	# Bound the request body at the front door. Starlette spools a multipart part
+	# to disk while parsing, BEFORE any handler sees its size — so a 10 GB POST
+	# fills the disk no matter how careful the app is. 12 MB leaves headroom over
+	# the app's own 10 MiB upload cap for the multipart envelope.
+	request_body {
+		max_size 12MB
+	}
+
 	# Public media (avatars, banners) served from MinIO.
 	# Scoped to the IMAGES bucket on purpose: a bare /media/* proxies ANY bucket,
 	# so any future bucket is on the internet the moment it exists. Reports and

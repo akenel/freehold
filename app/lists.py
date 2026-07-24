@@ -107,6 +107,11 @@ def _tab_headers(blob: bytes, names: list[str]) -> list[dict]:
     for i, name in enumerate(names[:MAX_TABS]):
         try:
             fields, _rows = inbound.read_xlsx(blob, sheet=i, limit=1)
+        except inbound.TooBig:
+            # One tab over the decompression cap means the whole workbook is
+            # over it — sharedStrings is shared. Stop rather than re-inflating
+            # the same bomb another eleven times.
+            break
         except Exception:  # noqa: BLE001 — a tab we can't read is still a tab
             fields = []
         out.append({"index": i, "name": name, "headers": fields[:8]})

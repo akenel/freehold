@@ -39,6 +39,21 @@
     .by-rule{color:#7aa2f7}.by-model{color:#bb9af7}.by-source{opacity:.6}
     .g-auto{color:#7fcf9a}.g-review{color:#e0af68}.g-rejected{color:#f7768e}
     .scroll{overflow-x:auto}
+    /* --- run log as cards: a 9-column table needed sideways scrolling to reach
+       the one link that mattered. Cards wrap, and the whole card IS the link. --- */
+    .runcards{display:grid;gap:10px;margin-top:10px;
+      grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+    .runcard{display:block;padding:13px 15px;border:1px solid var(--line,#4443);
+      border-radius:12px;text-decoration:none;color:inherit}
+    .runcard:hover{border-color:currentColor}
+    .rc-top{display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .rc-src{font-weight:600;overflow-wrap:anywhere}
+    .rc-when{opacity:.6;font-size:.82rem;margin-top:3px}
+    .rc-stats{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:9px;font-size:.85rem;opacity:.85}
+    .rc-stats b{font-variant-numeric:tabular-nums}
+    .rc-review{color:#e0af68}
+    .rc-open{margin-top:9px;font-size:.83rem;opacity:.7}
+    .runcard:hover .rc-open{opacity:1}
   </style>
 </head>
 <body>
@@ -136,27 +151,23 @@
 
       <h2 style="margin-top:26px">Run log</h2>
       {% if runs %}
-      <div class="scroll">
-      <table class="runs">
-        <thead><tr><th>When</th><th>Source</th><th class="num">Records</th><th>Brain</th>
-          <th class="num">Enriched</th><th class="num">Tokens</th><th class="num">Review</th>
-          <th>Report</th><th>By</th></tr></thead>
-        <tbody>
-          {% for r in runs %}
-          <tr>
-            <td>{{ r.run_at.strftime('%Y-%m-%d %H:%M:%S') if r.run_at else '—' }}</td>
-            <td>{{ r.source }}</td>
-            <td class="num">{{ r.count }}</td>
-            <td><span class="tag {{ 'by-model' if r.model and r.model != 'none' else 'by-source' }}">{{ r.model or 'none' }}</span></td>
-            <td class="num">{{ r.enriched_count }}</td>
-            <td class="num">{{ r.tokens }}</td>
-            <td class="num">{{ r.review_count }}</td>
-            <td>{% if r.report_key %}<a href="{{ report_url(r.report_key) }}" target="_blank" rel="noopener">{{ r.report_key }}</a>{% else %}—{% endif %}</td>
-            <td>{{ r.run_by }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="runcards">
+        {% for r in runs %}
+        <a class="runcard" href="{{ report_url(r.report_key) }}">
+          <div class="rc-top">
+            <span class="rc-src">{{ r.source }}</span>
+            <span class="tag {{ 'by-model' if r.model and r.model != 'none' else 'by-source' }}">🧠 {{ r.model or 'none' }}</span>
+          </div>
+          <div class="rc-when">{{ r.run_at.strftime('%Y-%m-%d %H:%M') if r.run_at else '—' }} · {{ r.run_by }}</div>
+          <div class="rc-stats">
+            <span><b>{{ r.count }}</b> records</span>
+            <span><b>{{ r.enriched_count }}</b> AI-written</span>
+            <span><b>{{ r.tokens }}</b> tokens</span>
+            {% if r.review_count %}<span class="rc-review"><b>{{ r.review_count }}</b> to review</span>{% endif %}
+          </div>
+          <div class="rc-open">{% if r.report_key %}Open the result →{% else %}No report{% endif %}</div>
+        </a>
+        {% endfor %}
       </div>
       {% else %}
       <p class="empty">No runs yet — hit <strong>Run sync now</strong> and watch a record appear here.</p>
