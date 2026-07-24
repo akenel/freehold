@@ -174,3 +174,27 @@ def test_profile_from_and_run_agree_on_the_namespaced_key():
     p, override = actions.profile_from(spec)
     assert p.key == "_recipe:agenturen-2024:3" and override == "none"
     assert p.key not in enrich.PROFILES          # only registered for the length of a run
+
+
+def test_a_column_action_with_no_columns_is_dropped_not_saved_as_a_noop():
+    """A recipe that claims to normalize phones and doesn't is a lie in the
+    artefact. Found by driving the form with the wrong token shape: the action
+    id alone (no ":col" suffix) produced an action with columns=[] that was
+    saved, ran, changed nothing, and reported success."""
+    spec = recipes.build(XR, {"actions": []}, {
+        "key": "t", "label": "T",
+        # every scope except `table`, all without the ":cols" suffix
+        "actions": ["normalize_phone", "reconcile_phones", "dedupe",
+                    "parse_dates", "validate_email"],
+    })
+    assert [a["id"] for a in spec["actions"]] == []
+
+    # build_schema is genuinely list-scoped and keeps its empty column list.
+    spec = recipes.build(XR, {"actions": []}, {
+        "key": "t", "label": "T", "actions": ["build_schema"]})
+    assert [a["id"] for a in spec["actions"]] == ["build_schema"]
+
+    # ...while the shape the template actually submits still works.
+    spec = recipes.build(XR, {"actions": []}, {
+        "key": "t", "label": "T", "actions": ["normalize_phone:telefon"]})
+    assert [(a["id"], a["columns"]) for a in spec["actions"]] == [("normalize_phone", ["telefon"])]

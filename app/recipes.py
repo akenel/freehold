@@ -113,6 +113,13 @@ def build(xr: dict, analysis: dict, form: dict) -> dict:
             params = {"table": actions.ident(form.get("schema_table")
                                              or slug(form.get("key", "")).replace("-", "_"),
                                              "list_table")}
+        # A column-scoped action with no columns is a no-op that still writes
+        # itself into the recipe — so the saved spec claims to normalize phones
+        # and then doesn't. Silence is the problem: the run looks successful and
+        # the artefact lies. Drop it instead; build_schema is genuinely
+        # list-scoped and keeps its empty column list.
+        if not cols and actions.ACTIONS[aid].get("scope") != "table":
+            continue
         acts.append({"id": aid, "columns": cols, "params": params})
 
     semantics = {}
