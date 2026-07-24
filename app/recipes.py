@@ -330,10 +330,17 @@ async def run(spec: dict, records: list[dict], model: str = enrich.DEFAULT_MODEL
     # set purely so reconcile_phones has a left-hand side. If nobody ticked
     # those actions, take the fields back out: "nothing runs that you didn't
     # tick" has to be literally true, not nearly true.
+    dropped_quality = "score_quality" not in ids
     for aid, key in (("score_quality", "quality"), ("normalize_phone", "phone_e164")):
         if aid not in ids:
             for rec in out:
                 rec["_enriched"].pop(key, None)
+    # The gate reads the quality score (enrich.gate_for). If we just removed that
+    # field because nobody ticked score_quality, re-derive the gate so it isn't
+    # justified by a number the row no longer carries.
+    if dropped_quality:
+        for rec in out:
+            rec["_gate"] = enrich.gate_for(rec)
 
     action_stats: dict[str, dict] = {}
     schema_sql = ""

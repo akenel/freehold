@@ -109,6 +109,30 @@ def gate(confidence: float) -> str:
     return REVIEW if confidence >= REVIEW_ABOVE else REJECTED
 
 
+# Below this completeness a row barely looks like a record. The footer somebody
+# typed at the bottom of a spreadsheet — "TOTALS", "Best time to call" — scores
+# near zero here, and it must NOT sail through as green/auto just because no model
+# touched it. This is the seam that separates records from notes.
+RECORD_FLOOR = 0.40
+
+
+def gate_for(rec: dict) -> str:
+    """The human-attention gate for one enriched record.
+
+    Two things earn a second look: a model wrote something it wasn't sure of, OR
+    the row is too empty to be a real record. Both mean 'a human should see this
+    before it becomes master data'. Confidence alone missed the second one — on a
+    rules-only run every row is auto by definition, so a page of footer junk used
+    to show up under '✅ Applied' with nothing flagged."""
+    confs = [f["confidence"] for f in rec["_enriched"].values() if f.get("source") == "model"]
+    g = gate(min(confs)) if confs else AUTO
+    if g == AUTO:
+        q = rec.get("_enriched", {}).get("quality", {}).get("value")
+        if isinstance(q, dict) and q.get("score", 1.0) < RECORD_FLOOR:
+            g = REVIEW
+    return g
+
+
 # --- step 1: the rules (deterministic, free, boring, correct) --------------
 _EXT = re.compile(r"\s*(x|ext\.?|extension)\s*\d+", re.I)
 # A phone-ish run of characters. Deliberately greedy about separators (real
@@ -443,10 +467,9 @@ async def enrich(records: list[dict], model: str = DEFAULT_MODEL,
                 prompt_version=PROMPT_VERSION,
             )
 
-    # The gate: a record is only as trustworthy as its least-confident AI field.
+    # The gate: least-confident AI field, or too-empty-to-be-a-record. See gate_for.
     for rec in out:
-        confs = [f["confidence"] for f in rec["_enriched"].values() if f["source"] == "model"]
-        rec["_gate"] = gate(min(confs)) if confs else AUTO
+        rec["_gate"] = gate_for(rec)
 
     stats = {
         "profile": p.key,

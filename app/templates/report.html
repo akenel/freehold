@@ -12,35 +12,39 @@
     .facts{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
     .fact{padding:6px 10px;border:1px solid var(--line,#4443);border-radius:999px;font-size:.82rem}
     .fact b{font-variant-numeric:tabular-nums}
-    .chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 6px}
+    .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0 6px}
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
     .chip{padding:6px 12px;border:1px solid var(--line,#4443);border-radius:999px;
-      font-size:.83rem;text-decoration:none;color:inherit;opacity:.75}
+      font-size:.83rem;text-decoration:none;color:inherit;opacity:.72}
     .chip:hover{opacity:1;border-color:currentColor}
     .chip.on{opacity:1;font-weight:600;border-color:currentColor}
-    .chip.g-auto{color:#7fcf9a}.chip.g-review{color:#e0af68}.chip.g-rejected{color:#f7768e}
-    .tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:.7rem;
-      letter-spacing:.03em;border:1px solid currentColor;white-space:nowrap}
-    .by-rule{color:#7aa2f7}.by-model{color:#bb9af7}.by-source{opacity:.55}
-    .g-auto{color:#7fcf9a}.g-review{color:#e0af68}.g-rejected{color:#f7768e}
-    /* --- the list, as a list of cards. No horizontal scrolling, ever. --- */
-    .rec{border:1px solid var(--line,#4443);border-radius:12px;padding:14px 16px;margin:12px 0}
-    .rec.review{border-left:3px solid #e0af68}
-    .rec.rejected{border-left:3px solid #f7768e}
-    .rec.auto{border-left:3px solid #7fcf9a}
-    .rec h3{margin:0 0 2px;font-size:1rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .rec .n{opacity:.45;font-variant-numeric:tabular-nums;font-weight:400;font-size:.85rem}
-    .kv{display:grid;grid-template-columns:minmax(110px,auto) 1fr;gap:4px 14px;
-      margin-top:10px;font-size:.9rem}
-    .kv dt{opacity:.6;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .kv dd{margin:0;overflow-wrap:anywhere}
-    .was{opacity:.55;text-decoration:line-through;margin-right:6px}
-    .now{font-weight:600}
-    .prov{opacity:.7;font-size:.78rem;margin-left:8px;white-space:nowrap}
-    .src{opacity:.55;font-size:.82rem;margin-top:2px}
-    .pager{display:flex;gap:10px;align-items:center;margin-top:18px;flex-wrap:wrap}
+    .chip.g-auto{color:#3f9d63}.chip.g-review{color:#b5851f}.chip.g-rejected{color:#c0392b}
+    .dl{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+    .dl .btn.sm{padding:6px 12px}
+    /* --- the grid: one bounded, scrollable box. The PAGE never scrolls
+       sideways and the header never leaves — that's what makes a 5,000-row
+       list usable instead of an endless card fall. --- */
+    .gridbox{margin-top:12px;border:1px solid var(--line,#4443);border-radius:12px;
+      overflow:auto;max-height:70vh}
+    table.grid{border-collapse:separate;border-spacing:0;font-size:.86rem;white-space:nowrap}
+    table.grid th,table.grid td{padding:7px 11px;border-bottom:1px solid var(--line,#4443);
+      text-align:left;max-width:280px;overflow:hidden;text-overflow:ellipsis}
+    table.grid thead th{position:sticky;top:0;z-index:2;background:var(--card,#1b1712);
+      font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;opacity:.85}
+    table.grid thead th.enr{color:#bb9af7}
+    table.grid tbody tr:hover td{background:#8881}
+    /* the gate cell is frozen to the left so you never lose which row is what */
+    table.grid .gate{position:sticky;left:0;z-index:1;background:var(--card,#1b1712)}
+    table.grid tbody tr:hover .gate{background:#2a241c}
+    .pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.72rem;
+      font-weight:600;border:1px solid currentColor}
+    .g-auto{color:#3f9d63}.g-review{color:#b5851f}.g-rejected{color:#c0392b}
+    /* a cell the pipeline changed: subtle left mark + the before/after on hover */
+    td.chg{border-left:2px solid #bb9af7}
+    td.chg .was{opacity:.5;text-decoration:line-through;margin-right:5px;font-size:.8em}
+    .pager{display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap}
     .empty{opacity:.6;padding:14px 0}
-    @media (max-width:520px){ .kv{grid-template-columns:1fr} .kv dt{margin-top:6px} }
+    .note{font-size:.83rem;opacity:.7;margin-top:8px}
   </style>
 </head>
 <body>
@@ -49,8 +53,8 @@
 
     <main class="card">
       <h1>📄 Run result</h1>
-      <p class="lede">{{ meta['source'] or 'A run' }} — what actually happened to each row.
-        The original is kept beside every change, so nothing here is a one-way door.</p>
+      <p class="lede">{{ meta['source'] or 'A run' }} — every row, and what happened to it.
+        Hover a marked cell to see the original. Download it back in the shape you sent it.</p>
 
       <div class="facts">
         <span class="fact">🧠 Brain <b>{{ meta['model'] or 'none' }}</b></span>
@@ -59,76 +63,73 @@
         <span class="fact">✨ AI-written rows <b>{{ meta['enriched_count'] }}</b></span>
         <span class="fact">🎫 Tokens <b>{{ meta['tokens'] }}</b></span>
         <span class="fact">🕓 {{ meta['run_at'] }}</span>
-        <span class="fact">👤 {{ meta['run_by'] }}</span>
       </div>
       {% if meta['note'] %}
-      <p class="caveat">🧠 The brain didn't answer, so this ran on rules alone —
-        <strong>{{ meta['note'] }}</strong>. Everything below is still complete and
-        provenanced; it just has no AI-written fields.</p>
+      <p class="note">🧠 Ran on rules alone — <strong>{{ meta['note'] }}</strong>. Complete and
+        provenanced, just no AI-written fields.</p>
       {% endif %}
 
-      <div class="chips">
-        <a class="chip {% if not gate %}on{% endif %}" href="?">All <b>{{ meta['count'] }}</b></a>
-        <a class="chip g-auto {% if gate == 'auto' %}on{% endif %}" href="?gate=auto">✅ Applied <b>{{ counts['auto'] }}</b></a>
-        <a class="chip g-review {% if gate == 'review' %}on{% endif %}" href="?gate=review">🙋 Needs review <b>{{ counts['review'] }}</b></a>
-        <a class="chip g-rejected {% if gate == 'rejected' %}on{% endif %}" href="?gate=rejected">⛔ Rejected <b>{{ counts['rejected'] }}</b></a>
+      <div class="bar">
+        <div class="chips">
+          <a class="chip {% if not gate %}on{% endif %}" href="?">All <b>{{ meta['count'] }}</b></a>
+          <a class="chip g-auto {% if gate == 'auto' %}on{% endif %}" href="?gate=auto">✅ Applied <b>{{ counts['auto'] }}</b></a>
+          <a class="chip g-review {% if gate == 'review' %}on{% endif %}" href="?gate=review">🙋 Review <b>{{ counts['review'] }}</b></a>
+          <a class="chip g-rejected {% if gate == 'rejected' %}on{% endif %}" href="?gate=rejected">⛔ Rejected <b>{{ counts['rejected'] }}</b></a>
+        </div>
+        <div class="dl">
+          <a class="btn primary sm" href="/business-hub/report/{{ key }}/export">⤓ Cleaned {{ default_fmt|upper }}</a>
+          {% for f in other_fmts %}<a class="btn ghost sm" href="/business-hub/report/{{ key }}/export?fmt={{ f }}">{{ f|upper }}</a>{% endfor %}
+          <a class="btn ghost sm" href="/business-hub/report/{{ key }}/raw" target="_blank" rel="noopener">JSON</a>
+        </div>
       </div>
-      <p style="font-size:.84rem;opacity:.7;margin:4px 0 0">
-        The gate: ≥ {{ auto_above }} confidence applies automatically, ≥ {{ review_above }}
-        waits for a human, below that is rejected. Rules are always 1.00 — they don't guess.
-      </p>
+      <p class="note">The download echoes what you uploaded — spreadsheet in, spreadsheet out —
+        with a frozen header, filters, a coloured <b>Gate</b> column and the rows that need review
+        on their own tab.</p>
 
       {% if records %}
-        {% for r in records %}
-        <article class="rec {{ r['_gate'] }}">
-          <h3>
-            <span>{{ r['_label'] or r[source_names[0]] if source_names else '—' }}</span>
-            <span class="tag g-{{ r['_gate'] }}">{{ r['_gate'] }}</span>
-            <span class="n">#{{ loop.index + (page - 1) * per_page }}</span>
-          </h3>
-
-          <div class="src">
-            {%- for c in source_names[:6] %}{% if r[c] %}<b>{{ c }}</b> {{ r[c]|truncate(60) }}{% if not loop.last %} · {% endif %}{% endif %}{% endfor -%}
-          </div>
-
-          {% if r['_enriched'] %}
-          <dl class="kv">
-            {% for name, f in r['_enriched'].items() %}
-            <dt>{{ name }}</dt>
-            <dd>
-              {% if f['original'] %}<span class="was">{{ f['original']|truncate(70) }}</span>{% endif %}
-              <span class="now">
-                {%- if f['value'] is mapping -%}
-                  {%- if 'score' in f['value'] -%}
-                    {{ f['value']['score'] }}{% if f['value']['missing'] %} · missing: {{ f['value']['missing']|join(', ') }}{% endif %}
-                  {%- elif 'status' in f['value'] -%}
-                    {{ f['value']['status'] }}
-                  {%- else -%}{{ f['value'] }}{%- endif -%}
-                {%- else -%}{{ f['value'] }}{%- endif -%}
-              </span>
-              <span class="prov">
-                <span class="tag by-{{ f['source'] }}">{{ f['source'] }}{% if f['model'] %} · {{ f['model'] }}{% endif %}</span>
-                {{ '%.2f'|format(f['confidence']) }}
-              </span>
-            </dd>
+      <div class="gridbox">
+        <table class="grid">
+          <thead><tr>
+            <th class="gate">Gate</th>
+            {% for c in source_names %}<th>{{ c }}</th>{% endfor %}
+            {% for e in enriched_names %}<th class="enr">✦ {{ e }}</th>{% endfor %}
+          </tr></thead>
+          <tbody>
+            {% for r in records %}
+            <tr>
+              <td class="gate"><span class="pill g-{{ r['_gate'] }}">{{ r['_gate'] }}</span></td>
+              {% for c in source_names %}<td title="{{ r[c] }}">{{ r[c]|string|truncate(48) }}</td>{% endfor %}
+              {% for e in enriched_names %}
+                {% set f = r['_enriched'].get(e) %}
+                {% if f %}
+                  {% set disp = f['value']['score'] if f['value'] is mapping and 'score' in f['value']
+                                else (f['value']['status'] if f['value'] is mapping and 'status' in f['value']
+                                else f['value']) %}
+                  <td class="{% if f['original'] %}chg{% endif %}"
+                      title="{% if f['original'] %}was: {{ f['original'] }} · {% endif %}{{ f['source'] }}{% if f['model'] %} {{ f['model'] }}{% endif %} · {{ '%.2f'|format(f['confidence']) }}">
+                    {% if f['original'] %}<span class="was">{{ f['original']|string|truncate(20) }}</span>{% endif %}{{ disp|string|truncate(40) }}
+                  </td>
+                {% else %}<td>—</td>{% endif %}
+              {% endfor %}
+            </tr>
             {% endfor %}
-          </dl>
-          {% endif %}
-        </article>
-        {% endfor %}
+          </tbody>
+        </table>
+      </div>
 
-        <div class="pager">
-          {% if page > 1 %}<a class="btn ghost" href="?gate={{ gate }}&page={{ page - 1 }}">← Previous</a>{% endif %}
-          <span style="opacity:.7;font-size:.9rem">Page {{ page }} of {{ pages }} · {{ total }} rows</span>
-          {% if page < pages %}<a class="btn ghost" href="?gate={{ gate }}&page={{ page + 1 }}">Next →</a>{% endif %}
-        </div>
+      <div class="pager">
+        {% if page > 1 %}<a class="btn ghost sm" href="?gate={{ gate }}&page={{ page - 1 }}">← Previous</a>{% endif %}
+        <span style="opacity:.7;font-size:.9rem">Page {{ page }} of {{ pages }} · showing {{ records|length }} of {{ total }} rows</span>
+        {% if page < pages %}<a class="btn ghost sm" href="?gate={{ gate }}&page={{ page + 1 }}">Next →</a>{% endif %}
+      </div>
+      <p class="note">Preview is {{ per_page }} rows a page and the columns are trimmed to fit.
+        The download has every row and every character.</p>
       {% else %}
-        <p class="empty">Nothing in this bucket.</p>
+      <p class="empty">Nothing in this bucket.</p>
       {% endif %}
 
       <div class="row" style="margin-top:22px">
         <a class="btn ghost" href="/business-hub">← Run log</a>
-        <a class="btn ghost" href="/business-hub/report/{{ key }}/raw" target="_blank" rel="noopener">⤓ Raw JSON</a>
       </div>
     </main>
   </div>

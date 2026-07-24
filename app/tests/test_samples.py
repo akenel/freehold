@@ -106,6 +106,23 @@ def test_the_whole_enrichment_runs_on_every_sample_without_a_brain():
         assert len(out) == len(recs), name
         assert stats["model"] == "none" and stats["enriched_count"] == 0, name
         for r in out:
-            assert r["_gate"] == enrich.AUTO, name       # nothing AI-written to doubt
+            assert r["_gate"] in (enrich.AUTO, enrich.REVIEW), name
             for f in r["_enriched"].values():
                 assert f["source"] in ("rule", "source"), name
+
+
+def test_footer_rows_are_gated_for_review_not_silently_applied():
+    """The bug this fixes shipped to sandbox: a page of footer junk — PROGRESS,
+    'Best time to call', a person's own margin notes — all scored ~0.12 by quality
+    and all gated 'auto', i.e. green/applied, review_count 0. The X-ray SAW them
+    (a 'trailer' finding) but nothing acted on it. Now completeness drives the
+    gate: a row too empty to be a record is handed to a human."""
+    _fields, recs = _read("3-notes-in-the-data")
+    out, stats = asyncio.run(enrich.enrich(recs, model="none", profile="call_list"))
+
+    reviewed = [r["agency"] for r in out if r["_gate"] == enrich.REVIEW]
+    applied = [r["agency"] for r in out if r["_gate"] == enrich.AUTO]
+    # the three real agencies pass; the five note rows are held for a human
+    assert set(applied) == {"Alpina AG", "Bernina GmbH", "Cervin SA"}
+    assert len(reviewed) == 5
+    assert stats["review_count"] == 5

@@ -360,6 +360,13 @@ def build_schema(spec: dict, xr: dict) -> str:
     sem = spec.get("semantics", {})
     cols = xr.get("columns", {})
 
+    # A footer contaminates uniqueness: "TOTALS", "Best time to call" and your
+    # own margin notes are each a distinct string, so a column reads as unique
+    # "in every row" only because the junk rows are junk-unique. Declaring that a
+    # PRIMARY KEY makes a sentence the identity of your table. If the sheet has a
+    # detected trailer, we still name the key candidate but hold the PRIMARY KEY
+    # back until those rows are gone.
+    trailer = bool(xr.get("trailer_rows"))
     key_col = next((c for c in sem if cols.get(c, {}).get("is_key")), "")
     # A column the recipe parses into a real date is a DATE, whatever the
     # semantic says. Excel handed it to us as the number 45231; declaring that
@@ -371,8 +378,14 @@ def build_schema(spec: dict, xr: dict) -> str:
              "-- Reviewed by a human before it means anything. Freehold does not run this.",
              f"CREATE TABLE {table} ("]
     body: list[str] = []
-    if not key_col:
+    if not key_col or trailer:
+        # No clean key (or a contaminated one) → give the table a synthetic key
+        # and don't pretend a data column is unique.
         body.append("  id            SERIAL PRIMARY KEY")
+    if key_col and trailer:
+        lines.insert(2, f"-- NOTE: '{key_col}' looks unique, but this sheet has footer/"
+                        f"note rows mixed in — remove those first, then '{key_col}' can be "
+                        f"the PRIMARY KEY instead of the synthetic id.")
 
     for col, meta in sem.items():
         c = cols.get(col, {})
@@ -383,7 +396,7 @@ def build_schema(spec: dict, xr: dict) -> str:
                (_SQL_TYPE.get(semantic, "") if semantic != "unknown" else "")
                or _RULE_TYPE.get(c.get("rule_type", ""), "TEXT"))
         parts = [f"  {ident(col, 'c'):<13} {sql}"]
-        if col == key_col:
+        if col == key_col and not trailer:
             parts.append("PRIMARY KEY")
         elif c.get("fill") == 1.0 and not c.get("is_empty"):
             parts.append("NOT NULL")

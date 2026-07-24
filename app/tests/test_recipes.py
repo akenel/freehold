@@ -198,3 +198,28 @@ def test_a_column_action_with_no_columns_is_dropped_not_saved_as_a_noop():
     spec = recipes.build(XR, {"actions": []}, {
         "key": "t", "label": "T", "actions": ["normalize_phone:telefon"]})
     assert [(a["id"], a["columns"]) for a in spec["actions"]] == [("normalize_phone", ["telefon"])]
+
+
+def test_build_schema_withholds_primary_key_when_a_footer_pollutes_uniqueness():
+    """The bug shipped to sandbox: the SAP list's 'agency' column read as unique
+    'in every row' only because the footer rows were unique sentences, so the
+    schema declared `agency TEXT PRIMARY KEY` — a note as the table's identity.
+    With a trailer detected, the key candidate is named in a comment and the
+    table gets a synthetic id instead."""
+    import actions
+    fields = ["agency", "phone"]
+    rows = [{"agency": "Alpina AG", "phone": "+41445551234"},
+            {"agency": "Bernina GmbH", "phone": "+41315559876"},
+            {"agency": "TOTALS", "phone": ""},          # the footer
+            {"agency": "Best time to call: Tue-Thu", "phone": ""}]
+    xr = xray.xray(fields, rows, "list.xlsx", "Sheet1")
+    assert xr["trailer_rows"], "the fixture must actually have a detected footer"
+
+    spec = {"key": "agencies", "label": "Agencies",
+            "semantics": {"agency": {"semantic": "company_name"}, "phone": {"semantic": "phone"}},
+            "actions": [{"id": "build_schema", "columns": [], "params": {"table": "agencies"}}]}
+    sql = actions.build_schema(spec, xr)
+    assert "id            SERIAL PRIMARY KEY" in sql     # synthetic key
+    assert "agency        TEXT NOT NULL" in sql          # agency is a column, NOT the key
+    assert "agency        TEXT PRIMARY KEY" not in sql   # the exact bug we shipped
+    assert "-- NOTE" in sql and "footer" in sql          # and we say why, in the file

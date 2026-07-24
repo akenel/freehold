@@ -15,6 +15,7 @@ from fastapi.responses import RedirectResponse, StreamingResponse
 import business_hub
 import deps
 import enrich
+import export
 from deps import templates
 
 router = APIRouter()
@@ -97,6 +98,8 @@ async def report_view(request: Request, key: str, gate: str = "", page: int = 1)
                 enriched_names.append(k)
 
     counts = Counter(r.get("_gate", "") for r in (rep.get("records") or []))
+    default_fmt = export.default_format(rep)
+    other_fmts = [f for f in ("xlsx", "csv") if f != default_fmt]
     return templates.TemplateResponse("report.html", {
         "request": request, "user": user, "key": key,
         "meta": rep.get("meta", {}), "records": shown,
@@ -104,7 +107,37 @@ async def report_view(request: Request, key: str, gate: str = "", page: int = 1)
         "counts": counts, "gate": gate, "page": page, "per_page": PAGE,
         "total": len(records), "pages": max(1, (len(records) + PAGE - 1) // PAGE),
         "auto_above": enrich.AUTO_ABOVE, "review_above": enrich.REVIEW_ABOVE,
+        "default_fmt": default_fmt, "other_fmts": other_fmts,
     })
+
+
+@router.get("/business-hub/report/{key}/export")
+async def report_export(request: Request, key: str, fmt: str = ""):
+    """The cleaned list, in the format they want — default: the format they gave.
+
+    This is the actual deliverable. /raw hands back the wire JSON; this renders
+    the same report into a polished workbook (frozen header, autofilter, a
+    coloured Gate column, a review-queue tab) or a flat csv. See export.py."""
+    user = deps.current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    if not _REPORT_KEY.fullmatch(key or ""):
+        raise HTTPException(status_code=404)
+    rep = business_hub.load_report(key)
+    if not rep:
+        raise HTTPException(status_code=404)
+
+    fmt = fmt or export.default_format(rep)
+    if fmt not in export.FORMATS:
+        raise HTTPException(status_code=404)
+    blob, mime = export.render(rep, fmt)
+
+    stem = re.sub(r"[^A-Za-z0-9_.-]+", "-",
+                  (rep.get("meta", {}).get("source") or "list").rsplit(".", 1)[0])[:60] or "list"
+    name = f"{stem}-cleaned.{fmt}"
+    return StreamingResponse(
+        iter((blob,)), media_type=mime,
+        headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
 
 @router.get("/business-hub/report/{key}/raw")
