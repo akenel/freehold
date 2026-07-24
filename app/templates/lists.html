@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lists — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#15120d">
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .empty{opacity:.6;padding:14px 0}
+    .caveat{margin-top:18px;font-size:.85rem;opacity:.7;border-left:3px solid var(--line,#4443);padding-left:12px}
+    .scroll{overflow-x:auto}
+    .brain{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:6px}
+    .brain select{padding:9px 10px;border-radius:9px;border:1px solid var(--line,#4443);
+      background:transparent;color:inherit;font:inherit;max-width:100%}
+    .runs{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
+    .runs th,.runs td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line,#4443)}
+    .runs th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;opacity:.6}
+    .runs .num{font-variant-numeric:tabular-nums;white-space:nowrap}
+    .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.72rem;
+      letter-spacing:.04em;border:1px solid currentColor;white-space:nowrap}
+    .by-rule{color:#7aa2f7}.by-model{color:#bb9af7}.by-source{opacity:.6}
+    .act{border:1px solid var(--line,#4443);border-radius:10px;padding:12px 14px;margin:8px 0}
+    .act.review{border-left:3px solid #e0af68}
+    .act.rejected{opacity:.5}
+    .find{margin:6px 0;padding-left:2px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    {% include "_topbar.html" %}
+
+    <main class="card">
+      <h1>📋 Lists.</h1>
+      <p class="lede">Every list is a table that never got a schema. Drop one in and
+        Freehold reads it, tells you what it actually is, and offers you
+        <b>ten things</b> it can do about it. Nothing runs until you tick a box — and
+        what you tick is saved as a recipe you can run again next quarter.</p>
+
+      {% if error %}<div class="err">{{ error }}</div>{% endif %}
+
+      <div class="act">
+        <form class="brain" method="post" action="/lists/upload" enctype="multipart/form-data">
+          <div style="flex:1 1 100%">
+            <label for="file">Spreadsheet</label>
+            <input id="file" type="file" name="file"
+                   accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+            <p style="font-size:.82rem;opacity:.65;margin:6px 0 0">
+              .xlsx only · up to {{ max_mb }} MB · first {{ row_limit }} rows of one tab.</p>
+          </div>
+          <div style="flex:1 1 100%">
+            <label for="model">🧠 Read it with</label>
+            <select id="model" name="model">
+              {% for id, label in models.items() %}
+              <option value="{{ id }}" {% if id == default_model %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="btn primary" type="submit">Read the list</button>
+          <a class="btn ghost" href="/business-hub">Cancel</a>
+        </form>
+      </div>
+      <p style="font-size:.85rem;opacity:.7;margin-top:8px">
+        Only column names, counts and up to five sample values per column ever leave
+        this box. <b>Never the sheet.</b> Pick <em>Rules only</em> and nothing leaves at all —
+        the page still works, it just names things less gracefully.
+      </p>
+
+      <h2 style="margin-top:26px">Recipes</h2>
+      {% if recipes %}
+      <div class="scroll">
+        <table class="runs">
+          <thead><tr><th>Recipe</th><th class="num">Ver</th><th>Actions</th>
+            <th>Approved</th><th></th></tr></thead>
+          <tbody>
+            {% for r in recipes %}
+            <tr>
+              <td>{{ r.label }}<div style="opacity:.55;font-size:.8rem">{{ r.key }}</div></td>
+              <td class="num">v{{ r.current }}</td>
+              <td>{{ r.actions|length }}</td>
+              <td>{{ r.approved_at[:10] }} · {{ r.approved_by }}</td>
+              <td><a class="btn ghost sm" href="/lists/recipe/{{ r.key }}">Open</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty">No recipes yet — read a list and approve a mapping. That's how a recipe is born.</p>
+      {% endif %}
+
+      <h2 style="margin-top:26px">Open drafts</h2>
+      {% if drafts %}
+      <div class="scroll">
+        <table class="runs">
+          <thead><tr><th>When</th><th>File</th><th class="num">Rows</th><th>Brain</th><th></th></tr></thead>
+          <tbody>
+            {% for d in drafts %}
+            <tr>
+              <td>{{ d.at[:16].replace('T', ' ') }}</td>
+              <td>{{ d.filename }}</td>
+              <td class="num">{{ d.rows }}</td>
+              <td><span class="tag {{ 'by-model' if d.model != 'none' else 'by-source' }}">{{ d.model }}</span></td>
+              <td><a class="btn ghost sm" href="/lists/draft/{{ d.token }}">Continue →</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty">Nothing half-finished. A draft lives here until you approve it or bin it.</p>
+      {% endif %}
+
+      <h2 style="margin-top:26px">Recent list runs</h2>
+      {% if runs %}
+      <div class="scroll">
+        <table class="runs">
+          <thead><tr><th>When</th><th>Recipe</th><th>Brain</th><th class="num">Rows</th>
+            <th class="num">Review</th></tr></thead>
+          <tbody>
+            {% for r in runs %}
+            <tr>
+              <td>{{ r.run_at.strftime('%Y-%m-%d %H:%M') if r.run_at else '—' }}</td>
+              <td>{{ r.source }}</td>
+              <td><span class="tag {{ 'by-model' if r.model and r.model != 'none' else 'by-source' }}">{{ r.model or 'none' }}</span></td>
+              <td class="num">{{ r.count }}</td>
+              <td class="num">{{ r.review_count }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:.85rem;opacity:.7;margin-top:8px">
+        Values, provenance and the gate for the newest run are on the
+        <a href="/business-hub">Business Hub</a> — one run log, one story, one page.
+      </p>
+      {% else %}
+      <p class="empty">No list runs yet. Approve a recipe and the run shows up here and on the Business Hub.</p>
+      {% endif %}
+
+      <p class="caveat">🐺 Honest caveat: your file is stored in a private bucket on your own
+        MinIO — no public URL, ever, and the sheet itself is never sent to a model. It has no
+        expiry date and nothing deletes it yet; that's on the list, not done. Any logged-in
+        Freehold user can download an original if they learn its key — this is a
+        single-tenant box, and per-file ownership is phase two.</p>
+
+      <div class="row" style="margin-top:18px">
+        <a class="btn ghost" href="/business-hub">← Business Hub</a>
+        <a class="btn ghost" href="/dashboard">Dashboard</a>
+      </div>
+    </main>
+  </div>
+  {% include "_footer.html" %}
+</body>
+</html>

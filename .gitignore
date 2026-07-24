@@ -6,6 +6,11 @@ __pycache__/
 .env
 *.env
 uat.env
+# ...and anything derived from them. `*.env` only matches names ENDING in .env,
+# so .env.bak / .env.prod / .env.pre-ollama.bak were all still committable.
+.env.*
+*.env.*
+!.env.example
 # data
 *.db
 *.sqlite3

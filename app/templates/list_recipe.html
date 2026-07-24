@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#15120d">
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .empty{opacity:.6;padding:14px 0}
+    .caveat{margin-top:18px;font-size:.85rem;opacity:.7;border-left:3px solid var(--line,#4443);padding-left:12px}
+    .scroll{overflow-x:auto}
+    .facts{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+    .fact{padding:6px 10px;border:1px solid var(--line,#4443);border-radius:999px;font-size:.82rem}
+    .fact b{font-variant-numeric:tabular-nums}
+    .brain{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:6px}
+    .brain select{padding:9px 10px;border-radius:9px;border:1px solid var(--line,#4443);
+      background:transparent;color:inherit;font:inherit;max-width:100%}
+    .runs{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
+    .runs th,.runs td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line,#4443)}
+    .runs th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;opacity:.6}
+    .runs .num{font-variant-numeric:tabular-nums;white-space:nowrap}
+    .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.72rem;
+      letter-spacing:.04em;border:1px solid currentColor;white-space:nowrap}
+    .by-rule{color:#7aa2f7}.by-model{color:#bb9af7}.by-source{opacity:.6}
+    .act{border:1px solid var(--line,#4443);border-radius:10px;padding:12px 14px;margin:8px 0}
+    .find{margin:6px 0;padding-left:2px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    {% include "_topbar.html" %}
+
+    <main class="card">
+      <h1>🧾 {{ doc.label }}</h1>
+      <p class="lede">{{ doc.key }} · v{{ shown.version }}{% if shown.version == doc.current %} (current){% endif %} —
+        approved by <b>{{ shown.approved_by }}</b> on {{ shown.approved_at[:10] }}{% if shown.note %},
+        “{{ shown.note }}”{% endif %}. Spec sha <code>{{ shown.spec_sha[:12] }}</code>.</p>
+
+      {% if shown.get('warnings') %}
+      <p class="caveat">⚠ What you ticked and what got saved are not identical.
+        {% for w in shown.get('warnings') %}<br>• {{ w }}{% endfor %}</p>
+      {% endif %}
+
+      <div class="facts">
+        <span class="fact">🧱 Actions <b>{{ spec.actions|length }}</b></span>
+        <span class="fact">🗂 Versions <b>{{ chain|length }}</b></span>
+        <span class="fact">▶ Runs <b>{{ runs|length }}</b></span>
+        <span class="fact">🧠 Proposed by <b>{{ spec.get('derived_from', {}).get('model', 'none') }}</b></span>
+      </div>
+
+      <h2 style="margin-top:26px">Run it again</h2>
+      <div class="act">
+        <form class="brain" method="post" action="/lists/recipe/{{ doc.key }}/run"
+              enctype="multipart/form-data">
+          {% if last_src %}
+          <div style="flex:1 1 100%;font-size:.9rem">
+            <label style="text-transform:none;letter-spacing:0">
+              <input type="radio" name="src_key" value="{{ last_src }}" checked>
+              the file this recipe was built from</label>
+          </div>
+          {% endif %}
+          <div style="flex:1 1 100%">
+            <label for="file">…or a new file</label>
+            <input id="file" type="file" name="file" accept=".xlsx">
+          </div>
+          <div style="flex:1 1 100%">
+            <label for="version">Version</label>
+            <select id="version" name="version">
+              {% for v in chain %}
+              <option value="{{ v.version }}" {% if v.version == doc.current %}selected{% endif %}>
+                v{{ v.version }}{% if v.version == doc.current %} (current){% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div style="flex:1 1 100%">
+            <label for="model">🧠 Brain</label>
+            <select id="model" name="model">
+              {% for id, l in models.items() %}
+              <option value="{{ id }}" {% if id == default_model %}selected{% endif %}>{{ l }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="btn primary" type="submit">Run</button>
+        </form>
+      </div>
+      <p style="font-size:.85rem;opacity:.7;margin-top:8px">
+        Re-running v{{ shown.version }} with a different brain is a fair comparison by
+        construction: same mapping, same spec sha, and the X-ray is deterministic, so not
+        one number can move.
+      </p>
+
+      <h2 style="margin-top:26px">Versions</h2>
+      <div class="scroll">
+        <table class="runs">
+          <thead><tr><th class="num">Ver</th><th>When</th><th>By</th><th>Proposed by</th>
+            <th>Spec sha</th><th>Note</th></tr></thead>
+          <tbody>
+            {% for v in chain %}
+            <tr>
+              <td class="num"><a href="/lists/recipe/{{ doc.key }}?version={{ v.version }}">v{{ v.version }}</a></td>
+              <td>{{ v.approved_at[:10] }}</td>
+              <td>{{ v.approved_by }}</td>
+              <td><span class="tag {{ 'by-model' if v.spec.get('derived_from', {}).get('model', 'none') != 'none' else 'by-source' }}">{{ v.spec.get('derived_from', {}).get('model', 'none') }}</span></td>
+              <td><code style="font-size:.78rem">{{ v.spec_sha[:12] }}</code></td>
+              <td>{{ v.note }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:.85rem;opacity:.7;margin-top:8px">
+        Two versions with the same spec sha have the <b>same mapping</b> — only the brain
+        that proposed it differed. Different shas mean the mapping itself changed.
+      </p>
+
+      <h2 style="margin-top:26px">The mapping (v{{ shown.version }})</h2>
+      <div class="scroll">
+        <table class="runs">
+          <thead><tr><th>Action</th><th>Columns</th><th>Params</th><th>Runs on</th></tr></thead>
+          <tbody>
+            {% for a in spec.actions %}
+            <tr>
+              <td>{{ a.id }}</td>
+              <td>{{ a.columns|join(', ') or '—' }}</td>
+              <td style="font-size:.85rem;opacity:.8">
+                {% if a.id == 'classify' %}→ {{ a.params.get('to', '—') }} · {{ a.params.get('taxonomy', [])|length }} allowed values
+                {% elif a.id == 'split_multivalue' %}sep “{{ a.params.get('sep', '/') }}”
+                {% elif a.id == 'canonicalize_values' %}{{ a.params.get('map', {})|length }} merges
+                {% elif a.id == 'parse_dates' %}read as {{ a.params.get('from', 'auto') }}
+                {% elif a.id == 'build_schema' %}{{ a.params.get('table', '—') }}
+                {% else %}—{% endif %}
+              </td>
+              <td>{% if actions_meta[a.id].needs_model %}<span class="tag by-model">✨ model</span>
+                  {% else %}<span class="tag by-rule">⚙ rule</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 style="margin-top:26px">Runs of this recipe</h2>
+      {% if runs %}
+      <div class="scroll">
+        <table class="runs">
+          <thead><tr><th>When</th><th>Brain</th><th class="num">Rows</th>
+            <th class="num">AI-written</th><th class="num">Tokens</th>
+            <th class="num">Review</th><th>Report</th></tr></thead>
+          <tbody>
+            {% for r in runs %}
+            <tr>
+              <td>{{ r.run_at.strftime('%Y-%m-%d %H:%M') if r.run_at else '—' }}</td>
+              <td><span class="tag {{ 'by-model' if r.model and r.model != 'none' else 'by-source' }}">{{ r.model or 'none' }}</span></td>
+              <td class="num">{{ r.count }}</td>
+              <td class="num">{{ r.enriched_count }}</td>
+              <td class="num">{{ r.tokens }}</td>
+              <td class="num">{{ r.review_count }}</td>
+              <td><a href="/business-hub/report/{{ r.report_key }}" target="_blank" rel="noopener">JSON</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty">No runs yet — pick a brain above and press Run.</p>
+      {% endif %}
+
+      <p class="caveat">🐺 Honest caveat: this compares <b>runs</b>, not answers. Fewer rows held
+        for review is not the same as being more right — a confident model is not a correct
+        model. Open the before→after pane on the Business Hub to look at actual values. And a
+        recipe is never deleted here: the version chain is append-only, like the audit log,
+        because the mapping that ran last March is evidence.</p>
+
+      <div class="row" style="margin-top:18px">
+        <a class="btn ghost" href="/lists">← Lists</a>
+        <a class="btn ghost" href="/business-hub">Business Hub</a>
+      </div>
+    </main>
+  </div>
+  {% include "_footer.html" %}
+</body>
+</html>

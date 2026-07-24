@@ -35,10 +35,14 @@
 	}
 }
 
-# An app vhost body: public media from MinIO at /media/*, everything else to the
+# An app vhost body: public images from MinIO at /media/freehold/*, everything else to the
 # backend passed as the import arg (e.g. `import appsite app:8000`).
 (appsite) {
-	handle /media/* {
+	# Scoped to the IMAGES bucket. A bare /media/* proxies ANY MinIO bucket with
+	# no auth, on every vhost that imports this snippet — which would put run
+	# reports and uploaded spreadsheets on the public internet. Both are now
+	# served by the app behind the session cookie.
+	handle /media/freehold/* {
 		uri strip_prefix /media
 		reverse_proxy minio:9000
 	}

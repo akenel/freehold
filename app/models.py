@@ -35,9 +35,14 @@ class Profile(Base):
 
 class BusinessHubRun(Base):
     """One row per integration sync — the 'record' step of pull → transform →
-    store → record. Proves the job ran: who ran it, how many records moved, and
-    the key of the report we stashed in MinIO. Swap the source system and this
-    same table logs a real client integration."""
+    enrich → store → record. Proves the job ran: who ran it, how many records
+    moved, and the key of the report we stashed in MinIO. Swap the source system
+    and this same table logs a real client integration.
+
+    The enrichment columns are the bring-your-own-brain paper trail: *which*
+    model touched this run, under which prompt version, how many rows it wrote,
+    what it cost in tokens, and how many rows it handed back to a human. Without
+    these, 'the AI cleaned your data' is a claim; with them, it's a record."""
     __tablename__ = "business_hub_runs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -46,6 +51,12 @@ class BusinessHubRun(Base):
     count: Mapped[int] = mapped_column(default=0)                    # records moved
     report_key: Mapped[str] = mapped_column(String(200), default="") # object key in MinIO
     run_by: Mapped[str] = mapped_column(String(80), default="anonymous")
+    # --- enrichment provenance (phase 5: bring your own brain) ---
+    model: Mapped[str] = mapped_column(String(80), default="none")      # which brain, "none" = rules only
+    prompt_version: Mapped[str] = mapped_column(String(40), default="") # which prompt wrote those values
+    enriched_count: Mapped[int] = mapped_column(default=0)              # rows the model wrote to
+    tokens: Mapped[int] = mapped_column(default=0)                      # what it cost
+    review_count: Mapped[int] = mapped_column(default=0)                # rows the gate sent to a human
 
 
 class AuditEvent(Base):

@@ -25,8 +25,11 @@ localhost {
 		reverse_proxy keycloak:8080
 	}
 
-	# Public media (avatars, banners) served from MinIO
-	handle /media/* {
+	# Public media (avatars, banners) served from MinIO.
+	# Scoped to the IMAGES bucket on purpose: a bare /media/* proxies ANY bucket,
+	# so any future bucket is on the internet the moment it exists. Reports and
+	# uploaded spreadsheets are served by the app, behind the login, instead.
+	handle /media/freehold/* {
 		uri strip_prefix /media
 		reverse_proxy minio:9000
 	}

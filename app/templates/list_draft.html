@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Read the list — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#15120d">
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .empty{opacity:.6;padding:14px 0}
+    .caveat{margin-top:18px;font-size:.85rem;opacity:.7;border-left:3px solid var(--line,#4443);padding-left:12px}
+    .scroll{overflow-x:auto}
+    .facts{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+    .fact{padding:6px 10px;border:1px solid var(--line,#4443);border-radius:999px;font-size:.82rem}
+    .fact b{font-variant-numeric:tabular-nums}
+    .brain{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:6px}
+    .brain select{padding:9px 10px;border-radius:9px;border:1px solid var(--line,#4443);
+      background:transparent;color:inherit;font:inherit;max-width:100%}
+    .diff{width:100%;border-collapse:collapse;margin-top:8px;font-size:.9rem}
+    .diff th,.diff td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line,#4443);vertical-align:top}
+    .diff th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;opacity:.6}
+    .diff .num{font-variant-numeric:tabular-nums;white-space:nowrap}
+    .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.72rem;
+      letter-spacing:.04em;border:1px solid currentColor;white-space:nowrap}
+    .by-rule{color:#7aa2f7}.by-model{color:#bb9af7}.by-source{opacity:.6}
+    .g-auto{color:#7fcf9a}.g-review{color:#e0af68}.g-rejected{color:#f7768e}
+    .act{border:1px solid var(--line,#4443);border-radius:10px;padding:12px 14px;margin:8px 0}
+    .act.review{border-left:3px solid #e0af68}
+    .act.rejected{opacity:.5}
+    .act .hd{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+    .act .hd .t{font-weight:600}
+    .act .why{font-size:.85rem;opacity:.75;margin-top:5px}
+    .find{margin:6px 0;padding-left:2px}
+  </style>
+</head>
+<body>
+{#- One action block. `ticked` comes from enrich.gate() — the same function and the
+    same thresholds the run-time value gate uses, so "pre-ticked" means exactly what
+    "auto-applied" means everywhere else in this app. -#}
+{% macro act(a, ticked) %}
+<div class="act {{ a.gate }}">
+  <div class="hd">
+    <label style="margin:0;text-transform:none;letter-spacing:0;font-size:.95rem">
+      <input type="checkbox" name="action" value="{{ a.id }}:{{ a.columns|join('|') }}"
+             {% if ticked %}checked{% endif %}>
+      <span class="t">{{ a.label }}</span>
+    </label>
+    <span class="tag g-{{ a.gate }}">{{ '%.2f'|format(a.confidence) }}</span>
+    <span class="tag by-{{ a.source }}">{{ a.source }}</span>
+  </div>
+  <div class="why">{% if a.columns %}<b>{{ a.columns|join(', ') }}</b> · {% endif %}{{ a.reason }}</div>
+  {% if a.why.source == 'model' %}
+  <div class="why"><span class="tag by-model">model</span> “{{ a.why.value }}”</div>
+  {% endif %}
+  <div class="why" style="opacity:.6">{{ a.blurb }}</div>
+
+  {% if a.id == 'score_quality' %}
+  <div class="why">counting:
+    {% for c in a.columns %}
+    <label style="margin:0 8px 0 0;text-transform:none;letter-spacing:0;font-size:.8rem">
+      <input type="checkbox" name="quality_col" value="{{ c }}" checked> {{ c }}</label>
+    {% endfor %}
+  </div>
+  {% elif a.id == 'canonicalize_values' %}
+  <div class="why">the most common spelling wins, and the map is frozen into the recipe:
+    {% for bad, good in a.params.get('map', {}).items() %}<br>&nbsp;&nbsp;{{ good }} ← {{ bad }}{% endfor %}
+  </div>
+  {% elif a.id == 'parse_dates' %}
+  <label for="parse_from">Read as</label>
+  <select id="parse_from" name="parse_from">
+    {% for v, l in (('auto', 'Work it out from the column itself'),
+                    ('excel_serial', 'Excel serial number'),
+                    ('iso', 'YYYY-MM-DD'), ('dmy', 'Day first (31.12.2024)'),
+                    ('mdy', 'Month first (12/31/2024)')) %}
+    <option value="{{ v }}" {% if v == a.params.get('from', 'auto') %}selected{% endif %}>{{ l }}</option>
+    {% endfor %}
+  </select>
+  <div class="why">⚠ Genuinely ambiguous cells are left alone and flagged, not guessed.</div>
+  {% elif a.id == 'split_multivalue' %}
+  <div class="why">separator “{{ a.params.get('sep', '/') }}” → a new <b>{{ a.columns[0] }}_values</b> field</div>
+  {% elif a.id == 'build_schema' %}
+  <label for="schema_table">Table name</label>
+  <input id="schema_table" type="text" name="schema_table" value="{{ a.params.get('table', '') }}">
+  <div class="why">emits schema.sql. It does <b>NOT</b> run it.</div>
+  {% elif a.id == 'classify' %}
+  <label for="classify_to">New field</label>
+  <input id="classify_to" type="text" name="classify_to" value="{{ a.params.get('to', '') }}">
+  <label style="text-transform:none;letter-spacing:0;font-size:.9rem">
+    <input type="checkbox" name="classify_multi" value="on" {% if a.params.get('multi') %}checked{% endif %}>
+    a row may have several values</label>
+  <label for="classify_taxonomy">Allowed values — closed on purpose. Edit this.</label>
+  <textarea id="classify_taxonomy" name="classify_taxonomy" rows="6">{{ a.params.get('taxonomy', [])|join('\n') }}</textarea>
+  <div class="why">One per line. Saved as a rule and reused forever
+    <span class="tag by-{{ a.params.get('taxonomy_source', 'rule') }}">{{ a.params.get('taxonomy_source', 'rule') }}</span></div>
+  <label for="classify_instruction">Instruction</label>
+  <input id="classify_instruction" type="text" name="classify_instruction"
+         value="{{ a.params.get('instruction', '') }}">
+  <div class="why">Evidence for the brain:
+    {% for c in a.columns %}
+    <label style="margin:0 8px 0 0;text-transform:none;letter-spacing:0;font-size:.8rem">
+      <input type="checkbox" name="classify_feed" value="{{ c }}" checked> {{ c }}</label>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endmacro %}
+  <div class="wrap">
+    {% include "_topbar.html" %}
+
+    <main class="card">
+      <h1>🔎 {{ analysis.title.value }}</h1>
+      <p class="lede">{{ analysis.summary.value }}
+        <span class="tag by-{{ analysis.summary.source }}">{{ analysis.summary.source }}</span></p>
+
+      <p style="font-size:.88rem;opacity:.75;margin-top:-10px">
+        {{ draft.filename }} · tab “{{ xr.sheet_name or 'first' }}” · read {{ draft.at[11:16] }} UTC.
+        <b>Nothing here is saved yet.</b> Read it, fix what's wrong, then approve.
+      </p>
+
+      {% if error %}<div class="err">{{ error }}</div>{% endif %}
+
+      <div class="facts">
+        <span class="fact">📦 Rows <b>{{ xr.row_count }}</b></span>
+        <span class="fact">🧱 Columns <b>{{ xr.col_count }}</b></span>
+        <span class="fact">🧠 Brain <b>{{ stats.model }}</b></span>
+        {% if stats.prompt_version %}<span class="fact">📝 Prompt <b>{{ stats.prompt_version }}</b></span>{% endif %}
+        <span class="fact">🎫 Tokens <b>{{ stats.tokens }}</b></span>
+        <span class="fact">🔎 Findings <b>{{ xr.findings|length }}</b></span>
+      </div>
+
+      <form class="brain" method="post" action="/lists/draft/{{ draft.token }}/analyze">
+        <label for="sheet" style="opacity:.75;font-size:.9rem">Tab</label>
+        <select id="sheet" name="sheet">
+          {% for t in draft.tabs %}
+          <option value="{{ t.index }}" {% if t.index == draft.sheet %}selected{% endif %}>{{ t.name }}</option>
+          {% endfor %}
+        </select>
+        <label for="remodel" style="opacity:.75;font-size:.9rem">🧠</label>
+        <select id="remodel" name="model">
+          {% for id, label in models.items() %}
+          <option value="{{ id }}" {% if id == stats.model %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn ghost sm" type="submit">Re-read this tab</button>
+      </form>
+      {% for t in draft.tabs %}{% if t.index == draft.sheet %}
+      <p style="font-size:.82rem;opacity:.65;margin-top:6px">
+        ↳ header row we actually read: {{ t.headers|join(' | ') }}<br>
+        (tab order and worksheet order in an .xlsx are not guaranteed to match — if this
+        preview looks wrong, it is.)
+      </p>
+      {% endif %}{% endfor %}
+
+      {% if stats.note %}
+      <p class="caveat" style="margin-top:12px">⚠ {{ stats.note }} — dropped claims are not
+        shown on this page at all. That is the gate working, not a bug.</p>
+      {% endif %}
+
+      <h2 style="margin-top:26px">What's actually in here
+        <span class="tag by-rule">rule</span></h2>
+      {% if xr.findings %}
+      {% for f in xr.findings %}
+      <p class="find">• {{ f.text }}</p>
+      {% endfor %}
+      <p style="font-size:.85rem;opacity:.7;margin-top:10px">
+        Every number on that list was <b>counted</b>, not guessed. The model was never
+        shown it and is not allowed to write one.</p>
+      {% else %}
+      <p class="empty">Nothing worth flagging — this sheet is unusually tidy.</p>
+      {% endif %}
+
+      <h2 style="margin-top:26px">The columns</h2>
+      <div class="scroll">
+        <table class="diff">
+          <thead><tr><th>Column</th><th>Is</th><th class="num">Fill</th>
+            <th class="num">Distinct</th><th>Note</th></tr></thead>
+          <tbody>
+            {% for name, c in columns.items() %}
+            {% set sem = analysis.columns[name].semantic %}
+            <tr>
+              <td><b>{{ name }}</b></td>
+              <td>{{ sem.value }}
+                <span class="tag by-{{ sem.source }}">{{ sem.source }} {{ '%.2f'|format(sem.confidence) }}</span></td>
+              <td class="num">{{ (c.fill * 100)|round|int }}%</td>
+              <td class="num">{{ c.distinct }}</td>
+              <td style="font-size:.85rem;opacity:.8">
+                {{ analysis.columns[name].role.value }}
+                {% if c.phone_multi %}⚠ {{ c.phone_multi }} cells hold more than one number{% endif %}
+                {% if c.multivalue %}⚠ {{ c.multivalue.mean_per_cell }} values per cell{% endif %}
+                {% if c.case_variants %}⚠ {{ c.case_variants|length }} value(s) spelled more than one way{% endif %}
+                {% if c.date_range %}{{ c.date_range[0] }} → {{ c.date_range[1] }}{% endif %}
+                {% if c.is_key %}🔑 unique in every row{% endif %}
+                {% if c.is_constant %}same value in every row{% endif %}
+                {% if c.is_empty %}(empty){% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 style="margin-top:26px">What do you want done?</h2>
+      <p style="font-size:.88rem;opacity:.75;margin-top:-6px">
+        Ten things. That's the whole list — there is no eleventh and no free-text box.
+        <b>Nothing runs that you didn't tick.</b> Nine of the ten never touch a model again:
+        only “sort every row into a category” calls a brain at run time, and only with
+        the categories you freeze right here.
+      </p>
+
+      <form method="post" action="/lists/draft/{{ draft.token }}/approve">
+        <label>Name each row by</label>
+        <div class="row">
+          {% for name in columns %}
+          <label style="margin:0 10px 0 0;font-size:.8rem">
+            <input type="checkbox" name="label_fields" value="{{ name }}"
+                   {% if name in analysis.label_fields %}checked{% endif %}> {{ name }}</label>
+          {% endfor %}
+        </div>
+
+        <h3 style="margin-top:22px">✅ Apply automatically <span style="opacity:.6;font-weight:400;font-size:.85rem">— confident ≥ {{ auto_above }}</span></h3>
+        {% if auto %}
+        {% for a in auto %}
+        {{ act(a, true) }}
+        {% endfor %}
+        {% else %}<p class="empty">Nothing scored high enough to pre-tick. Everything is below.</p>{% endif %}
+
+        <h3 style="margin-top:22px">🙋 Needs your eyes <span style="opacity:.6;font-weight:400;font-size:.85rem">— {{ review_above }} to {{ auto_above }}, unticked by default</span></h3>
+        {% if review %}
+        {% for a in review %}
+        {{ act(a, false) }}
+        {% endfor %}
+        {% else %}<p class="empty">Nothing in the middle band.</p>{% endif %}
+
+        {% if rejected %}
+        <details style="margin-top:22px">
+          <summary style="cursor:pointer">⛔ Rejected by the gate — below {{ review_above }} ({{ rejected|length }})</summary>
+          {% for a in rejected %}
+          {{ act(a, false) }}
+          {% endfor %}
+          <p style="font-size:.85rem;opacity:.7">You can still tick these. It's your list — and
+            the tick is audited.</p>
+        </details>
+        {% endif %}
+
+        {% if slow %}
+        <p class="caveat" style="margin-top:16px">⚠ {{ xr.row_count }} rows × “sort every row into
+          a category” = {{ calls }} sequential model calls, roughly a few minutes. The page will
+          sit there while it runs. That's honest, not broken.</p>
+        {% endif %}
+
+        <h2 style="margin-top:26px">Approve it</h2>
+        <label for="label">Recipe name</label>
+        <input id="label" type="text" name="label" value="{{ analysis.title.value }}">
+        <label for="key">Recipe key</label>
+        <input id="key" type="text" name="key" value="{{ analysis.suggested_key }}">
+        <label for="note">Why this version</label>
+        <input id="note" type="text" name="note" placeholder="first pass">
+        <label for="runmodel">🧠 Brain for the run</label>
+        <select id="runmodel" name="model" style="width:100%">
+          {% for id, l in models.items() %}
+          <option value="{{ id }}" {% if id == default_model %}selected{% endif %}>{{ l }}</option>
+          {% endfor %}
+        </select>
+        <label style="text-transform:none;letter-spacing:0;font-size:.95rem;margin-top:16px">
+          <input type="checkbox" name="confirm" value="on">
+          I approve this mapping. It becomes the next version of this recipe.
+        </label>
+
+        <div class="row" style="margin-top:18px">
+          <button class="btn primary" type="submit" name="run" value="1">Approve &amp; run</button>
+          <button class="btn ghost" type="submit" name="run" value="0">Approve only</button>
+        </div>
+      </form>
+
+      <form method="post" action="/lists/draft/{{ draft.token }}/discard" style="margin-top:10px">
+        <button class="btn ghost sm" type="submit">Discard this draft</button>
+      </form>
+
+      <p class="caveat">🐺 Honest caveat: every count on this page was computed from your cells —
+        the model was only allowed to <b>name</b> things, never to count them, and anything it
+        said that wasn't already in the profile we sent it was thrown away unread. What gets
+        saved is a <b>rule</b>, not a prompt, so next quarter's run does exactly this again with
+        or without an AI. Your originals are never overwritten and never made public.</p>
+
+      <div class="row" style="margin-top:18px">
+        <a class="btn ghost" href="/lists">← Lists</a>
+        {% if draft.src_key %}
+        <a class="btn ghost" href="/lists/source/{{ draft.src_key }}">⬇ the original file</a>
+        {% endif %}
+      </div>
+    </main>
+  </div>
+  {% include "_footer.html" %}
+</body>
+</html>

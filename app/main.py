@@ -9,7 +9,8 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 import deps
-from routers import audit, base, business_hub, door, extras, loop, profile, robot_panel, tempest
+from routers import (audit, base, business_hub, door, extras, lists, loop, profile,
+                     robot_panel, tempest)
 
 app = FastAPI(title="Freehold", version="0.2.0-phase2")
 # Signed, http-only session cookie. same_site=lax lets the OIDC redirect back in.
@@ -19,7 +20,8 @@ app.add_middleware(
 )
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-for _module in (base, door, loop, profile, extras, robot_panel, tempest, business_hub, audit):
+for _module in (base, door, loop, profile, extras, robot_panel, tempest, business_hub,
+                lists, audit):
     app.include_router(_module.router)
 
 

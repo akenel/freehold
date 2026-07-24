@@ -27,6 +27,11 @@ SYNC = "business_hub.sync"
 TICKET_NEW = "ticket.create"
 TICKET_STATUS = "ticket.status"
 TICKET_CLOSE = "ticket.close"
+# List Intake. RECIPE_APPROVE is the important one: it is the row that proves a
+# human, not a model, decided what a customer's spreadsheet means.
+LIST_ANALYZE = "list.analyze"
+RECIPE_APPROVE = "recipe.approve"
+LIST_RUN = "list.run"
 
 
 async def record(actor: str | None, action: str, target: str = "", **detail) -> None:
