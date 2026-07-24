@@ -281,32 +281,37 @@ def test_the_result_preview_renders_a_scrollable_grid_not_a_json_dump(draft):
     spreadsheet turns into an endless scroll. It's a bounded, sticky-header table
     now. This also guards a real 500: a quality score is a float, and |truncate
     on a float raised 'object of type float has no len()' in production."""
-    records = [
-        {"agency": "Eursap NL", "phone": "+31 20 890 8064", "_gate": "auto",
-         "_enriched": {
-             "phone_e164": {"value": "+31208908064", "original": "+31 20 890 8064",
-                            "source": "rule", "model": "", "confidence": 1.0},
-             "quality": {"value": {"score": 1.0, "missing": []}, "original": None,
-                         "source": "rule", "model": "", "confidence": 1.0}}},
-        {"agency": "PROGRESS", "phone": "", "_gate": "review",
-         "_enriched": {
-             "quality": {"value": {"score": 0.12, "missing": ["phone"]}, "original": None,
-                         "source": "rule", "model": "", "confidence": 1.0}}},
-    ]
+    import export
+    report = {
+        "meta": {"source": "SAP.xlsx", "model": "none", "prompt_version": "", "note": "",
+                 "count": 2, "enriched_count": 0, "tokens": 0, "review_count": 1,
+                 "run_at": "2026-07-24T20:00:00+00:00", "columns": ["agency", "phone"]},
+        "records": [
+            {"agency": "Eursap NL", "phone": "+31 20 890 8064", "_gate": "auto",
+             "_enriched": {
+                 "phone_e164": {"value": "+31208908064", "original": "+31 20 890 8064",
+                                "replaces": "phone", "source": "rule", "model": "",
+                                "confidence": 1.0},
+                 "quality": {"value": {"score": 0.12, "missing": ["phone"]}, "original": None,
+                             "replaces": "", "source": "rule", "model": "", "confidence": 1.0}}},
+            {"agency": "PROGRESS", "phone": "", "_gate": "review",
+             "_enriched": {
+                 "quality": {"value": {"score": 0.12, "missing": ["phone"]}, "original": None,
+                             "replaces": "", "source": "rule", "model": "", "confidence": 1.0}}},
+        ],
+    }
+    columns, rows = export.clean_grid(report)
     html = ENV.get_template("report.html").render(
         request=None, user={"username": "angel"}, key="a" * 32 + ".json",
-        meta={"source": "SAP.xlsx", "model": "none", "prompt_version": "", "note": "",
-              "count": 2, "enriched_count": 0, "tokens": 0, "review_count": 1,
-              "run_at": "2026-07-24T20:00:00+00:00", "columns": ["agency", "phone"]},
-        records=records, source_names=["agency", "phone"],
-        enriched_names=["phone_e164", "quality"],
+        meta=report["meta"], columns=columns, rows=rows,
         counts={"auto": 1, "review": 1, "rejected": 0}, gate="", page=1, per_page=50,
         total=2, pages=1, auto_above=0.9, review_above=0.7,
         default_fmt="xlsx", other_fmts=["csv"], lang="en")
 
     assert 'class="grid"' in html and 'class="gridbox"' in html   # a table, bounded box
-    assert "sticky" not in html or True                            # (styling, not asserted)
     assert "Cleaned XLSX" in html                                  # the deliverable button
     assert "/export?fmt=csv" in html and "/raw" in html            # the other formats
-    assert "0.12" in html                                          # the float that once 500'd
+    assert "+31208908064" in html                                  # clean value, in the column
+    assert "phone · original" in html                              # raw kept beside it
+    assert "0.12" in html                                          # float that once 500'd
     assert 'class="pill g-review"' in html                         # the gate, per row

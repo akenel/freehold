@@ -22,19 +22,38 @@ REPORT = {
         {"agency": "Eursap NL", "phone": "+31 20 890 8064", "_label": "Eursap NL",
          "_gate": "auto", "_enriched": {
              "phone_e164": {"value": "+31208908064", "original": "+31 20 890 8064",
-                            "source": "rule", "model": "", "confidence": 1.0},
+                            "replaces": "phone", "source": "rule", "model": "",
+                            "confidence": 1.0},
              "quality": {"value": {"score": 1.0, "missing": []}, "original": None,
-                         "source": "rule", "model": "", "confidence": 1.0}}},
+                         "replaces": "", "source": "rule", "model": "", "confidence": 1.0}}},
         {"agency": "Deckow", "phone": "call us", "_label": "Deckow",
          "_gate": "review", "_enriched": {
-             "industry": {"value": "Logistics", "original": "Deckow", "source": "model",
-                          "model": "gpt-oss:120b", "confidence": 0.61}}},
+             "industry": {"value": "Logistics", "original": "Deckow", "replaces": "",
+                          "source": "model", "model": "gpt-oss:120b", "confidence": 0.61}}},
         {"agency": "PROGRESS", "phone": "", "_label": "—",
          "_gate": "review", "_enriched": {
              "quality": {"value": {"score": 0.12, "missing": ["phone"]}, "original": None,
-                         "source": "rule", "model": "", "confidence": 1.0}}},
+                         "replaces": "", "source": "rule", "model": "", "confidence": 1.0}}},
     ],
 }
+
+
+def test_clean_values_are_folded_into_their_column_with_the_raw_kept():
+    """The complaint that drove this: the cleaned phone lived in a sidecar
+    '✦ phone_e164' column while the 'phone' column stayed messy, so the
+    deliverable wasn't cleaner where it counts. Now the phone column carries the
+    dialable number and 'phone · original' holds the raw."""
+    columns, rows = export.clean_grid(REPORT)
+    names = [c["name"] for c in columns]
+    assert "phone" in names and "phone · original" in names
+    assert "phone_e164" not in names          # not a sidecar any more — it's in-place
+
+    r0 = rows[0]
+    assert r0["phone"]["value"] == "+31208908064"        # the clean number, in the column
+    assert r0["phone"]["changed"] is True
+    assert r0["phone · original"]["value"] == "+31 20 890 8064"   # raw kept, nothing destroyed
+    # a row where the column wasn't cleaned keeps its raw and isn't marked changed
+    assert rows[1]["phone"]["value"] == "call us" and rows[1]["phone"].get("changed") is False
 
 
 def test_default_format_echoes_the_inbound_channel():
@@ -49,7 +68,8 @@ def test_csv_has_a_header_a_gate_column_and_every_row():
     assert len(rows) == 3
     assert "Gate" in rows[0] and rows[0]["Gate"] == "auto"
     assert rows[0]["agency"] == "Eursap NL"
-    assert "+31208908064" in rows[0]["✦ phone_e164"]
+    assert rows[0]["phone"] == "+31208908064"                    # clean, in the column
+    assert rows[0]["phone · original"] == "+31 20 890 8064"      # raw kept beside it
 
 
 def test_json_is_the_report_verbatim():
@@ -66,8 +86,7 @@ def test_xlsx_opens_and_carries_the_cleaned_grid_plus_the_extra_tabs():
     assert len(records) == 3
     assert records[0]["agency"] == "Eursap NL"
     assert records[0]["gate"] == "auto"
-    # the enriched value made it into a cell (header carries the ✦ marker)
-    assert any("phone_e164" in f for f in fields)
+    assert records[0]["phone"] == "+31208908064"       # the clean number is IN the column
 
 
 def test_the_review_tab_holds_only_the_rows_a_human_must_touch():

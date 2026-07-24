@@ -63,48 +63,89 @@ def _detail(v):
     return ""
 
 
-def _grid(report: dict) -> tuple[list[str], list[dict], list[str]]:
-    """(header, rows, enriched-field-names) — the shared shape all formats render.
+def clean_grid(report: dict) -> tuple[list[dict], list[dict]]:
+    """Fold each cleaned value back into the column it cleans. The shared shape
+    every format and the preview render from.
 
-    Source columns first, in sheet order, then one column per enriched field, then
-    Gate. Every record contributes; paging is a preview concern, not an export one."""
+    Returns (columns, rows).
+      columns: [{"name", "kind"}] where kind is
+               "source"  — an original column, showing the CLEAN value when one
+                           exists (the whole point: the phone column becomes
+                           dialable instead of the fix living in a sidecar)
+               "raw"     — the original of a cleaned column, kept beside it, so
+                           nothing is destroyed (principle 3)
+               "enriched"— an added analysis column (quality, phone_check) that
+                           replaces nothing
+      rows: [{name: {"value", "raw", "changed", "source", "confidence"}}], plus
+            "_gate" and "_label". `changed` marks a cell the pipeline improved."""
     meta = report.get("meta", {})
     records = report.get("records", [])
+
     source = list(meta.get("columns") or [])
-    enriched: list[str] = []
+    replaced: dict[str, str] = {}      # source column -> the enriched field that cleans it
+    added: list[str] = []              # enriched fields that replace nothing
     for r in records:
         for k in r:
             if not k.startswith("_") and k not in source:
                 source.append(k)
-        for k in (r.get("_enriched") or {}):
-            if k not in enriched:
-                enriched.append(k)
+        for k, env in (r.get("_enriched") or {}).items():
+            rep = env.get("replaces")
+            if rep:
+                replaced.setdefault(rep, k)
+            elif k not in added:
+                added.append(k)
 
-    header = list(source) + [f"✦ {e}" for e in enriched] + ["Gate"]
+    columns: list[dict] = []
+    for c in source:
+        columns.append({"name": c, "kind": "source"})
+        if c in replaced:
+            columns.append({"name": f"{c} · original", "kind": "raw"})
+    for e in added:
+        columns.append({"name": e, "kind": "enriched"})
+
     rows = []
     for r in records:
-        row = {c: r.get(c, "") for c in source}
-        for e in enriched:
-            env = (r.get("_enriched") or {}).get(e)
+        enr = r.get("_enriched") or {}
+        cells: dict[str, dict] = {}
+        for c in source:
+            if c in replaced and replaced[c] in enr:
+                env = enr[replaced[c]]
+                clean = _cell_value(env.get("value"))
+                raw = r.get(c, "")
+                changed = str(clean) not in ("", "None") and str(clean) != str(raw)
+                cells[c] = {"value": clean if str(clean) not in ("", "None") else raw,
+                            "raw": raw, "changed": changed,
+                            "source": env.get("source"), "confidence": env.get("confidence")}
+                cells[f"{c} · original"] = {"value": raw, "changed": False}
+            else:
+                cells[c] = {"value": r.get(c, ""), "changed": False}
+                if c in replaced:      # cleaned on other rows, declined on this one
+                    cells[f"{c} · original"] = {"value": r.get(c, ""), "changed": False}
+        for e in added:
+            env = enr.get(e)
             if env is None:
-                row[f"✦ {e}"] = ""
-                continue
-            val = _cell_value(env.get("value"))
-            note = _detail(env.get("value"))
-            row[f"✦ {e}"] = f"{val}  ({note})" if note else val
-        row["Gate"] = r.get("_gate", "")
-        rows.append(row)
-    return header, rows, enriched
+                cells[e] = {"value": "", "changed": False}
+            else:
+                val = _cell_value(env.get("value"))
+                note = _detail(env.get("value"))
+                cells[e] = {"value": f"{val}  ({note})" if note else val, "changed": False,
+                            "source": env.get("source"), "confidence": env.get("confidence")}
+        cells["_gate"] = r.get("_gate", "")
+        cells["_label"] = r.get("_label", "")
+        rows.append(cells)
+    return columns, rows
 
 
 # --- csv -------------------------------------------------------------------
 def to_csv(report: dict) -> bytes:
-    header, rows, _ = _grid(report)
+    columns, rows = clean_grid(report)
+    header = [c["name"] for c in columns] + ["Gate"]
     buf = io.StringIO()
-    w = csv.DictWriter(buf, fieldnames=header, extrasaction="ignore")
-    w.writeheader()
+    w = csv.writer(buf)
+    w.writerow(header)
     for row in rows:
-        w.writerow(row)
+        w.writerow([row.get(c["name"], {}).get("value", "") for c in columns]
+                   + [row.get("_gate", "")])
     return buf.getvalue().encode("utf-8-sig")   # BOM so Excel opens UTF-8 cleanly
 
 
@@ -114,11 +155,18 @@ def to_json(report: dict) -> bytes:
 
 
 # --- xlsx ------------------------------------------------------------------
-def _write_sheet(ws, header, rows):
+_CHG_FILL = "EDE4FB"          # a cleaned cell — faint purple, so it reads at a glance
+_RAW_FONT = "8A8A8A"          # the kept-original columns, greyed
+
+
+def _write_sheet(ws, columns, rows):
     head_fill = PatternFill("solid", fgColor=_HEAD_FILL)
     head_font = Font(bold=True, color=_HEAD_FONT)
     gate_fills = {g: PatternFill("solid", fgColor=c) for g, c in _GATE_FILL.items()}
-    gate_col = header.index("Gate") + 1 if "Gate" in header else 0
+    chg_fill = PatternFill("solid", fgColor=_CHG_FILL)
+    raw_font = Font(color=_RAW_FONT, italic=True)
+    header = [c["name"] for c in columns] + ["Gate"]
+    ncol = len(header)
 
     for j, name in enumerate(header, start=1):
         c = ws.cell(row=1, column=j, value=name)
@@ -127,39 +175,43 @@ def _write_sheet(ws, header, rows):
 
     widths = [max(10, min(48, len(str(h)) + 2)) for h in header]
     for i, row in enumerate(rows, start=2):
-        for j, name in enumerate(header, start=1):
-            val = row.get(name, "")
-            ws.cell(row=i, column=j, value=val)
+        for j, col in enumerate(columns, start=1):
+            cell = row.get(col["name"], {})
+            val = cell.get("value", "")
+            c = ws.cell(row=i, column=j, value=val)
+            if col["kind"] == "raw":
+                c.font = raw_font
+            elif cell.get("changed"):
+                c.fill = chg_fill                          # this cell got cleaner
             widths[j - 1] = max(widths[j - 1], min(48, len(str(val)) + 2))
-        if gate_col:
-            fill = gate_fills.get(row.get("Gate"))
-            if fill:
-                ws.cell(row=i, column=gate_col).fill = fill
+        g = row.get("_gate", "")
+        gc = ws.cell(row=i, column=ncol, value=g)
+        if gate_fills.get(g):
+            gc.fill = gate_fills[g]
 
     for j, w in enumerate(widths, start=1):
         ws.column_dimensions[get_column_letter(j)].width = w
-
     ws.freeze_panes = "A2"                                  # header stays put
     if rows:
-        ws.auto_filter.ref = f"A1:{get_column_letter(len(header))}{len(rows) + 1}"
+        ws.auto_filter.ref = f"A1:{get_column_letter(ncol)}{len(rows) + 1}"
 
 
 def to_xlsx(report: dict) -> bytes:
     """The deliverable: a workbook better than the one that came in."""
-    header, rows, _ = _grid(report)
+    columns, rows = clean_grid(report)
     meta = report.get("meta", {})
     wb = Workbook()
 
     ws = wb.active
     ws.title = "Cleaned"
-    _write_sheet(ws, header, rows)
+    _write_sheet(ws, columns, rows)
 
     # The review queue on its own tab — the rows a human actually has to touch,
     # which is the whole point of the gate. Empty tab if the run was all-green.
-    review = [r for r in rows if r.get("Gate") == "review"]
+    review = [r for r in rows if r.get("_gate") == "review"]
     rq = wb.create_sheet("Needs review")
     if review:
-        _write_sheet(rq, header, review)
+        _write_sheet(rq, columns, review)
     else:
         rq["A1"] = "Nothing needed review — every row cleared the gate."
 

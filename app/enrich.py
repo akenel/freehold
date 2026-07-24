@@ -67,8 +67,14 @@ AUTO, REVIEW, REJECTED = "auto", "review", "rejected"
 
 # --- the provenance envelope ----------------------------------------------
 def field(value, *, original=None, source="rule", model="",
-          confidence=1.0, prompt_version="") -> dict:
+          confidence=1.0, prompt_version="", replaces="") -> dict:
     """Wrap one enriched value in its paper trail.
+
+    `replaces` names the source column this value is the *cleaned form of* — e.g.
+    phone_e164 replaces the phone column. The data model stays additive (we never
+    overwrite the original field), but a deliverable can fold the clean value back
+    into its column and keep the raw beside it, so the output actually looks
+    cleaner where it matters instead of growing a sidecar column.
 
     This little dict is the whole compliance story: what we wrote, what it came
     from, who decided it, how sure they were, and when. Everything downstream —
@@ -77,6 +83,7 @@ def field(value, *, original=None, source="rule", model="",
     return {
         "value": value,
         "original": original,
+        "replaces": replaces,             # source column this is the clean form of
         "source": source,                 # "source" | "rule" | "model"
         "model": model,
         "prompt_version": prompt_version,
@@ -425,6 +432,7 @@ async def enrich(records: list[dict], model: str = DEFAULT_MODEL,
         raw = str(rec.get(p.phone_field, ""))
         got = phone_e164(raw)
         if got:
+            got["replaces"] = p.phone_field    # the clean form of the phone column
             rec["_enriched"]["phone_e164"] = got
         elif raw.strip():
             unresolved.add(i)          # ambiguous or unknown country — ask the brain
@@ -464,7 +472,7 @@ async def enrich(records: list[dict], model: str = DEFAULT_MODEL,
             rec["_enriched"]["phone_e164"] = field(
                 res["phone_e164"], original=rec.get(p.phone_field, ""), source="model",
                 model=model, confidence=as_confidence(res.get("phone_confidence")),
-                prompt_version=PROMPT_VERSION,
+                prompt_version=PROMPT_VERSION, replaces=p.phone_field,
             )
 
     # The gate: least-confident AI field, or too-empty-to-be-a-record. See gate_for.

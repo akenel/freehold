@@ -176,13 +176,15 @@ def profile_from(spec: dict) -> tuple[enrich.Profile, str | None]:
 
 
 # --- the pure executors ----------------------------------------------------
-def _env(value, raw):
+def _env(value, raw, replaces=""):
     """Every post-pass value wears the same paper trail as an enrichment.
 
     source="rule", confidence 1.0, no prompt version: these are arithmetic, not
     opinions. Rule-written fields deliberately do not move enrich's gate — a
-    parsed date is not something a human needs to second-guess."""
-    return enrich.field(value, original=raw, source="rule", confidence=1.0, prompt_version="")
+    parsed date is not something a human needs to second-guess. `replaces` names
+    the source column this is the clean form of, so a deliverable folds it in."""
+    return enrich.field(value, original=raw, source="rule", confidence=1.0,
+                        prompt_version="", replaces=replaces)
 
 
 def value_map(xr: dict, col: str) -> dict:
@@ -204,7 +206,7 @@ def canonicalize(records: list[dict], col: str, vmap: dict) -> dict:
             continue
         value = vmap.get(raw, raw)
         merged += value != raw
-        rec["_enriched"][f"{col}_canon"] = _env(value, raw)
+        rec["_enriched"][f"{col}_canon"] = _env(value, raw, replaces=col)
     return {"merged": merged, "variants": len(vmap)}
 
 
@@ -232,7 +234,7 @@ def parse_dates(records: list[dict], col: str, from_: str = "auto") -> dict:
         else:
             value = {"status": status, "raw": raw}
             out[status] += 1
-        rec["_enriched"][f"{col}_iso"] = _env(value, raw)
+        rec["_enriched"][f"{col}_iso"] = _env(value, raw, replaces=col)
     return out
 
 

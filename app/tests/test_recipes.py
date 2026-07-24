@@ -152,7 +152,7 @@ def test_every_post_pass_envelope_wears_the_same_seven_key_paper_trail():
     out, _stats, extra = asyncio.run(recipes.run(spec, ROWS, model="none", xr=XR))
     for rec in out:
         for name, env in rec["_enriched"].items():
-            assert set(env) == {"value", "original", "source", "model",
+            assert set(env) == {"value", "original", "replaces", "source", "model",
                                 "prompt_version", "confidence", "at"}
             assert env["source"] == "rule", name
     assert extra["action_stats"]["parse_dates"]["parsed"] == 3

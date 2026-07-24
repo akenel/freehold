@@ -78,34 +78,25 @@ async def report_view(request: Request, key: str, gate: str = "", page: int = 1)
     if not rep:
         raise HTTPException(status_code=404)
 
-    records = rep.get("records") or []
+    # One overlay, shared with every export: cleaned values folded into their
+    # columns, originals kept beside them. The preview shows exactly what the
+    # download contains.
+    columns, all_rows = export.clean_grid(rep)
+    counts = Counter(r.get("_gate", "") for r in all_rows)
     if gate in (enrich.AUTO, enrich.REVIEW, enrich.REJECTED):
-        records = [r for r in records if r.get("_gate") == gate]
+        all_rows = [r for r in all_rows if r.get("_gate") == gate]
 
     page = max(1, page)
     start = (page - 1) * PAGE
-    shown = records[start:start + PAGE]
-    # Source columns are whatever the records actually carry, minus our own
-    # underscore-prefixed bookkeeping. Order comes from meta.columns when the
-    # spreadsheet channel recorded it, so the preview matches the sheet.
-    enriched_names, source_names = [], list(rep.get("meta", {}).get("columns") or [])
-    for r in records:
-        for k in r:
-            if not k.startswith("_") and k not in source_names:
-                source_names.append(k)
-        for k in (r.get("_enriched") or {}):
-            if k not in enriched_names:
-                enriched_names.append(k)
+    shown = all_rows[start:start + PAGE]
 
-    counts = Counter(r.get("_gate", "") for r in (rep.get("records") or []))
     default_fmt = export.default_format(rep)
     other_fmts = [f for f in ("xlsx", "csv") if f != default_fmt]
     return templates.TemplateResponse("report.html", {
         "request": request, "user": user, "key": key,
-        "meta": rep.get("meta", {}), "records": shown,
-        "source_names": source_names, "enriched_names": enriched_names,
+        "meta": rep.get("meta", {}), "columns": columns, "rows": shown,
         "counts": counts, "gate": gate, "page": page, "per_page": PAGE,
-        "total": len(records), "pages": max(1, (len(records) + PAGE - 1) // PAGE),
+        "total": len(all_rows), "pages": max(1, (len(all_rows) + PAGE - 1) // PAGE),
         "auto_above": enrich.AUTO_ABOVE, "review_above": enrich.REVIEW_ABOVE,
         "default_fmt": default_fmt, "other_fmts": other_fmts,
     })

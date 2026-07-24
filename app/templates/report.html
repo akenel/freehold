@@ -32,6 +32,7 @@
     table.grid thead th{position:sticky;top:0;z-index:2;background:var(--card,#1b1712);
       font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;opacity:.85}
     table.grid thead th.enr{color:#bb9af7}
+    table.grid thead th.rawcol,table.grid td.rawcol{opacity:.5;font-style:italic}
     table.grid tbody tr:hover td{background:#8881}
     /* the gate cell is frozen to the left so you never lose which row is what */
     table.grid .gate{position:sticky;left:0;z-index:1;background:var(--card,#1b1712)}
@@ -86,30 +87,24 @@
         with a frozen header, filters, a coloured <b>Gate</b> column and the rows that need review
         on their own tab.</p>
 
-      {% if records %}
+      {% if rows %}
       <div class="gridbox">
         <table class="grid">
           <thead><tr>
             <th class="gate">Gate</th>
-            {% for c in source_names %}<th>{{ c }}</th>{% endfor %}
-            {% for e in enriched_names %}<th class="enr">✦ {{ e }}</th>{% endfor %}
+            {% for c in columns %}<th class="{{ 'enr' if c.kind == 'enriched' else ('rawcol' if c.kind == 'raw' else '') }}">{{ '✦ ' if c.kind == 'enriched' else '' }}{{ c.name }}</th>{% endfor %}
           </tr></thead>
           <tbody>
-            {% for r in records %}
+            {% for r in rows %}
             <tr>
               <td class="gate"><span class="pill g-{{ r['_gate'] }}">{{ r['_gate'] }}</span></td>
-              {% for c in source_names %}<td title="{{ r[c] }}">{{ r[c]|string|truncate(48) }}</td>{% endfor %}
-              {% for e in enriched_names %}
-                {% set f = r['_enriched'].get(e) %}
-                {% if f %}
-                  {% set disp = f['value']['score'] if f['value'] is mapping and 'score' in f['value']
-                                else (f['value']['status'] if f['value'] is mapping and 'status' in f['value']
-                                else f['value']) %}
-                  <td class="{% if f['original'] %}chg{% endif %}"
-                      title="{% if f['original'] %}was: {{ f['original'] }} · {% endif %}{{ f['source'] }}{% if f['model'] %} {{ f['model'] }}{% endif %} · {{ '%.2f'|format(f['confidence']) }}">
-                    {% if f['original'] %}<span class="was">{{ f['original']|string|truncate(20) }}</span>{% endif %}{{ disp|string|truncate(40) }}
-                  </td>
-                {% else %}<td>—</td>{% endif %}
+              {% for c in columns %}
+                {% set cell = r.get(c.name) or {} %}
+                <td class="{{ 'chg' if cell.get('changed') else '' }} {{ 'rawcol' if c.kind == 'raw' else '' }}"
+                    title="{% if cell.get('changed') %}was: {{ cell.get('raw') }} → {% endif %}{{ cell.get('value') }}">
+                  {%- if cell.get('changed') %}<span class="was">{{ cell.get('raw')|string|truncate(16) }}</span>{% endif -%}
+                  {{ cell.get('value')|string|truncate(46) }}
+                </td>
               {% endfor %}
             </tr>
             {% endfor %}
@@ -119,7 +114,7 @@
 
       <div class="pager">
         {% if page > 1 %}<a class="btn ghost sm" href="?gate={{ gate }}&page={{ page - 1 }}">← Previous</a>{% endif %}
-        <span style="opacity:.7;font-size:.9rem">Page {{ page }} of {{ pages }} · showing {{ records|length }} of {{ total }} rows</span>
+        <span style="opacity:.7;font-size:.9rem">Page {{ page }} of {{ pages }} · showing {{ rows|length }} of {{ total }} rows</span>
         {% if page < pages %}<a class="btn ghost sm" href="?gate={{ gate }}&page={{ page + 1 }}">Next →</a>{% endif %}
       </div>
       <p class="note">Preview is {{ per_page }} rows a page and the columns are trimmed to fit.

@@ -98,7 +98,7 @@ def test_every_enriched_value_carries_its_paper_trail():
     out, _ = asyncio.run(enrich.enrich(records, model="none"))
     for f in out[0]["_enriched"].values():
         assert set(f) == {
-            "value", "original", "source", "model",
+            "value", "original", "replaces", "source", "model",
             "prompt_version", "confidence", "at",
         }
         assert f["source"] in ("source", "rule", "model")
