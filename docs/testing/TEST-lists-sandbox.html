@@ -182,7 +182,7 @@
     <div class="meta">
       <div><b>Tester:</b> <input class="txt" data-k="tester" type="text" placeholder="Angel"></div>
       <div><b>Date:</b> <input class="txt" data-k="date" type="text" placeholder="dd/mm/yyyy"></div>
-      <div><b>Build:</b> <input class="txt" data-k="build" type="text" value="sandbox b83 · commit ba981ec"></div>
+      <div><b>Build:</b> <input class="txt" data-k="build" type="text" value="sandbox b85 · commit f6ab021"></div>
       <div><b>Realm / login:</b> <input class="txt" data-k="login" type="text" value="kc-sbx · demo / demo"></div>
     </div>
 
@@ -191,7 +191,7 @@
       <a class="go" href="https://sandbox.wolfhold.app/lists" target="_blank">📋 Lists — start here <span class="arr">↗</span></a>
       <a class="go" href="https://sandbox.wolfhold.app/business-hub" target="_blank">🔌 Business Hub — run log <span class="arr">↗</span></a>
     </div>
-    <div class="creds">Log in with <code>demo / demo</code>. Use your own <code>SAP_Call_Campaign.xlsx</code> from your desktop — it is deliberately <b>not</b> in the repo. Desktop browser, not phone.</div>
+    <div class="creds">Log in with <code>demo / demo</code>. Steps 17–19 need a <b>second private window</b> logged in as <code>sam / sam</code>. Use your own <code>SAP_Call_Campaign.xlsx</code> from your desktop — it is deliberately <b>not</b> in the repo. Desktop browser, not phone.</div>
 
     <!-- ===== Tap-to-copy chips (OPTIONAL — delete this whole box if not needed).
          Handy for barcodes/codes/IDs you want to paste instead of type. ===== -->
@@ -202,6 +202,21 @@
       <span class="chip" data-copy="SAP call list">SAP call list <span class="tag">· recipe label</span></span>
       <span class="chip" data-copy="gpt-oss:120b">gpt-oss:120b <span class="tag">· big brain</span></span>
       <span class="chip" data-copy="gpt-oss:20b">gpt-oss:20b <span class="tag">· small brain</span></span>
+    </div>
+
+    <div class="howto" style="background:#fff6e5;border-color:#f0d9a8;border-left-color:#e0a800">
+      <b>⚠️ Already known — don't waste a note on these.</b> An adversarial review pass found
+      them after this build shipped; they are logged, not forgotten:
+      <ul style="margin:6px 0 0 18px;padding:0">
+        <li>Ticking <b>classify</b> AND <b>normalize phone</b> together sends some phone cells to the
+            model row-by-row at run time. The "nine of ten never call a brain" line is wrong in that combo.</li>
+        <li>If a sheet has two date columns, one <i>Read dates as</i> control governs both.</li>
+        <li>The grounding check can still let a made-up sentence through if it starts the sentence
+            (e.g. "About 60% of these rows..."). <b>If you see an invented claim, still note it</b> — I want the example.</li>
+        <li>A very long filename (118+ chars) breaks the link between a recipe and its runs.</li>
+        <li>Runs from before 24/07 show a report link that 404s. The data is fine, the old URL isn't.</li>
+        <li>A crafted .xlsx could still exhaust memory. Don't stress-test that one — it's a real hole, being fixed.</li>
+      </ul>
     </div>
 
     <!-- ===== the checks ===== -->
@@ -235,7 +250,7 @@
     </div>
   </div>
 
-  <footer><span>Confidential — Internal Use Only</span><span>TEST-LISTS-SBX-001 · Rev 1 · 24/07/2026</span></footer>
+  <footer><span>Confidential — Internal Use Only</span><span>TEST-LISTS-SBX-001 · Rev 2 · 24/07/2026</span></footer>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -300,8 +315,20 @@
     { do:"<b>The trust test.</b> Copy a report link from the run log, then open it in a private window.",
       exp:"It asks you to log in. A report holds every enriched record \u2014 it must never be a public URL.", big:true },
 
+    { do:"<b>Read the small print under the upload box</b> before you touch anything.",
+      exp:"It says the brain is sent column names, counts, sample values <b>and the first three rows in full</b>. If it claims the sheet never leaves, that is a FAIL \u2014 it would be a lie." },
+
+    { do:"<b>Second window.</b> Open a private window, log in as <code>sam / sam</code>, go to Lists.",
+      exp:"Sam sees an EMPTY drafts list. Your draft is not there and neither is its link.", big:true },
+
+    { do:"As <b>sam</b>, paste the URL of <i>your</i> draft (copy it from the demo window).",
+      exp:"<b>403 Forbidden.</b> Sam cannot open someone else's draft." },
+
+    { do:"Back in the demo window, refresh your draft.",
+      exp:"Still yours, still there \u2014 sam's attempt changed nothing.", big:true },
+
     { do:"<b>Overall.</b> Would you let this near a paying client\u2019s customer list tomorrow?",
-      exp:"If not, say exactly what stopped you in the \u{1F3A4} box. That answer is worth more than the other sixteen." }
+      exp:"If not, say exactly what stopped you in the \u{1F3A4} box. That answer is worth more than the other twenty." }
   ];
 
   // ---- build rows ----
