@@ -127,7 +127,18 @@ def test_the_draft_screen_renders_every_number_and_every_action(draft):
     assert f"<b>{xr['row_count']}</b>" in html
     for f in xr["findings"]:
         assert str(escape(f["text"])) in html, f["code"]
-    assert "counted</b>, not guessed" in html
+    # The provenance claim must be on the page beside the numbers. Phrasing moved
+    # when the screen was restructured into steps; the promise did not.
+    assert "counted, not guessed" in html
+    assert "came from your cells" in html
+
+    # ...and it must read as an ordered walk, not a wall of sections.
+    for n, heading in ((1, "What you gave me"), (2, "What I think this is"),
+                       (3, "What I found in it"), (4, "What I suggest doing"),
+                       (5, "Your call")):
+        assert f'<span class="no">{n}</span> {heading}' in html, heading
+    assert html.index("What you gave me") < html.index("What I suggest doing") \
+        < html.index("Your call")
 
     # every licensed action is on the page as a tickable checkbox
     for a in acts:
