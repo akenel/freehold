@@ -33,6 +33,34 @@
     .act .hd .t{font-weight:600}
     .act .why{font-size:.85rem;opacity:.75;margin-top:5px}
     .find{margin:6px 0;padding-left:2px}
+    /* --- wizard: one pane at a time, and a visible "it is working" --- */
+    .wizbar{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+    .wizdot{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;
+      border:1px solid var(--line,#4443);background:transparent;color:inherit;font:inherit;
+      font-size:.84rem;cursor:pointer;opacity:.55}
+    .wizdot:hover{opacity:.9;border-color:currentColor}
+    .wizdot.on{opacity:1;font-weight:600;border-color:currentColor}
+    .wizdot.done{opacity:.8}
+    .wizdot.done .n::after{content:"✓";margin-left:-.62em}
+    .wizdot.done .n{color:transparent}
+    .wizdot .n{width:19px;height:19px;border-radius:50%;border:1px solid currentColor;
+      display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;flex:0 0 auto}
+    @media (max-width:620px){ .wizdot .l{display:none} }
+    .wiznav{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;padding-top:16px;
+      border-top:1px dashed var(--line,#4443)}
+    /* with the wizard on, panes lose their own dividers — the bar is the map now */
+    .wiz-on .step{border-top:0;padding-top:0;margin-top:14px}
+    .busy{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+      background:#000a;backdrop-filter:blur(2px);opacity:0;transition:opacity .18s ease;z-index:50}
+    .busy.in{opacity:1}
+    .busybox{background:var(--card,#1b1712);border:1px solid var(--line,#4443);border-radius:14px;
+      padding:26px 30px;text-align:center;max-width:92vw;box-shadow:0 10px 40px #0006}
+    .busymsg{font-weight:600;margin-top:14px}
+    .busysub{font-size:.84rem;opacity:.7;margin-top:6px}
+    .spin{width:30px;height:30px;margin:0 auto;border-radius:50%;
+      border:3px solid #8884;border-top-color:currentColor;animation:sp .8s linear infinite}
+    @keyframes sp{to{transform:rotate(360deg)}}
+    @media (prefers-reduced-motion:reduce){ .spin{animation-duration:2.4s} }
     /* --- reads top to bottom: four numbered steps, one decision at the end --- */
     .step{margin-top:30px;padding-top:22px;border-top:1px solid var(--line,#4443)}
     .step:first-of-type{border-top:0;padding-top:0;margin-top:20px}
@@ -147,7 +175,9 @@
 
       {% if error %}<div class="err">{{ error }}</div>{% endif %}
 
-      <section class="step">
+      <div data-wizard>
+
+      <section class="step" data-step="1" data-title="What you gave me">
         <h2><span class="no">1</span> What you gave me</h2>
         <p class="say">Straight off your file. No opinions yet.</p>
 
@@ -161,7 +191,8 @@
 
         <details class="tweak">
           <summary>Wrong tab, or want a different brain to read it? →</summary>
-          <form class="brain" method="post" action="/lists/draft/{{ draft.token }}/analyze">
+          <form class="brain" method="post" action="/lists/draft/{{ draft.token }}/analyze"
+                data-busy="Reading your list…">
             <label for="sheet" style="opacity:.75;font-size:.9rem">Tab</label>
             <select id="sheet" name="sheet">
               {% for t in draft.tabs %}
@@ -174,7 +205,7 @@
               <option value="{{ id }}" {% if id == stats.model %}selected{% endif %}>{{ label }}</option>
               {% endfor %}
             </select>
-            <button class="btn ghost" type="submit">Read it again</button>
+            <button class="btn ghost" type="submit" data-busy="Reading it again…">Read it again</button>
           </form>
           {% for t in draft.tabs %}{% if t.index == draft.sheet %}
           <p style="font-size:.83rem;opacity:.65;margin-top:8px">Header row: {{ t.headers|join(' · ') }}</p>
@@ -182,7 +213,7 @@
         </details>
       </section>
 
-      <section class="step">
+      <section class="step" data-step="2" data-title="What I think this is">
         <h2><span class="no">2</span> What I think this is</h2>
         <p class="say">The only part a model wrote. It may name things; it may never count them.</p>
 
@@ -200,7 +231,7 @@
         {% endif %}
       </section>
 
-      <section class="step">
+      <section class="step" data-step="3" data-title="What I found in it">
         <h2><span class="no">3</span> What I found in it <span class="tag by-rule">counted, not guessed</span></h2>
         <p class="say">Every number below came from your cells. The model was never shown
           this list and is not allowed to write one.</p>
@@ -244,9 +275,10 @@
         </details>
       </section>
 
-      <form method="post" action="/lists/draft/{{ draft.token }}/approve">
+      <form method="post" action="/lists/draft/{{ draft.token }}/approve"
+            data-busy="Saving the recipe…">
 
-      <section class="step">
+      <section class="step" data-step="4" data-title="What I suggest doing">
         <h2><span class="no">4</span> What I suggest doing</h2>
         <p class="say">Ten things. That is the whole list — there is no eleventh and no
           free-text box, so the model can only rank a menu it didn't write.
@@ -296,7 +328,7 @@
 
       </section>
 
-      <section class="step">
+      <section class="step" data-step="5" data-title="Your call">
         <h2><span class="no">5</span> Your call</h2>
         <p class="say">Ticking the box is the gate. Until you do, none of the above has
           touched anything — and what gets saved is a rule you can re-run, not a prompt.</p>
@@ -320,12 +352,16 @@
         </label>
 
         <div class="row" style="margin-top:18px">
-          <button class="btn primary" type="submit" name="run" value="1">Approve &amp; run</button>
-          <button class="btn ghost" type="submit" name="run" value="0">Approve only</button>
+          <button class="btn primary" type="submit" name="run" value="1"
+                  data-busy="Approved. Running it on your list…">Approve &amp; run</button>
+          <button class="btn ghost" type="submit" name="run" value="0"
+                  data-busy="Saving the recipe…">Approve only</button>
         </div>
         </div>
       </section>
       </form>
+
+      </div><!-- /data-wizard -->
 
       <form method="post" action="/lists/draft/{{ draft.token }}/discard" style="margin-top:10px">
         <button class="btn ghost sm" type="submit">Discard this draft</button>
@@ -346,5 +382,6 @@
     </main>
   </div>
   {% include "_footer.html" %}
+  <script src="/static/wizard.js" defer></script>
 </body>
 </html>

@@ -26,6 +26,17 @@
     .act.review{border-left:3px solid #e0af68}
     .act.rejected{opacity:.5}
     .find{margin:6px 0;padding-left:2px}
+    .busy{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+      background:#000a;backdrop-filter:blur(2px);opacity:0;transition:opacity .18s ease;z-index:50}
+    .busy.in{opacity:1}
+    .busybox{background:var(--card,#1b1712);border:1px solid var(--line,#4443);border-radius:14px;
+      padding:26px 30px;text-align:center;max-width:92vw;box-shadow:0 10px 40px #0006}
+    .busymsg{font-weight:600;margin-top:14px}
+    .busysub{font-size:.84rem;opacity:.7;margin-top:6px}
+    .spin{width:30px;height:30px;margin:0 auto;border-radius:50%;
+      border:3px solid #8884;border-top-color:currentColor;animation:sp .8s linear infinite}
+    @keyframes sp{to{transform:rotate(360deg)}}
+    @media (prefers-reduced-motion:reduce){ .spin{animation-duration:2.4s} }
   </style>
 </head>
 <body>
@@ -42,7 +53,8 @@
       {% if error %}<div class="err">{{ error }}</div>{% endif %}
 
       <div class="act">
-        <form class="brain" method="post" action="/lists/upload" enctype="multipart/form-data">
+        <form class="brain" method="post" action="/lists/upload" enctype="multipart/form-data"
+              data-busy="Reading your list…">
           <div style="flex:1 1 100%">
             <label for="file">Spreadsheet</label>
             <input id="file" type="file" name="file"
@@ -58,7 +70,7 @@
               {% endfor %}
             </select>
           </div>
-          <button class="btn primary" type="submit">Read the list</button>
+          <button class="btn primary" type="submit" data-busy="Reading your list…">Read the list</button>
           <a class="btn ghost" href="/business-hub">Cancel</a>
         </form>
       </div>
@@ -156,5 +168,6 @@
     </main>
   </div>
   {% include "_footer.html" %}
+  <script src="/static/wizard.js" defer></script>
 </body>
 </html>

@@ -9,6 +9,7 @@ disagree about a key, this is where it shows up.
 """
 import asyncio
 import os
+import re
 import types
 
 # db.py builds an engine at import time; business_hub imports it. A DSN that
@@ -229,3 +230,47 @@ def test_the_business_hub_page_still_renders_with_the_new_report_url():
     assert "/business-hub/report/" + "c" * 32 + ".json" in html
     assert "/media/business-hub/" not in html          # the public link is gone
     assert "📋 Bring your own list →" in html
+
+
+def test_the_draft_screen_is_a_walkable_wizard_that_degrades_to_one_long_form(draft):
+    """Two complaints from the first real run: you press a button and see no sign
+    it happened, and you can't get back to an earlier step. Both are fixed in
+    markup the server emits, so both are testable right here.
+
+    The wizard is progressive enhancement: with JS off every pane is visible and
+    the page behaves exactly as it did before. Nothing in wizard.js is
+    load-bearing for correctness — the gate and the ticks live on the server."""
+    xr, analysis = draft["xray"], draft["analysis"]
+    acts = analysis["actions"]
+    html = ENV.get_template("list_draft.html").render(
+        request=None, user={"username": "angel"}, error="", draft=draft,
+        xr=xr, analysis=analysis, stats=draft["stats"],
+        auto=[a for a in acts if a["gate"] == enrich.AUTO],
+        review=[a for a in acts if a["gate"] == enrich.REVIEW],
+        rejected=[a for a in acts if a["gate"] == enrich.REJECTED],
+        classify=next((a for a in acts if a["id"] == "classify"), None),
+        columns=xr["columns"], models=enrich.MODELS, default_model="gpt-oss:120b",
+        auto_above=enrich.AUTO_ABOVE, review_above=enrich.REVIEW_ABOVE,
+        slow=False, calls=1, lang="en")
+
+    # The root must WRAP every pane, including the two that live inside the
+    # approve form — stepping forward past the form boundary would otherwise
+    # leave the form (and every tick in it) behind.
+    open_at, close_at = html.index("<div data-wizard>"), html.index("/data-wizard")
+    first, last = html.index('data-step="1"'), html.index('data-step="5"')
+    assert open_at < first < last < close_at
+
+    assert re.findall(r'data-title="([^"]+)"', html) == [
+        "What you gave me", "What I think this is", "What I found in it",
+        "What I suggest doing", "Your call"]
+
+    # No pane is hidden in the HTML itself. JS hides them, so a browser without
+    # it shows the whole form rather than a blank page.
+    inner = html.split("<div data-wizard>")[1].split("/data-wizard")[0]
+    assert "hidden" not in inner
+
+    # "something is happening" on every button that takes real time
+    assert 'data-busy="Reading your list' in html          # re-read with another brain
+    assert 'data-busy="Saving the recipe' in html          # approve
+    assert "Running it on your list" in html               # approve & run
+    assert "/static/wizard.js" in html
