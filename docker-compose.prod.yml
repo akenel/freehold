@@ -21,6 +21,12 @@ services:
     environment:
       SITE_DOMAIN: ${SITE_DOMAIN}      # this box's app host, e.g. sandbox.wolfhold.app
       AUTH_DOMAIN: ${AUTH_DOMAIN}      # the shared Keycloak host, auth.wolfhold.app
+      # Open WebUI host. CADDY needs this too, not only the app container: the
+      # Caddyfile matches `@ai host {$OPENWEBUI_DOMAIN:ai.disabled.invalid}`, and an
+      # unset var silently becomes the inert default. The matcher then never fires
+      # and ai.<domain> falls through to the catch-all `handle` — serving the prod
+      # app on the wrong hostname, which looks like a working page, not an error.
+      OPENWEBUI_DOMAIN: ${OPENWEBUI_DOMAIN:-ai.disabled.invalid}
       # --- Wildcard cert via Porkbun DNS-01 (see Caddyfile.prod + caddy/Dockerfile) ---
       BASE_DOMAIN: ${BASE_DOMAIN:-wolfhold.app}     # registrable domain for *.<domain>
       PORKBUN_API_KEY: ${PORKBUN_API_KEY:-}         # from Porkbun (API access ON per-domain)
