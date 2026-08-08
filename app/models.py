@@ -91,3 +91,17 @@ class Ticket(Base):
     resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
     resolved_by: Mapped[str | None] = mapped_column(String(80), nullable=True)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class HealthCheck(Base):
+    """Snapshot of a service health check — what was checked, when, and the result.
+    Used by the health dashboard to show green/red status for Postgres, Keycloak,
+    MinIO, and the app itself. Not append-only; each service has one row updated
+    on each check."""
+    __tablename__ = "health_checks"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    service: Mapped[str] = mapped_column(String(60), unique=True, index=True)  # postgres, keycloak, minio, app
+    status: Mapped[str] = mapped_column(String(20), default="unknown")  # ok, degraded, down, unknown
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    detail: Mapped[str | None] = mapped_column(Text, nullable=True)  # human-readable detail (version, error message, etc.)

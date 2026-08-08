@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Service Health — Freehold</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#15120d">
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .status-card { background: #1a1712; border-radius: 8px; padding: 24px; margin: 20px 0; }
+    .status-overall { font-size: 2rem; font-weight: bold; margin-bottom: 20px; }
+    .status-ok { color: #4ade80; }
+    .status-down { color: #f87171; }
+    .service-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #2a2520; }
+    .service-row:last-child { border-bottom: none; }
+    .service-name { font-size: 1.1rem; }
+    .service-status { display: flex; align-items: center; gap: 8px; }
+    .status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .dot-ok { background: #4ade80; }
+    .dot-down { background: #f87171; }
+    .service-detail { color: #888; font-size: 0.9rem; margin-top: 4px; }
+    .build-info { margin-top: 30px; padding-top: 20px; border-top: 1px solid #2a2520; color: #666; font-size: 0.85rem; }
+    .refresh-link { color: #888; text-decoration: none; }
+    .refresh-link:hover { color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    {% include "_topbar.html" %}
+
+    <main class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h1>Service Health</h1>
+        <a class="refresh-link" href="/status/page">↻ Refresh</a>
+      </div>
+
+      <div class="status-card">
+        <div class="status-overall {% if overall_ok %}status-ok{% else %}status-down{% endif %}">
+          {% if overall_ok %}
+            ✓ All systems operational
+          {% else %}
+            ⚠ Some services degraded
+          {% endif %}
+        </div>
+
+        {% for svc in services %}
+        <div class="service-row">
+          <div>
+            <div class="service-name">{{ svc.name }}</div>
+            <div class="service-detail">{{ svc.detail }}</div>
+          </div>
+          <div class="service-status">
+            <span class="status-dot {% if svc.ok %}dot-ok{% else %}dot-down{% endif %}"></span>
+            <span style="{% if svc.ok %}color:#4ade80{% else %}color:#f87171{% endif %}">
+              {% if svc.ok %}OK{% else %}DOWN{% endif %}
+            </span>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="build-info">
+          Build: {{ build.version }} • {{ build.sha }} • {{ build.date }}
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:18px">
+        <a class="btn ghost" href="/status">JSON API</a>
+        <a class="btn ghost" href="/">← Back to Home</a>
+      </div>
+    </main>
+  </div>
+  {% include "_footer.html" %}
+</body>
+</html>

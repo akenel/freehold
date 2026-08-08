@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 import deps
-from routers import (audit, base, business_hub, door, extras, lists, loop, profile,
+from routers import (audit, base, business_hub, door, extras, health, lists, loop, profile,
                      robot_panel, tempest)
 
 app = FastAPI(title="Freehold", version="0.2.0-phase2")
@@ -21,7 +21,7 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 for _module in (base, door, loop, profile, extras, robot_panel, tempest, business_hub,
-                lists, audit):
+                lists, audit, health):
     app.include_router(_module.router)
 
 
