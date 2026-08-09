@@ -8,4 +8,4 @@
 - [x] 5. Create a templates/status.html page showing service health with green/red indicators
 - [x] 6. Write tests for the health endpoint in tests/test_health.py
 - [x] 7. Run the full test suite to prove nothing broke
-- [ ] 8. Git commit with a meaningful message
+- [x] 8. Git commit with a meaningful message
