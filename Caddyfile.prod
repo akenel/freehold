@@ -103,6 +103,28 @@
 		reverse_proxy tempest-app:8000
 	}
 
+	# Ecolution GmbH's two live business sites. Both backends are EXTERNAL to this
+	# repo — they run from ~/repos/integration-works and ~/repos/werkstatt as their
+	# own compose projects, joined to the `freehold` network so Caddy can resolve
+	# them by name. Freehold does not build, deploy or health-check them; it only
+	# routes. If a container is stopped these 502, exactly like @devtempest above.
+	#
+	# These matchers live HERE, in git, on purpose: they were once a local-only
+	# edit on the prod box, which meant one `git checkout Caddyfile.prod` could
+	# silently take two real businesses offline. It did, on 2026-08-09.
+
+	# Integration Works — iw.<domain>
+	@iw host iw.{$BASE_DOMAIN:wolfhold.app}
+	handle @iw {
+		reverse_proxy iw-web:80
+	}
+
+	# Werkstatt — wk.<domain>
+	@wk host wk.{$BASE_DOMAIN:wolfhold.app}
+	handle @wk {
+		reverse_proxy wk-web:80
+	}
+
 	# default: www.<domain> (and any other subdomain) -> the prod app
 	handle {
 		import appsite app:8000
