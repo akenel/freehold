@@ -80,6 +80,20 @@ async def check_app() -> tuple[bool, str]:
     return True, f"Running {version} ({sha})"
 
 
+async def check_bridge() -> tuple[bool, str]:
+    """Check Ground Control Bridge availability."""
+    bridge_url = os.getenv("BRIDGE_URL", "http://100.72.40.117:8765").rstrip("/")
+    try:
+        async with asyncio.timeout(5):
+            async with httpx.AsyncClient(timeout=5) as client:
+                resp = await client.get(bridge_url)
+                if resp.status_code == 200:
+                    return True, "Ground Control Bridge v3.0 — auth enabled"
+                return False, f"Bridge returned {resp.status_code}"
+    except Exception as exc:
+        return False, str(exc)
+
+
 async def record_check(service: str, ok: bool, detail: str) -> None:
     """Record a health check result in the database."""
     try:
@@ -110,6 +124,7 @@ async def health_status():
     keycloak_ok, keycloak_detail = await check_keycloak()
     minio_ok, minio_detail = await check_minio()
     app_ok, app_detail = await check_app()
+    bridge_ok, bridge_detail = await check_bridge()
     
     # Record results
     await asyncio.gather(
@@ -117,9 +132,10 @@ async def health_status():
         record_check("keycloak", keycloak_ok, keycloak_detail),
         record_check("minio", minio_ok, minio_detail),
         record_check("app", app_ok, app_detail),
+        record_check("bridge", bridge_ok, bridge_detail),
     )
     
-    overall = all([postgres_ok, keycloak_ok, minio_ok, app_ok])
+    overall = all([postgres_ok, keycloak_ok, minio_ok, app_ok, bridge_ok])
     
     return JSONResponse({
         "status": "ok" if overall else "degraded",
@@ -128,6 +144,7 @@ async def health_status():
             "keycloak": {"status": "ok" if keycloak_ok else "down", "detail": keycloak_detail},
             "minio": {"status": "ok" if minio_ok else "down", "detail": minio_detail},
             "app": {"status": "ok" if app_ok else "down", "detail": app_detail},
+            "bridge": {"status": "ok" if bridge_ok else "down", "detail": bridge_detail},
         },
         "build": {"version": build_info.version(), "sha": build_info.sha(), "date": build_info.date()},
     })
@@ -142,6 +159,7 @@ async def health_page(request: Request):
     keycloak_ok, keycloak_detail = await check_keycloak()
     minio_ok, minio_detail = await check_minio()
     app_ok, app_detail = await check_app()
+    bridge_ok, bridge_detail = await check_bridge()
     
     # Record results
     await asyncio.gather(
@@ -149,15 +167,17 @@ async def health_page(request: Request):
         record_check("keycloak", keycloak_ok, keycloak_detail),
         record_check("minio", minio_ok, minio_detail),
         record_check("app", app_ok, app_detail),
+        record_check("bridge", bridge_ok, bridge_detail),
     )
     
-    overall = all([postgres_ok, keycloak_ok, minio_ok, app_ok])
+    overall = all([postgres_ok, keycloak_ok, minio_ok, app_ok, bridge_ok])
     
     services = [
         {"name": "PostgreSQL", "ok": postgres_ok, "detail": postgres_detail},
         {"name": "Keycloak", "ok": keycloak_ok, "detail": keycloak_detail},
         {"name": "MinIO", "ok": minio_ok, "detail": minio_detail},
         {"name": "App", "ok": app_ok, "detail": app_detail},
+        {"name": "Ground Control Bridge", "ok": bridge_ok, "detail": bridge_detail},
     ]
     
     return deps.templates.TemplateResponse("status.html", {
