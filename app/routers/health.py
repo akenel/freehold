@@ -80,15 +80,27 @@ async def check_app() -> tuple[bool, str]:
     return True, f"Running {version} ({sha})"
 
 
+# The Ground Control Bridge is an OPTIONAL peer on a private network, not part of
+# the Freehold stack. Two rules follow, both learned the hard way:
+#   - OFF unless BRIDGE_URL is set. It used to default to a hard-coded Tailscale
+#     address, so a prod box that cannot route there paid two 5s timeouts per page
+#     load to discover that.
+#   - ADVISORY. Reported, never folded into `overall`. An optional peer being
+#     unreachable is not a Freehold outage, and a status page that cries degraded
+#     over it is a red light that lies — same sin as a green one.
+BRIDGE_URL = os.getenv("BRIDGE_URL", "").rstrip("/")
+
+
 async def check_bridge() -> tuple[bool, str]:
-    """Check Ground Control Bridge availability."""
-    bridge_url = os.getenv("BRIDGE_URL", "http://100.72.40.117:8765").rstrip("/")
+    """Check Ground Control Bridge reachability. Only called when BRIDGE_URL is set."""
     try:
         async with asyncio.timeout(5):
             async with httpx.AsyncClient(timeout=5) as client:
-                resp = await client.get(bridge_url)
+                resp = await client.get(BRIDGE_URL)
+                # Report what we actually observed. A 200 proves it answered — it
+                # does NOT prove the version or that auth is on, so don't claim it.
                 if resp.status_code == 200:
-                    return True, "Ground Control Bridge v3.0 — auth enabled"
+                    return True, f"Reachable at {BRIDGE_URL} (HTTP 200)"
                 return False, f"Bridge returned {resp.status_code}"
     except Exception as exc:
         return False, str(exc)
@@ -117,34 +129,43 @@ async def record_check(service: str, ok: bool, detail: str) -> None:
         pass
 
 
-@router.get("/status")
-async def health_status():
-    """JSON health report for all services."""
+async def gather_checks() -> tuple[bool, list[dict]]:
+    """Probe every service once, record the results, return (overall_ok, rows).
+
+    Both /status and /status/page go through here so the JSON and the HTML can
+    never disagree about what's up. `overall` counts only the services Freehold
+    actually owns — advisory rows are shown but never flip the light.
+    """
     postgres_ok, postgres_detail = await check_postgres()
     keycloak_ok, keycloak_detail = await check_keycloak()
     minio_ok, minio_detail = await check_minio()
     app_ok, app_detail = await check_app()
-    bridge_ok, bridge_detail = await check_bridge()
-    
-    # Record results
-    await asyncio.gather(
-        record_check("postgres", postgres_ok, postgres_detail),
-        record_check("keycloak", keycloak_ok, keycloak_detail),
-        record_check("minio", minio_ok, minio_detail),
-        record_check("app", app_ok, app_detail),
-        record_check("bridge", bridge_ok, bridge_detail),
-    )
-    
-    overall = all([postgres_ok, keycloak_ok, minio_ok, app_ok, bridge_ok])
-    
+
+    rows = [
+        {"key": "postgres", "name": "PostgreSQL", "ok": postgres_ok, "detail": postgres_detail, "advisory": False},
+        {"key": "keycloak", "name": "Keycloak", "ok": keycloak_ok, "detail": keycloak_detail, "advisory": False},
+        {"key": "minio", "name": "MinIO", "ok": minio_ok, "detail": minio_detail, "advisory": False},
+        {"key": "app", "name": "App", "ok": app_ok, "detail": app_detail, "advisory": False},
+    ]
+    if BRIDGE_URL:
+        bridge_ok, bridge_detail = await check_bridge()
+        rows.append({"key": "bridge", "name": "Ground Control Bridge",
+                     "ok": bridge_ok, "detail": bridge_detail, "advisory": True})
+
+    await asyncio.gather(*(record_check(r["key"], r["ok"], r["detail"]) for r in rows))
+    return all(r["ok"] for r in rows if not r["advisory"]), rows
+
+
+@router.get("/status")
+async def health_status():
+    """JSON health report for all services."""
+    overall, rows = await gather_checks()
     return JSONResponse({
         "status": "ok" if overall else "degraded",
         "services": {
-            "postgres": {"status": "ok" if postgres_ok else "down", "detail": postgres_detail},
-            "keycloak": {"status": "ok" if keycloak_ok else "down", "detail": keycloak_detail},
-            "minio": {"status": "ok" if minio_ok else "down", "detail": minio_detail},
-            "app": {"status": "ok" if app_ok else "down", "detail": app_detail},
-            "bridge": {"status": "ok" if bridge_ok else "down", "detail": bridge_detail},
+            r["key"]: {"status": "ok" if r["ok"] else "down",
+                       "detail": r["detail"], "advisory": r["advisory"]}
+            for r in rows
         },
         "build": {"version": build_info.version(), "sha": build_info.sha(), "date": build_info.date()},
     })
@@ -154,32 +175,8 @@ async def health_status():
 async def health_page(request: Request):
     """HTML health dashboard with green/red indicators."""
     user = deps.current_user(request)
-    
-    postgres_ok, postgres_detail = await check_postgres()
-    keycloak_ok, keycloak_detail = await check_keycloak()
-    minio_ok, minio_detail = await check_minio()
-    app_ok, app_detail = await check_app()
-    bridge_ok, bridge_detail = await check_bridge()
-    
-    # Record results
-    await asyncio.gather(
-        record_check("postgres", postgres_ok, postgres_detail),
-        record_check("keycloak", keycloak_ok, keycloak_detail),
-        record_check("minio", minio_ok, minio_detail),
-        record_check("app", app_ok, app_detail),
-        record_check("bridge", bridge_ok, bridge_detail),
-    )
-    
-    overall = all([postgres_ok, keycloak_ok, minio_ok, app_ok, bridge_ok])
-    
-    services = [
-        {"name": "PostgreSQL", "ok": postgres_ok, "detail": postgres_detail},
-        {"name": "Keycloak", "ok": keycloak_ok, "detail": keycloak_detail},
-        {"name": "MinIO", "ok": minio_ok, "detail": minio_detail},
-        {"name": "App", "ok": app_ok, "detail": app_detail},
-        {"name": "Ground Control Bridge", "ok": bridge_ok, "detail": bridge_detail},
-    ]
-    
+    overall, services = await gather_checks()
+
     return deps.templates.TemplateResponse("status.html", {
         "request": request,
         "user": user,

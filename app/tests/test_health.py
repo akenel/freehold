@@ -1,4 +1,6 @@
 """Tests for the health check endpoint and status page."""
+import asyncio
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -62,6 +64,45 @@ def test_health_checks_app():
     # Build info should match
     assert data["build"]["version"] is not None
     assert data["build"]["sha"] is not None
+
+
+def test_bridge_absent_when_unconfigured():
+    """No BRIDGE_URL -> no bridge row, and no 5s timeout paid to discover that.
+
+    The bridge is an optional peer on a private network. A prod box that can't
+    route there must not probe it on every page load.
+    """
+    from routers import health
+
+    assert health.BRIDGE_URL == "", "test env must not configure a bridge"
+    data = client.get("/status").json()
+    assert "bridge" not in data["services"]
+
+
+def test_advisory_service_never_degrades_overall(monkeypatch):
+    """An unreachable advisory peer is reported, but `overall` stays ok.
+
+    Regression guard: the bridge check was once folded into
+    `all([...bridge_ok])`, so a peer Freehold doesn't own could paint prod
+    degraded. asyncio.run keeps this plugin-free — the suite has no async runner.
+    """
+    from routers import health
+
+    async def ok(detail):
+        return True, detail
+
+    monkeypatch.setattr(health, "BRIDGE_URL", "http://127.0.0.1:1")   # nothing listens
+    monkeypatch.setattr(health, "check_postgres", lambda: ok("pg"))
+    monkeypatch.setattr(health, "check_keycloak", lambda: ok("kc"))
+    monkeypatch.setattr(health, "check_minio", lambda: ok("minio"))
+    monkeypatch.setattr(health, "check_app", lambda: ok("build"))
+
+    overall, rows = asyncio.run(health.gather_checks())
+
+    bridge = next(r for r in rows if r["key"] == "bridge")
+    assert bridge["advisory"] is True
+    assert bridge["ok"] is False, "nothing listens on port 1 — it must report down"
+    assert overall is True, "an advisory peer must never flip the overall light"
 
 
 @pytest.mark.parametrize("endpoint", ["/status", "/status/page"])

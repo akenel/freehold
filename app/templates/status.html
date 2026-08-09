@@ -20,6 +20,10 @@
     .status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
     .dot-ok { background: #4ade80; }
     .dot-down { background: #f87171; }
+    /* Amber, not red: an optional peer we can't reach is a note, not an outage. */
+    .dot-advisory { background: #fbbf24; }
+    .advisory-tag { font-size: .7rem; font-weight: normal; opacity: .65; border: 1px solid currentColor;
+                    border-radius: 4px; padding: 0 4px; vertical-align: middle; }
     .service-detail { color: #888; font-size: 0.9rem; margin-top: 4px; }
     .build-info { margin-top: 30px; padding-top: 20px; border-top: 1px solid #2a2520; color: #666; font-size: 0.85rem; }
     .refresh-link { color: #888; text-decoration: none; }
@@ -48,13 +52,15 @@
         {% for svc in services %}
         <div class="service-row">
           <div>
-            <div class="service-name">{{ svc.name }}</div>
+            <div class="service-name">{{ svc.name }}{% if svc.advisory %} <span class="advisory-tag">advisory</span>{% endif %}</div>
             <div class="service-detail">{{ svc.detail }}</div>
           </div>
           <div class="service-status">
-            <span class="status-dot {% if svc.ok %}dot-ok{% else %}dot-down{% endif %}"></span>
-            <span style="{% if svc.ok %}color:#4ade80{% else %}color:#f87171{% endif %}">
-              {% if svc.ok %}OK{% else %}DOWN{% endif %}
+            {# Advisory rows are optional peers: shown honestly, but a red one is
+               not a Freehold outage and never changes the overall verdict above. #}
+            <span class="status-dot {% if svc.ok %}dot-ok{% elif svc.advisory %}dot-advisory{% else %}dot-down{% endif %}"></span>
+            <span style="{% if svc.ok %}color:#4ade80{% elif svc.advisory %}color:#fbbf24{% else %}color:#f87171{% endif %}">
+              {% if svc.ok %}OK{% elif svc.advisory %}UNREACHABLE{% else %}DOWN{% endif %}
             </span>
           </div>
         </div>
