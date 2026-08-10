@@ -212,8 +212,15 @@ def ship(files: list[Path], env: dict) -> bool:
         # and the box's B2 key is deliberately WRITE-ONLY — so that HEAD returns
         # 401 and the whole copy fails. Small DB dumps never hit this; the 1 GB
         # openwebui archive did, on 2026-08-10. Single-stream skips the read-back.
+        # Retries are CAPPED for a reason. rclone defaults to 3 attempts x 10
+        # low-level retries; on 2026-08-10 a verification failure made it re-upload
+        # a 1 GB archive THIRTY times, and because B2 versions every upload, all 30
+        # were kept — 30.7 GB, blowing a 10 GB free tier off one run. When the
+        # failure is systematic (bad key, cap hit, permissions) retrying cannot
+        # help; it can only cost money. The nightly run tries again tomorrow.
         if sh("rclone", "copy", str(f), dest, "--no-traverse", "--no-check-dest",
-              "--multi-thread-streams", "0", env=rc).returncode != 0:
+              "--multi-thread-streams", "0", "--retries", "2", "--low-level-retries", "2",
+              env=rc).returncode != 0:
             print(f"      ❌ FAILED  — {f.name}")
             failed.append(f)
         else:

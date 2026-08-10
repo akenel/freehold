@@ -133,8 +133,14 @@ def main() -> int:
         # delete — only add. An attacker who owns the box can't wipe recovery points.
         # Shipped one at a time so a failure names the file that didn't make it.
         for enc_file in enc_files:
+            # Capped retries. rclone defaults to 3 attempts x 10 low-level retries,
+            # and B2 keeps a VERSION of every upload — on 2026-08-10 that turned one
+            # failing 1 GB copy into 30 stored copies and 30.7 GB of billed storage.
+            # These dumps are small, but the exposure is the same shape.
             if subprocess.run(["rclone", "copy", str(enc_file), dest,
-                               "--no-traverse", "--no-check-dest"], env=rc).returncode != 0:
+                               "--no-traverse", "--no-check-dest",
+                               "--retries", "2", "--low-level-retries", "2"],
+                              env=rc).returncode != 0:
                 print(f"ERROR: off-box copy to B2 failed for {enc_file.name}"); return 1
             print(f"      ✅ OFF-BOX — {enc_file.name} shipped to B2 (immutable; lifecycle keeps ≤ {keep}d).")
         print("      Survives box loss.")
