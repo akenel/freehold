@@ -15,4 +15,5 @@
 - [ ] 2. Rehearse the restore with a REAL prod dump pulled from B2 (docs/private/RESTORE.md, "Rehearsing without touching production"). Mine used local data; this proves prod's users come back. Touches nothing live.
 - [x] 3. ~~Back up openwebui_data (AI chat history)~~ — done: `ops/backup-volumes.py`, round-trip verified
 - [ ] 4. Decide on MinIO: `python3 ops/backup-volumes.py miniodata` works today, but check the volume size first (B2 charges by GB) before adding it to the nightly timer
-- [ ] 5. Put backup-volumes.py on a cron timer on the box (see docs/private/RESTORE.md)
+- [ ] 5. Put backup-volumes.py on a cron timer on the box (see docs/private/RESTORE.md) — cheap now: nightly hot is ~1.4% of the volume
+- [ ] 6. Re-run `python3 ops/backup-volumes.py --cold` once on the box to ship the 1 GB baseline off-box (the 2026-08-10 attempt failed on the write-only-key 401, now fixed)

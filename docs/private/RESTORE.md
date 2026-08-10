@@ -204,9 +204,35 @@ plus per-user settings and uploads. Arguably the most sensitive data on the box.
 
 ```bash
 cd ~/freehold
-python3 ops/backup-volumes.py                 # default set: openwebui_data
-python3 ops/backup-volumes.py miniodata       # or name volumes explicitly
+python3 ops/backup-volumes.py                 # hot; cold too if no baseline yet
+python3 ops/backup-volumes.py --cold          # force a fresh cold baseline
+python3 ops/backup-volumes.py --inspect       # what's in there and how big; changes nothing
+python3 ops/backup-volumes.py miniodata       # a specific volume
 ```
+
+### Cold / hot — why this is two archives, not one
+
+The first full run on prod produced **1.02 GB**, and `open-webui` was paused for the
+2.4 minutes it took to tar. Nightly, that is 2.4 minutes of frozen AI chat spent
+backing up an embedding-model cache that is not user data — `webui.db`, the actual
+conversations, is a few MB of that gigabyte.
+
+You can't simply drop the cache: `OFFLINE_MODE=true` stops Open WebUI re-downloading
+models, so a restore without it comes back broken.
+
+| Part | Contains | When |
+|---|---|---|
+| **cold** | `cache/` — the model cache. Big, static. | **once**, kept as a baseline; re-made only with `--cold` |
+| **hot** | `webui.db`, `uploads/`, `vector_db/`, and anything new | every run |
+
+Measured on the test volume: cold 3.0 MB, **hot 41 KB** — the nightly archive is 1.4%
+of the whole, and the pause drops from minutes to a blink.
+
+Anything **not** named as cold is hot, so a new top-level directory appearing after an
+Open WebUI upgrade lands in the nightly backup by default. Silently excluding unknown
+new data is the failure this script exists to prevent.
+
+A volume with no cold paths (`miniodata`, `pgdata`) is archived whole as one `full` part.
 
 Same discipline as the databases: tar → encrypt (`BACKUP_PASSPHRASE`) → **open the
 archive and check the thing you actually need is inside** → ship to
@@ -235,11 +261,15 @@ FILES="-f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.multie
 # stop the writer first — restoring under a running container corrupts it
 CADDYFILE=./Caddyfile.prod docker compose $FILES stop open-webui
 
-# wipe and repopulate, straight from the encrypted archive
-openssl enc -d -aes-256-cbc -pbkdf2 -pass env:BACKUP_PASSPHRASE \
-  -in backups/openwebui_data-<stamp>.tar.gz.enc \
-  | docker run --rm -i -v freehold_openwebui_data:/data alpine \
-      sh -c 'rm -rf /data/* /data/.[!.]* 2>/dev/null; tar xzf - -C /data'
+# empty it, then unpack COLD FIRST, then the newest HOT over the top.
+# Order matters: hot is the current state and must win.
+docker run --rm -v freehold_openwebui_data:/data alpine sh -c 'rm -rf /data/* /data/.[!.]* 2>/dev/null'
+
+for A in backups/openwebui_data-cold-<stamp>.tar.gz.enc \
+         backups/openwebui_data-hot-<stamp>.tar.gz.enc; do
+  openssl enc -d -aes-256-cbc -pbkdf2 -pass env:BACKUP_PASSPHRASE -in "$A" \
+    | docker run --rm -i -v freehold_openwebui_data:/data alpine tar xzf - -C /data
+done
 
 CADDYFILE=./Caddyfile.prod docker compose $FILES start open-webui
 ```
@@ -248,11 +278,27 @@ CADDYFILE=./Caddyfile.prod docker compose $FILES start open-webui
 volume's **full docker name** (`freehold_openwebui_data`) — the compose project
 prefixes it.
 
-**Verified end to end on 2026-08-10:** 200 conversations seeded, backed up, the
-volume emptied to zero entries, restored with the command above — all 200 rows
-back with correct content. The drill's guards were tested too: a 61 KB archive
-that looked entirely healthy but contained a corrupt `webui.db` was **refused**,
-as was one where `webui.db` was missing altogether.
+The cold baseline is **older than the hot archive by design** — that is not a
+mistake, it just hasn't changed. If the box is gone you need **both** files from
+B2, and the cold one may be weeks or months older than the hot one.
+
+**Verified end to end on 2026-08-10:** 200 conversations plus a 3 MB model cache
+seeded, backed up as cold + hot, the volume emptied to zero entries, restored with
+the loop above — cache, uploads, a directory added after the baseline was taken,
+and all 200 conversations back. The drill's guards were tested individually too: a
+61 KB archive that looked entirely healthy but carried a corrupt `webui.db` was
+**refused**, as was one missing `webui.db`, as was a volume that doesn't exist.
+
+### The B2 write-only key needs `--multi-thread-streams 0`
+
+The first prod run uploaded 1 GB and failed three times with
+`failed to find object after copy: failed to HEAD for download: Unknown 401`.
+
+That is the hardening working. rclone's multi-thread path — used for large files —
+verifies with a **read-back HEAD** after upload, and the box's B2 key is
+deliberately write-only. Small DB dumps never reach that path, which is why
+`backup.py` was unaffected. `--multi-thread-streams 0` uses a single stream and
+skips the read-back; it is baked into `ops/backup-volumes.py`, not optional tuning.
 
 ---
 
