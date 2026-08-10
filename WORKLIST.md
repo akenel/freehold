@@ -9,3 +9,8 @@
 - [x] 6. Write tests for the health endpoint in tests/test_health.py
 - [x] 7. Run the full test suite to prove nothing broke
 - [x] 8. Git commit with a meaningful message
+
+## ON DECK — next session
+- [ ] 1. `python3 ops/promote.py production` — ships migration 0006 so /status actually records (prod is on 0005)
+- [ ] 2. Rehearse the restore with a REAL prod dump pulled from B2 (docs/private/RESTORE.md, "Rehearsing without touching production"). Mine used local data; this proves prod's users come back. Touches nothing live.
+- [ ] 3. Optional: back up the volumes nothing covers yet — MinIO objects + openwebui_data (AI chat history)
