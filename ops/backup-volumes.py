@@ -28,9 +28,18 @@ So each volume splits into:
 Restore = unpack the cold baseline, then the newest hot archive over it.
 A volume with no cold paths is archived whole, as one `full` part.
 
+COLD DOES NOT GO OFF-BOX by default. It is ~1 GB of PUBLIC model weights that
+HuggingFace will hand back to anyone; the only reason we can't refetch them after a
+restore is OFFLINE_MODE=true, a flag we control. Shipping it nightly exhausted a
+10 GB Backblaze free tier on 2026-08-10 (403 storage_cap_exceeded) while the data
+that is actually yours — the conversations — is ~5 MB. Off-box footprint with cold
+excluded is ~170 MB for 30 days of everything, DBs included. Use --ship-cold if you
+really want it up there.
+
 Usage:
     python3 ops/backup-volumes.py                 # hot; cold too if no baseline yet
     python3 ops/backup-volumes.py --cold          # force a fresh cold baseline
+    python3 ops/backup-volumes.py --ship-cold     # also send cold off-box (~1 GB)
     python3 ops/backup-volumes.py --inspect       # show what's big, change nothing
     python3 ops/backup-volumes.py miniodata       # a specific volume
     python3 ops/backup-volumes.py --no-pause ...  # don't pause the container first
@@ -42,6 +51,7 @@ Timer (the whole point of the split — this is now cheap enough to run nightly)
 import argparse
 import hashlib
 import os
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -172,16 +182,30 @@ def restore_drill(enc_file: Path, passphrase: str, key_file: str | None) -> bool
 
 
 def ship(files: list[Path], env: dict) -> bool:
+    if not files:
+        print("\n→ off-box copy: nothing to ship.")
+        return True
+
     key_id, app_key = env.get("B2_KEY_ID", "").strip(), env.get("B2_APP_KEY", "").strip()
     bucket = env.get("B2_BUCKET", "").strip()
     if not (key_id and app_key and bucket) or app_key.startswith("change_me"):
         print("\n→ off-box copy: B2 not configured — LOCAL ONLY ⚠️")
         return True
+    if shutil.which("rclone") is None:
+        print("\nERROR: rclone is not installed — cannot ship off-box. "
+              "A backup that never leaves the box is not disaster recovery.")
+        return False
 
     dest = f"b2:{bucket}/{env.get('APP_ENV', 'prod')}/volumes"
     rc = {**os.environ, "RCLONE_CONFIG_B2_TYPE": "b2",
           "RCLONE_CONFIG_B2_ACCOUNT": key_id, "RCLONE_CONFIG_B2_KEY": app_key}
     print(f"\n→ shipping {len(files)} archive(s) off-box → {dest} ...")
+
+    # Try EVERY file, then report. Aborting on the first failure once meant a 5 MB
+    # hot archive — the irreplaceable one — never got attempted because a 1 GB cold
+    # archive of re-downloadable model weights failed ahead of it. The small
+    # important thing must never be blocked by the big disposable one.
+    failed: list[Path] = []
     for f in files:
         # --multi-thread-streams 0 is REQUIRED, not tuning. rclone's multi-thread
         # path (used for large files) verifies with a read-back HEAD after upload,
@@ -190,8 +214,21 @@ def ship(files: list[Path], env: dict) -> bool:
         # openwebui archive did, on 2026-08-10. Single-stream skips the read-back.
         if sh("rclone", "copy", str(f), dest, "--no-traverse", "--no-check-dest",
               "--multi-thread-streams", "0", env=rc).returncode != 0:
-            print(f"ERROR: off-box copy failed for {f.name}"); return False
-        print(f"      ✅ OFF-BOX — {f.name}")
+            print(f"      ❌ FAILED  — {f.name}")
+            failed.append(f)
+        else:
+            print(f"      ✅ OFF-BOX — {f.name}")
+
+    if failed:
+        shipped = len(files) - len(failed)
+        print(f"\nERROR: {len(failed)} of {len(files)} archive(s) did not ship: "
+              + ", ".join(f.name for f in failed))
+        # Say exactly what is and isn't off-box. "The rest shipped" when nothing
+        # shipped is the kind of comfortable half-truth this repo exists to avoid.
+        print(f"       {shipped} did ship and {'is' if shipped == 1 else 'are'} off-box."
+              if shipped else "       NOTHING shipped — no off-box copy exists for this run.")
+        print("       Local copies of every archive are in backups/ and passed their drills.")
+        return False
     return True
 
 
@@ -201,6 +238,9 @@ def main() -> int:
                     help=f"short names (default: {' '.join(DEFAULT)}). Known: {', '.join(VOLUMES)}")
     ap.add_argument("--cold", action="store_true",
                     help="re-archive the cold baseline even if one already exists")
+    ap.add_argument("--ship-cold", action="store_true",
+                    help="also copy the cold baseline off-box (it is ~1 GB of "
+                         "re-downloadable model weights; off by default)")
     ap.add_argument("--inspect", action="store_true",
                     help="show what's in each volume and how big — changes nothing")
     ap.add_argument("--no-pause", action="store_true",
@@ -215,7 +255,7 @@ def main() -> int:
 
     backups = REPO / "backups"; backups.mkdir(exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    made: list[Path] = []
+    made: list[tuple[str, Path]] = []
 
     if not args.inspect:
         print(f"→ backing up {len(wanted)} volume(s): {', '.join(wanted)}")
@@ -290,7 +330,7 @@ def main() -> int:
                     print(f"\n✋ ABORT: '{short}' {part} failed its drill — "
                           f"not shipping a backup we can't trust.")
                     return 1
-                made.append(enc_file)
+                made.append((part, enc_file))
         finally:
             if paused:
                 sh("docker", "unpause", container, capture_output=True)
@@ -299,7 +339,19 @@ def main() -> int:
     if args.inspect:
         return 0
 
-    if not ship(made, env):
+    # Cold is ~1 GB of PUBLIC model weights. HuggingFace will hand them back to
+    # anyone; the only reason we can't re-download after a restore is
+    # OFFLINE_MODE=true, a flag we control. Shipping it nightly blew a 10 GB B2
+    # free tier on 2026-08-10 while the data that is actually yours — the
+    # conversations — is ~5 MB. So cold stays on the box unless asked for.
+    to_ship = [p for part, p in made if part != "cold" or args.ship_cold]
+    kept = [p for part, p in made if part == "cold" and not args.ship_cold]
+    for p in kept:
+        print(f"\n   ℹ️  {p.name} stays ON THE BOX (--ship-cold to send it).")
+        print("      It is the model cache, not your data. If the box is lost, restore")
+        print("      hot from B2 and set OFFLINE_MODE=false for one boot to refetch it.")
+
+    if not ship(to_ship, env):
         return 1
 
     print("\n   Volume backups are real, not a rumor.")

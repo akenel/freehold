@@ -225,8 +225,33 @@ models, so a restore without it comes back broken.
 | **cold** | `cache/` — the model cache. Big, static. | **once**, kept as a baseline; re-made only with `--cold` |
 | **hot** | `webui.db`, `uploads/`, `vector_db/`, and anything new | every run |
 
-Measured on the test volume: cold 3.0 MB, **hot 41 KB** — the nightly archive is 1.4%
-of the whole, and the pause drops from minutes to a blink.
+Measured on prod (`--inspect`, 2026-08-10): `cache` **1.0 GB**, everything else ~25 MB
+— so the nightly hot archive is **5.1 MB compressed**, and the pause drops from 2.4
+minutes to a blink.
+
+Note that hot includes `webui.db-wal` and `webui.db-shm`, not just `webui.db`. SQLite
+in WAL mode keeps recent transactions in the `-wal` file until a checkpoint, so a
+backup of `webui.db` alone opens perfectly and is **silently missing your newest
+conversations**. They come along automatically because the script archives everything
+not named cold.
+
+### Cold does NOT go off-box
+
+By default the cold baseline is made, drill-verified, and **kept on the box** — it is
+not copied to B2. It is ~1 GB of *public model weights*; HuggingFace will hand them
+back to anyone. The only reason we can't refetch them is `OFFLINE_MODE=true`, a flag
+we control.
+
+Shipping it nightly exhausted a 10 GB Backblaze free tier on 2026-08-10
+(`403 storage_cap_exceeded`). With cold excluded, **30 days of everything — both
+databases plus nightly hot — is about 170 MB**, comfortably inside the free tier.
+
+`--ship-cold` overrides this if you want the gigabyte up there anyway.
+
+**So on a totally dead box:** restore hot from B2, set `OFFLINE_MODE=false` in
+`docker-compose.openwebui.yml`, start `open-webui` once and let it refetch the models,
+then set it back to `true`. One extra step, in the one scenario where you're
+rebuilding from nothing regardless.
 
 Anything **not** named as cold is hot, so a new top-level directory appearing after an
 Open WebUI upgrade lands in the nightly backup by default. Silently excluding unknown
