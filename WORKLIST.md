@@ -17,3 +17,27 @@
 - [ ] 4. Decide on MinIO: `python3 ops/backup-volumes.py miniodata` works today, but check the volume size first (B2 charges by GB) before adding it to the nightly timer
 - [ ] 5. Put backup-volumes.py on a cron timer on the box (see docs/private/RESTORE.md) — cheap now: nightly hot is ~1.4% of the volume
 - [ ] 6. Re-run `python3 ops/backup-volumes.py --cold` once on the box to ship the 1 GB baseline off-box (the 2026-08-10 attempt failed on the write-only-key 401, now fixed)
+
+## BLOCKED — B2 out of space (2026-08-10)
+Bucket is 30.7 GB / 10 GB free tier: 30 versions of one 1 GB cold archive, from
+rclone retrying a copy that had actually succeeded (401 on the write-only key's
+read-back). Object Lock 14d means they can't be deleted yet. No credit card on the
+account, so the cap can't be raised.
+
+- [ ] **~24 Aug**: delete the 30 versions in `production/volumes/`, wait <24h for
+      usage to recalculate. B2 free again. Deleting never needs a card.
+- [ ] Set a B2 lifecycle rule: keep current version, drop previous after 1 day
+- [ ] Until then, prod deploys are BLOCKED — promote.py gates on backup.py
+      reaching B2. Fix = make the off-box target pluggable (any rclone remote
+      counts, e.g. the laptop over Tailscale sftp), not hard-wired to B2.
+- [ ] Optional tonight, real off-box copy, run ON THE LAPTOP:
+      `rsync -av root@100.122.129.118:/root/freehold/backups/ ~/freehold-offbox/`
+
+Already fixed today: retry caps in both backup scripts, so this can't recur.
+
+## UNDECIDED
+- [ ] `docs/private/openwebui-AI-wolfhold-app.md` — I committed this previously
+      untracked chat transcript to the PUBLIC repo. No secrets, but it has bKf's
+      messages, two mentions of Angel's wife, and pricing strategy. Options: leave
+      it / `git rm --cached` + gitignore / rewrite history. Recommend the middle
+      one, keeping the accuracy note as its own doc.
