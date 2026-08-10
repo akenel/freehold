@@ -57,19 +57,28 @@ step, and production won't move unless the restore-verified backup passes:
 # local: make it, prove it, commit, push
 git commit -am "..."  &&  git push
 
-# sandbox box — deploy the ref, test at sandbox.wolfhold.app
-git pull  &&  python3 ops/deploy.py sandbox
+# sandbox — build the ref into that env's image, test at sandbox.wolfhold.app
+git pull  &&  python3 ops/promote.py sandbox
 
-# good? staging box — same ref, retest at staging.wolfhold.app
-git pull  &&  python3 ops/deploy.py staging
+# good? staging — same ref, retest at staging.wolfhold.app
+git pull  &&  python3 ops/promote.py staging <sha>
 
-# good? prod box — the backup GATE runs first, then deploy + prove the SHA
-git pull  &&  python3 ops/deploy.py production
+# good? production — the backup GATE runs first, then deploy + prove the SHA
+git pull  &&  python3 ops/promote.py production <sha>
 ```
 
-`deploy.py` stamps the build, rebuilds, health-checks, and re-probes `/version`
-to prove the SHA now serving is the one you shipped. Promotion is never a leap of
-faith.
+**Which tool: `promote.py`, not `deploy.py`.** The wolfhold box runs all three
+envs side by side, and `deploy.py` shells out to a bare `docker compose up -d
+--build` — base compose only. That drops the prod overlay, so Caddy comes back on
+the *dev* Caddyfile with no site block for your domain, and the whole front door
+dies: app, auth, ai and the client sites at once. It did exactly that on
+2026-08-09. `deploy.py` now refuses to run when the multi-env containers exist;
+it is for single-stack boxes.
+
+`promote.py` builds each env's own image from a **git ref** via `git archive` (no
+working-tree contamination, no other env touched), runs the test suite inside the
+built image, recreates one container, and re-probes `/version` to prove the SHA
+now serving is the one you shipped. Promotion is never a leap of faith.
 
 ## Production hardening (baked into kc-prd)
 
@@ -94,15 +103,26 @@ comes back exactly:
 1. New box, DNS pointed at it, ports 80/443 open.
 2. `git clone` the repo.
 3. **Restore `.env`** from your password manager (or `make secrets ENV=production`
-   if you keep it in SOPS). It carries every secret — DB, Keycloak, session, and the
-   Google/GitHub client id + secret.
+   if you keep it in SOPS). It carries every secret — DB, Keycloak, session, the
+   Google/GitHub client id + secret, and **`BACKUP_PASSPHRASE`**, without which
+   your backups are noise.
 4. Launch: `CADDYFILE=./Caddyfile.prod docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`
-5. **`make apply`** — reconciles the running Keycloak to `.env`: aligns the client
+   (on a multi-env box add `-f docker-compose.multienv.yml -f docker-compose.openwebui.yml`).
+5. **Restore the data — see [`RESTORE.md`](RESTORE.md).** Pull the two newest
+   `.sql.enc` files from B2 and load them: the app database *and* the Keycloak
+   database. Then `alembic upgrade head`.
+6. **`make apply`** — reconciles the running Keycloak to `.env`: aligns the client
    secret, enables the social logins, sets account-linking to password re-auth.
-6. Recreate your admin (register at `/register`, grant the `admin` role — step 4 above).
+7. Verify per `RESTORE.md` — row counts, then an actual browser login.
 
 `make apply` is **idempotent** — re-run it whenever `.env` changes (rotated a secret,
 added a provider); it reconciles live, no restart, no re-import, no data loss.
+
+> **This used to say "recreate your admin by registering at `/register`".** That
+> was correct only while the Keycloak database had no backup — the procedure
+> rebuilt an empty box and told you to start over. Since 2026-08-10 `ops/backup.py`
+> covers both databases, so your users, credentials, role grants and social-login
+> links come back from the dump. Don't re-register; restore.
 
 ## Per-env code promotion (sandbox ahead of prod)
 
