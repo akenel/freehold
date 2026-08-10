@@ -13,4 +13,6 @@
 ## ON DECK — next session
 - [ ] 1. `python3 ops/promote.py production` — ships migration 0006 so /status actually records (prod is on 0005)
 - [ ] 2. Rehearse the restore with a REAL prod dump pulled from B2 (docs/private/RESTORE.md, "Rehearsing without touching production"). Mine used local data; this proves prod's users come back. Touches nothing live.
-- [ ] 3. Optional: back up the volumes nothing covers yet — MinIO objects + openwebui_data (AI chat history)
+- [x] 3. ~~Back up openwebui_data (AI chat history)~~ — done: `ops/backup-volumes.py`, round-trip verified
+- [ ] 4. Decide on MinIO: `python3 ops/backup-volumes.py miniodata` works today, but check the volume size first (B2 charges by GB) before adding it to the nightly timer
+- [ ] 5. Put backup-volumes.py on a cron timer on the box (see docs/private/RESTORE.md)

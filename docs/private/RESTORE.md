@@ -194,19 +194,81 @@ created with the same `POSTGRES_USER`.
 
 ---
 
+---
+
+## Volumes — `ops/backup-volumes.py`
+
+Some data lives in a volume, not a table, so `pg_dump` never sees it. The big one
+is **`openwebui_data`**: every conversation anyone has had with `ai.wolfhold.app`,
+plus per-user settings and uploads. Arguably the most sensitive data on the box.
+
+```bash
+cd ~/freehold
+python3 ops/backup-volumes.py                 # default set: openwebui_data
+python3 ops/backup-volumes.py miniodata       # or name volumes explicitly
+```
+
+Same discipline as the databases: tar → encrypt (`BACKUP_PASSPHRASE`) → **open the
+archive and check the thing you actually need is inside** → ship to
+`b2:<bucket>/<env>/volumes`. Exit 0 only if every volume passes every step.
+
+Two details worth knowing:
+
+- It **pauses the container** while reading (`docker pause`, a SIGSTOP — connections
+  survive, it resumes in milliseconds). Without that you can tar a half-written
+  SQLite page and get an archive that unpacks perfectly and contains a corrupt
+  database. `--no-pause` skips it if you accept that risk.
+- It is **not part of the deploy gate**, on purpose. These archives can be hundreds
+  of MB; tarring one on every promote would make deploys slow and B2 expensive. Run
+  it on a timer:
+
+```
+# /etc/cron.d/freehold-volumes — nightly at 03:20
+20 3 * * * root cd /root/freehold && /usr/bin/python3 ops/backup-volumes.py >> /var/log/freehold-volumes.log 2>&1
+```
+
+### Restoring a volume
+
+```bash
+FILES="-f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.multienv.yml -f docker-compose.openwebui.yml"
+
+# stop the writer first — restoring under a running container corrupts it
+CADDYFILE=./Caddyfile.prod docker compose $FILES stop open-webui
+
+# wipe and repopulate, straight from the encrypted archive
+openssl enc -d -aes-256-cbc -pbkdf2 -pass env:BACKUP_PASSPHRASE \
+  -in backups/openwebui_data-<stamp>.tar.gz.enc \
+  | docker run --rm -i -v freehold_openwebui_data:/data alpine \
+      sh -c 'rm -rf /data/* /data/.[!.]* 2>/dev/null; tar xzf - -C /data'
+
+CADDYFILE=./Caddyfile.prod docker compose $FILES start open-webui
+```
+
+`set -a; . ./.env; set +a` first so `BACKUP_PASSPHRASE` is exported. Note the
+volume's **full docker name** (`freehold_openwebui_data`) — the compose project
+prefixes it.
+
+**Verified end to end on 2026-08-10:** 200 conversations seeded, backed up, the
+volume emptied to zero entries, restored with the command above — all 200 rows
+back with correct content. The drill's guards were tested too: a 61 KB archive
+that looked entirely healthy but contained a corrupt `webui.db` was **refused**,
+as was one where `webui.db` was missing altogether.
+
+---
+
 ## Known gaps
 
-Covered by `ops/backup.py`: the app database and the Keycloak database.
+Covered: the app database, the Keycloak database (`ops/backup.py`), and
+`openwebui_data` (`ops/backup-volumes.py`).
 
-**Not covered — no backup exists today:**
+**Still not covered — no backup exists today:**
 
-- **MinIO objects** — uploaded files. Volume `miniodata`.
-- **Open WebUI data** — all AI chat history and per-user settings. Volume
-  `openwebui_data`.
+- **MinIO objects** — uploaded files, volume `miniodata`. `backup-volumes.py`
+  already knows this volume (`python3 ops/backup-volumes.py miniodata`); it just
+  isn't in the default set or on the timer yet. Enable it once you know the size —
+  MinIO can be large, and B2 charges by the GB.
 - **`iw` / `wk`** — separate compose projects from their own repos; whatever they
   persist is their own problem to solve.
 - **sandbox / staging databases** — deliberate. They're throwaway.
 
-These are volume-level work (`docker run --rm -v <vol>:/data ... tar`), not
-`pg_dump`, so they're a different job. Named here so the gap is a decision rather
-than a surprise.
+Named here so each gap is a decision rather than a surprise.
