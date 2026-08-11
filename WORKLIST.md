@@ -1,5 +1,57 @@
-# WORKLIST — Freehold Health Dashboard
+# WORKLIST — Freehold
 <!-- Ordered by priority. Top = next. Cross off when done. -->
+
+## ▶️ ON DECK — Wednesday 2026-08-12
+
+*Set 2026-08-11, late. Work now spans three repos; this is the one list. Start at
+the top and don't let items 2–4 push item 1 down the page — item 1 is the only
+one with a paying customer at the end of it.*
+
+- [ ] **1 · SEE FELIX. This week, and it's the whole week's job.**
+      Gate Zero is answered — he's on paper, not on BANCO
+      (`banco-starter/WORKLIST.md`). What's unanswered is whether he's serious:
+      a deadline, what "acceptable to go live" means to him, and whether money
+      changes hands. Take the two questions from `PARALLEL-RUN.md` with you —
+      *turnover or profit?* and *is a 30% catalogue a win or a fail?* Five
+      minutes, and between them they halve or double the project.
+      ⚠️ Before any shadow day: prod authenticates against the **DEMO realm**,
+      whose passwords are in a public repo. Close that or shadow locally.
+      **"He's slow" and "I didn't ask" look identical from here.**
+
+- [ ] **2 · Chapter 2 needs your half.** ~20 minutes in Longhand
+      (<http://127.0.0.1:1984>, `docker compose up -d` in `~/repos/longhand`).
+      The draft has my three failures because I have the transcript. It has
+      nothing of yours: what it's like when it confidently does the wrong thing,
+      whether ON DECK survives a bad week, what you stopped doing yourself and
+      whether you regret it. Also: clear your note on line 156, it's answered.
+
+- [ ] **3 · Write `longhand/docs/human-green/0001` YOURSELF.**
+      Three defects on 2026-08-11, all reporting success while broken: settings
+      mounted read-only so no setting could be changed; `--bind-addr` dropped so
+      it listened on the container's own loopback while logging "HTTP server
+      listening"; a root-owned volume that killed it on EACCES *after* a clean
+      start. Template: `freehold/docs/human-green/_TEMPLATE.md`.
+      **This one is the habit test.** If the notes only get written when the
+      machine writes them, it's an archive, not a practice — and the book runs
+      out of material at chapter 3.
+
+- [ ] **4 · Unblock prod deploys for zero francs.** Make the off-box backup
+      target pluggable — any rclone remote counts (laptop over Tailscale sftp),
+      not hard-wired to B2. Currently `promote.py` gates on `backup.py` reaching
+      B2, and B2 is capped until ~24 Aug, so nothing can ship to prod. Already
+      scoped in the BLOCKED section below, in your own words. An afternoon.
+
+- [ ] **5 · Decide the openwebui transcript.** It's in UNDECIDED below and has
+      been for days: committed to a public repo, carries bKf's messages, two
+      mentions of your wife, and pricing strategy. You already recommended
+      `git rm --cached` + gitignore. Ten minutes. Undecided items about public
+      exposure don't age — they just stop being visible to you.
+
+*Longhand's own next step (after 1–3): `references.md` for chapter 2, and decide
+whether the check runs on demand or continuously. On demand first — continuous
+gets expensive fast.*
+
+---
 
 - [x] 1. Read deps.py, models.py, main.py, audit.py, build_info.py to understand Freehold's patterns
 - [x] 2. Create a HealthCheck model in models.py (service, status, checked_at, detail)

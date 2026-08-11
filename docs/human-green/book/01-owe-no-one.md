@@ -78,8 +78,8 @@ five minutes on a clean machine, then the shop doesn't depend on that particular
 box, or that company, or that one person still being interested. The stack moves
 because you can describe it.
 
-For Felix that means the catalogue is in his shape, with his 52 categories and the
-fix he made last Tuesday about which grinder is which. The photos are on his disk.
+For Felix that means the catalogue is in his shape — 5,389 rows of it, in his
+categories, corrected by his own hand as stock moves. The photos are on his disk.
 The cost prices — the numbers that tell a competitor what he pays and who he buys
 from — never leave the box. Not by policy. By rule, enforced where the file gets
 written, checked with a diff.
