@@ -14,8 +14,23 @@ one with a paying customer at the end of it.*
       changes hands. Take the two questions from `PARALLEL-RUN.md` with you —
       *turnover or profit?* and *is a 30% catalogue a win or a fail?* Five
       minutes, and between them they halve or double the project.
-      ⚠️ Before any shadow day: prod authenticates against the **DEMO realm**,
-      whose passwords are in a public repo. Close that or shadow locally.
+      ⚠️ Before any shadow day — **half closed on 2026-08-14 (`a202c32`)**, and
+      the original note was aimed slightly wrong. What was actually true:
+      `kc-prd` was always clean (`"users": []`). The seeded logins were in
+      **`kc-sbx` and `kc-stg`** — `demo` (realmRole **`admin`**, 4-char password)
+      and `sam` (`staff`, 3-char), both **plaintext** and `temporary: false`, in
+      this **public** repo. Now stripped; both realms match kc-prd.
+      ✅ Repo no longer publishes them. ❌ **The live accounts are untouched** —
+      `prod-apply.py` reconciles clients/SMTP/IdPs only; realm JSON seeds users
+      on *first boot* alone, so a running Keycloak still has demo+sam, and git
+      history still has the passwords. **Treat them as burned.**
+      Two things left, both need you:
+        1. `ssh wolfhold` → confirm what `KC_REALM` prod really is. In-repo
+           evidence says `kc-prd`, but that was never verified on the box, and
+           the whole original warning rested on it.
+        2. Delete or rotate `demo` + `sam` in `kc-sbx` and `kc-stg` in the
+           Keycloak admin console. Note `REALMS=kc-sbx,kc-stg,kc-prd` — one box
+           owns all three, so sandbox/staging sit on the public internet too.
       **"He's slow" and "I didn't ask" look identical from here.**
 
 - [ ] **2 · Chapter 2 needs your half.** ~20 minutes in Longhand
