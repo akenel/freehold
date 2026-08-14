@@ -103,44 +103,7 @@
       }
     }
   ],
-  "users": [
-    {
-      "username": "demo",
-      "enabled": true,
-      "emailVerified": true,
-      "email": "demo@freehold.local",
-      "firstName": "Demo",
-      "lastName": "User",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "demo",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "admin"
-      ]
-    },
-    {
-      "username": "sam",
-      "enabled": true,
-      "emailVerified": true,
-      "email": "sam@freehold.local",
-      "firstName": "Sam",
-      "lastName": "Staff",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "sam",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "staff"
-      ]
-    }
-  ],
+  "users": [],
   "internationalizationEnabled": true,
   "supportedLocales": [
     "en",
