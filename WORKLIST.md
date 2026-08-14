@@ -77,11 +77,11 @@ Control was cut back to the kit alone. Tempest ships as a route inside this repo
 belongs here — this is "the one list." Nothing below is invented; it is the deck as it stood
 at `ground-control@323cd07`, minus the items already done.*
 
-- [x] **Escape hatch** — 🟢 DEPLOYED 2026-08-14, build `b120 · 0fce1f7`, machine-green 100%.
-      Dim `← FREEHOLD` link bottom-left + **Esc**, `ESC — EXIT` on the hint line.
-      ⚠️ **Human-green still open** — the specific check is: link visible bottom-left, goes amber
-      on hover, doesn't block the ship or eat shots, and *both* click and Esc land on Freehold.
-      (Angel confirmed the game plays and he's signed in; that isn't the same check.)
+- [x] **Escape hatch** — ✅ **DONE. Human-green 2026-08-14 by Angel, on the live Tempest screen.**
+      Deployed as build `b120 · 0fce1f7`, machine-green 100%, then checked by hand: the dim
+      `← FREEHOLD` link bottom-left and **Esc** both land on Freehold, and the link doesn't eat
+      shots. The game is no longer a fullscreen dead-end. *Closed the full ritual: pre-flight GO
+      → gate → promote → post-flight ✅ → human-green ✅.*
 
 - [ ] **Stale `dev-tempest` block in `Caddyfile.prod`** — ACME keeps trying to cert an unused
       host. It is **committed** at `Caddyfile.prod:100-101`
