@@ -11,6 +11,23 @@ backup key never needs delete rights). Reads B2 creds from .env. Idempotent.
 
 Governance mode is reversible/adjustable. For attacker-proof immutability, ALSO use a
 write-only B2 key (no deleteFiles / no bypassGovernance) — see docs/private/HARDENING.md.
+
+⚠️ RUNNING THIS ON THE BOX NOW RETURNS 401. THAT IS CORRECT — DO NOT "FIX" IT.
+Verified 2026-08-14: `ssh wolfhold` → this script → `b2_update_bucket failed 401
+unauthorized`. Authorize succeeds; only the bucket-admin call is refused, because the
+box's key is the restricted backup key and lacks `writeBuckets`. That is the whole
+point: **an attacker who owns the box cannot weaken Object Lock or the lifecycle rule.**
+The 401 is the hardening working, demonstrated.
+
+So this script is "run once" (see .env.example) in a stronger sense than it reads — it
+is run once, from somewhere holding a B2 key with `writeBuckets`, BEFORE the box is
+switched to the restricted key. After that switch it is deliberately un-runnable there.
+To genuinely change bucket policy, run it from the laptop with a master/admin key.
+
+Don't confuse this 401 with the 2026-08-10 one in WORKLIST's "next session" item 6.
+That was `backup-volumes.py --cold` failing on a *write* capability and was fixed. This
+is a *bucket-admin* capability and is refused on purpose. Same status code, opposite
+meaning — check which API call failed before concluding anything.
 """
 import base64
 import json
