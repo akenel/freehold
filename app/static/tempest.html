@@ -25,8 +25,17 @@
     letter-spacing: 1px; text-shadow: 0 0 6px #22d3ee55;
     pointer-events: none; user-select: none;
   }
+  #back {
+    position: fixed; bottom: 12px; left: 14px; z-index: 6;
+    font: 11px/1.4 "Courier New", monospace; color: #64748b; letter-spacing: 2px;
+    text-decoration: none; user-select: none; opacity: .75;
+    transition: color .15s, opacity .15s, text-shadow .15s;
+  }
+  #back:hover, #back:focus {
+    color: #f59e0b; opacity: 1; text-shadow: 0 0 8px #f59e0b88; outline: none;
+  }
   #devbar {
-    position: fixed; bottom: 12px; left: 14px; display: none;
+    position: fixed; bottom: 36px; left: 14px; display: none;
     font: 11px/1.4 "Courier New", monospace; color: #f59e0b; opacity: .95;
     letter-spacing: 1px; text-shadow: 0 0 6px #f59e0b88;
     background: rgba(20,14,2,.55); padding: 3px 8px; border-radius: 6px;
@@ -49,11 +58,12 @@
 <body>
 <div id="hud"><span id="score">SCORE 000000</span><span id="zap">ZAP ×2</span><span id="lives">LIVES ♦ ♦ ♦</span></div>
 <canvas id="game"></canvas>
-<div id="hint">MOVE MOUSE — RIDE THE RIM · CLICK/HOLD — FIRE · SPACE — SUPERZAPPER · M — MUTE</div>
+<div id="hint">MOVE MOUSE — RIDE THE RIM · CLICK/HOLD — FIRE · SPACE — SUPERZAPPER · M — MUTE · ESC — EXIT</div>
 <div id="buildbar">BUILD dev</div>
 <div id="devbar"></div>
 <div id="cheat"></div>
 <div id="who"></div>
+<a id="back" href="/" title="Back to Freehold (Esc)">← FREEHOLD</a>
 <script>
   // Build bar — the running build's number · SHA · date, from the app's /version
   // endpoint (freehold-style branding, always visible incl. the title screen).
@@ -278,6 +288,7 @@
         if (spawn) { spawnEnemy(spawn); cheatToast("SPAWN " + spawn.toUpperCase()); return; }
       }
     }
+    if (e.code === "Escape") { leaveGame(); return; }    // escape hatch — the game is fullscreen
     if (e.code === "KeyM") { muted = !muted; return; }   // mute toggle
     if (e.code === "Space") {
       e.preventDefault();
@@ -286,6 +297,21 @@
       superzap();
     }
   });
+
+  // --- escape hatch ------------------------------------------------------
+  // The game is a fullscreen dead-end otherwise: no chrome, no nav, no way out
+  // but the browser's back button. Corner link + Esc, both to the same target.
+  // Target adapts: signed-in players land on their dashboard; anonymous players
+  // land on the home page — /dashboard would bounce them to /login, which is a
+  // worse dead-end than the one we're fixing.
+  function backHref() { return account ? "/dashboard" : "/"; }
+  function leaveGame() { location.href = backHref(); }
+  const backEl = document.getElementById("back");
+  if (backEl) {
+    // Clicking the link must not also fire a shot on the way out.
+    backEl.addEventListener("mousedown", (e) => e.stopPropagation());
+    backEl.addEventListener("click", (e) => { e.preventDefault(); leaveGame(); });
+  }
 
   function nearestLane(angle) {
     let best = 0, bestDiff = Infinity;
@@ -735,6 +761,7 @@
   fetch("/me", { credentials: "same-origin" }).then((r) => (r.ok ? r.json() : Promise.reject())).then((d) => {
     account = d && d.user ? d.user : null;
     renderWho();                                // signed in → greet; signed out → SIGN IN link
+    if (backEl) backEl.href = backHref();       // real href, so hover/middle-click go the right place
     if (account) { pingPresence(); setInterval(pingPresence, 20000); }  // heartbeat while the tab is open
   }).catch(() => {});                           // no /me endpoint (static hosting) → no account UI
 
