@@ -107,9 +107,9 @@ at `ground-control@323cd07`, minus the items already done.*
       host. It is **committed** at `Caddyfile.prod:100-101`
       (`@devtempest host dev-tempest.{$BASE_DOMAIN:wolfhold.app}`) and the box's tree is clean,
       so `git checkout --` will NOT clear it. Real edit + commit + `promote.py`.
-      ⛔ Needs a prod deploy — check the B2 block below first. ⚠️ **`~/repos/MAP.md` says the B2
-      cap was lifted on 2026-08-14; the BLOCKED section below still says gated until ~24 Aug.
-      Settle which is true before promising this one.**
+      ✅ **Not blocked** (settled 2026-08-14 — the B2 cap is lifted, `promote.py`'s backup gate
+      passes). Needs a prod deploy, so bundle it with the next one rather than spending a whole
+      gated ritual on one stale Caddy block.
 
 - [ ] **The Tempest page's server side never shipped.** `app/static/tempest.html` carries Phase
       4/5 client code — `fetch("/me")`, `/api/ping`, `/api/scores`, links to `/leaderboard` —
