@@ -52,11 +52,14 @@ one with a paying customer at the end of it.*
       machine writes them, it's an archive, not a practice — and the book runs
       out of material at chapter 3.
 
-- [ ] **4 · Unblock prod deploys for zero francs.** Make the off-box backup
-      target pluggable — any rclone remote counts (laptop over Tailscale sftp),
-      not hard-wired to B2. Currently `promote.py` gates on `backup.py` reaching
-      B2, and B2 is capped until ~24 Aug, so nothing can ship to prod. Already
-      scoped in the BLOCKED section below, in your own words. An afternoon.
+- [ ] **4 · ~~Unblock prod deploys for zero francs.~~ DOWNGRADED 2026-08-14 —
+      no longer urgent, and no longer free.** The premise is gone: Angel put a
+      card on B2 and went Pro, so the cap is lifted and deploys already work.
+      Making the off-box target pluggable (any rclone remote — laptop over
+      Tailscale sftp — not hard-wired to B2) is now about *not renting your own
+      backups*, which is this project's whole thesis, rather than about being
+      unblocked. Still an afternoon, still worth doing, but it no longer beats
+      items 1–3. Don't let it feel like progress while Felix waits.
 
 - [ ] **5 · Decide the openwebui transcript.** It's in UNDECIDED below and has
       been for days: committed to a public repo, carries bKf's messages, two
@@ -122,22 +125,29 @@ at `ground-control@323cd07`, minus the items already done.*
 - [ ] **Online leaderboard (optional, big)** — wire the game's high scores to this app's existing
       Postgres + Keycloak. The item above is the first brick of it.
 
-## BLOCKED — B2 out of space (2026-08-10)
-Bucket is 30.7 GB / 10 GB free tier: 30 versions of one 1 GB cold archive, from
-rclone retrying a copy that had actually succeeded (401 on the write-only key's
-read-back). Object Lock 14d means they can't be deleted yet. No credit card on the
-account, so the cap can't be raised.
+## ~~BLOCKED~~ → 💸 COSTING MONEY — B2 (opened 2026-08-10, cap lifted 2026-08-14)
 
-- [ ] **~24 Aug**: delete the 30 versions in `production/volumes/`, wait <24h for
-      usage to recalculate. B2 free again. Deleting never needs a card.
-- [ ] Set a B2 lifecycle rule: keep current version, drop previous after 1 day
-- [ ] Until then, prod deploys are BLOCKED — promote.py gates on backup.py
-      reaching B2. Fix = make the off-box target pluggable (any rclone remote
-      counts, e.g. the laptop over Tailscale sftp), not hard-wired to B2.
-- [ ] Optional tonight, real off-box copy, run ON THE LAPTOP:
+**Settled 2026-08-14: `~/repos/MAP.md` was right, this section was stale.** Angel
+put a card on B2 and went Pro that day, so the 10 GB cap is gone and
+**prod deploys are NOT blocked** — `promote.py`'s backup gate passes again.
+
+But "cap lifted" hid the other half. The **~24 Aug date was never about the cap** —
+it's **Object Lock, 14 days from 2026-08-10**. Those 30 versions of one 1 GB cold
+archive (rclone retrying a copy that had actually succeeded — 401 on the
+write-only key's read-back) still can't be deleted until then. What changed is
+that they're no longer free: **~30 GB is now billable**, and it stays billable
+until Object Lock expires. The problem stopped blocking and started charging.
+
+- [ ] **~24 Aug** — delete the 30 versions in `production/volumes/`, wait <24h for
+      usage to recalculate. This is now a *bill*, not a blocker. Put it in the calendar.
+- [ ] **Set the B2 lifecycle rule** — keep current version, drop previous after 1 day.
+      Do this *before* 24 Aug: it's the thing that stops a retry storm from silently
+      costing money next time, now that there's no cap to stop it.
+- [ ] Optional, real off-box copy, run ON THE LAPTOP:
       `rsync -av root@100.122.129.118:/root/freehold/backups/ ~/freehold-offbox/`
 
-Already fixed today: retry caps in both backup scripts, so this can't recur.
+Already fixed 2026-08-10: retry caps in both backup scripts, so the 30-version
+storm can't recur.
 
 ## UNDECIDED
 - [ ] `docs/private/openwebui-AI-wolfhold-app.md` — I committed this previously
