@@ -70,6 +70,41 @@ gets expensive fast.*
 - [ ] 5. Put backup-volumes.py on a cron timer on the box (see docs/private/RESTORE.md) — cheap now: nightly hot is ~1.4% of the volume
 - [ ] 6. Re-run `python3 ops/backup-volumes.py --cold` once on the box to ship the 1 GB baseline off-box (the 2026-08-10 attempt failed on the write-only-key 401, now fixed)
 
+## 🕹️ TEMPEST — inherited 2026-08-14
+
+*These three lived in `ground-control/tig-tempest/WORKLIST.md`, which was deleted when Ground
+Control was cut back to the kit alone. Tempest ships as a route inside this repo, so its deck
+belongs here — this is "the one list." Nothing below is invented; it is the deck as it stood
+at `ground-control@323cd07`, minus the items already done.*
+
+- [x] **Escape hatch** — 🟢 DEPLOYED 2026-08-14, build `b120 · 0fce1f7`, machine-green 100%.
+      Dim `← FREEHOLD` link bottom-left + **Esc**, `ESC — EXIT` on the hint line.
+      ⚠️ **Human-green still open** — the specific check is: link visible bottom-left, goes amber
+      on hover, doesn't block the ship or eat shots, and *both* click and Esc land on Freehold.
+      (Angel confirmed the game plays and he's signed in; that isn't the same check.)
+
+- [ ] **Stale `dev-tempest` block in `Caddyfile.prod`** — ACME keeps trying to cert an unused
+      host. It is **committed** at `Caddyfile.prod:100-101`
+      (`@devtempest host dev-tempest.{$BASE_DOMAIN:wolfhold.app}`) and the box's tree is clean,
+      so `git checkout --` will NOT clear it. Real edit + commit + `promote.py`.
+      ⛔ Needs a prod deploy — check the B2 block below first. ⚠️ **`~/repos/MAP.md` says the B2
+      cap was lifted on 2026-08-14; the BLOCKED section below still says gated until ~24 Aug.
+      Settle which is true before promising this one.**
+
+- [ ] **The Tempest page's server side never shipped.** `app/static/tempest.html` carries Phase
+      4/5 client code — `fetch("/me")`, `/api/ping`, `/api/scores`, links to `/leaderboard` —
+      and this app serves none of those routes. They were built in the superseded standalone
+      `tig-tempest/app/`, which no longer exists (recoverable from
+      `ground-control@1501448` if ever wanted). It fails silently by design (the `.catch()`), so
+      nothing is visibly broken: `account` stays `null`, the `#who` bar never renders, no dead
+      link is shown. But it means **no score submission, no presence, no account greeting**, and
+      the escape hatch's `/dashboard` branch is dormant.
+      *Smallest unlock: a ~10-line `GET /me` returning `{"user": …}` from
+      `deps.current_user(request)` — that alone lights the greeting and the signed-in target.*
+
+- [ ] **Online leaderboard (optional, big)** — wire the game's high scores to this app's existing
+      Postgres + Keycloak. The item above is the first brick of it.
+
 ## BLOCKED — B2 out of space (2026-08-10)
 Bucket is 30.7 GB / 10 GB free tier: 30 versions of one 1 GB cold archive, from
 rclone retrying a copy that had actually succeeded (401 on the write-only key's
