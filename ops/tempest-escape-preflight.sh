@@ -13,6 +13,26 @@ sec(){ printf '\n\033[1;36m===== %s =====\033[0m\n' "$*"; }
 GO=1
 SITE=$(grep -E '^SITE_DOMAIN=' .env 2>/dev/null | cut -d= -f2-); SITE=${SITE:-www.wolfhold.app}
 
+sec "0. Am I actually on the wolfhold box?"
+# The box holds a PUBLIC ip on its interface; a laptop holds a private LAN one.
+# Running the deploy from a laptop drives an entirely different docker/compose —
+# it would 'succeed' and change nothing in prod, which is the worst kind of green.
+BOX_IP=167.233.125.248
+myip=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7; exit}')
+myip=${myip:-$(hostname -I 2>/dev/null | awk '{print $1}')}
+if [ "$myip" = "$BOX_IP" ]; then
+  echo "  ✅ on the box — $(hostname) · $myip"
+elif [ "${FORCE_OFFBOX:-0}" = "1" ]; then
+  echo "  ⚠️  NOT the box ($(hostname) · ${myip:-unknown}) — FORCE_OFFBOX=1 set, continuing anyway"
+else
+  echo "  ❌ STOP — this is not the wolfhold box."
+  echo "     here:     $(hostname) · ${myip:-unknown}"
+  echo "     expected: $BOX_IP"
+  echo "     Run:  ssh wolfhold   then  cd ~/freehold && bash ops/tempest-escape-preflight.sh"
+  echo "     (deliberate override: FORCE_OFFBOX=1 bash $0)"
+  exit 2
+fi
+
 sec "1. Is the escape-hatch change actually here? (did the git pull land?)"
 # The decisive tell — deploying without pulling is how you 'deploy' nothing and
 # then wonder why the page looks identical.

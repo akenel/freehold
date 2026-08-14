@@ -11,6 +11,25 @@ SITE=$(grep -E '^SITE_DOMAIN=' .env 2>/dev/null | cut -d= -f2-); SITE=${SITE:-ww
 AUTH=$(grep -E '^AUTH_DOMAIN=' .env 2>/dev/null | cut -d= -f2-); AUTH=${AUTH:-auth.wolfhold.app}
 HEAD_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "?")
 
+sec "0. Am I actually on the wolfhold box?"
+# Same guard as the pre-flight: off-box, HEAD here is not the HEAD that was
+# deployed, so the SHA comparison below would compare two unrelated things.
+BOX_IP=167.233.125.248
+myip=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7; exit}')
+myip=${myip:-$(hostname -I 2>/dev/null | awk '{print $1}')}
+if [ "$myip" = "$BOX_IP" ]; then
+  echo "  ✅ on the box — $(hostname) · $myip"
+elif [ "${FORCE_OFFBOX:-0}" = "1" ]; then
+  echo "  ⚠️  NOT the box ($(hostname) · ${myip:-unknown}) — FORCE_OFFBOX=1 set; the SHA check in §1 is meaningless from here"
+else
+  echo "  ❌ STOP — this is not the wolfhold box."
+  echo "     here:     $(hostname) · ${myip:-unknown}"
+  echo "     expected: $BOX_IP"
+  echo "     Run:  ssh wolfhold   then  cd ~/freehold && bash ops/tempest-escape-postflight.sh"
+  echo "     (deliberate override: FORCE_OFFBOX=1 bash $0)"
+  exit 2
+fi
+
 sec "1. Is the NEW build actually serving? (not a cached 'before' in disguise)"
 VER=$(curl -sS --max-time 15 "https://$SITE/version" 2>/dev/null || echo "")
 echo "  /version -> ${VER:-(nothing)}"
