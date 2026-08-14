@@ -88,7 +88,9 @@ if [ "$OK" = 1 ]; then
   echo "    2. bottom-left should read  ← FREEHOLD  (dim slate; goes amber on hover)"
   echo "    3. play a few seconds — it must NOT block the ship or eat your shots"
   echo "    4. click it -> you land on Freehold. Come back, press Esc -> same thing."
-  echo "    5. if you're signed in, both should land you on /dashboard instead of /"
+  echo "    NOTE: the signed-in path (-> /dashboard) CANNOT fire yet — freehold has no"
+  echo "    /me endpoint, so the page can never learn who you are and always sends you"
+  echo "    to /. The adaptive branch is correct but dormant until /me exists."
   echo "  Screenshot that and send it to Tig. Not done until you say it's right."
 else
   echo "  ❌ NOT GREEN — something above is ❌. Do not walk away."

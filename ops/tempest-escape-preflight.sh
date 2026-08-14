@@ -95,10 +95,12 @@ done
 sec "VERDICT"
 if [ "$GO" = 1 ]; then
   echo "  ✅ GO — one static file changes. Deploy with:"
-  echo "         make deploy ENV=production"
-  echo "     (stamps a new build, backup-gate runs first. Its 60s health wait can time"
-  echo "      out while migrations run — that is often NOT fatal; the post-flight is"
-  echo "      what decides.)"
+  echo "         python3 ops/promote.py production HEAD     # or: make promote ENV=production"
+  echo "     NOT 'make deploy ENV=production' — deploy.py REFUSES on this box, which runs"
+  echo "     the multi-env stack (it would restart it from base compose alone)."
+  echo "     promote.py builds freehold-app:prd from the git ref, runs the backup gate and"
+  echo "     the test suite inside the image, recreates ONLY prod's container, and confirms"
+  echo "     the served SHA. No other env is touched."
   echo "     Then run:  bash ops/tempest-escape-postflight.sh"
 else
   echo "  ⚠️  NO-GO — fix every ❌ above first, then re-run this. Do not deploy."
