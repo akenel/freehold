@@ -24,13 +24,15 @@ one with a paying customer at the end of it.*
       `prod-apply.py` reconciles clients/SMTP/IdPs only; realm JSON seeds users
       on *first boot* alone, so a running Keycloak still has demo+sam, and git
       history still has the passwords. **Treat them as burned.**
-      Two things left, both need you:
-        1. `ssh wolfhold` → confirm what `KC_REALM` prod really is. In-repo
-           evidence says `kc-prd`, but that was never verified on the box, and
-           the whole original warning rested on it.
-        2. Delete or rotate `demo` + `sam` in `kc-sbx` and `kc-stg` in the
-           Keycloak admin console. Note `REALMS=kc-sbx,kc-stg,kc-prd` — one box
-           owns all three, so sandbox/staging sit on the public internet too.
+      ✅ **VERIFIED ON THE BOX 2026-08-14** — `KC_REALM=kc-prd`,
+      `REALMS=kc-sbx,kc-stg,kc-prd`. So **prod was never exposed**: `demo`/`sam`
+      live in kc-sbx/kc-stg and cannot log into wolfhold.app. The original
+      warning was wrong, and **the shadow day is NOT blocked.** Don't let this
+      item hold item 1 another day — go see Felix.
+      One thing left, not urgent, not a blocker: delete or rotate `demo` + `sam`
+      in `kc-sbx` and `kc-stg` in the Keycloak console. The box owns all three
+      realms, so sandbox + staging accept a published `admin` password on the
+      public internet. Fine for a sandbox, wrong for a prod mirror.
       **"He's slow" and "I didn't ask" look identical from here.**
 
 - [ ] **2 · Chapter 2 needs your half.** ~20 minutes in Longhand
