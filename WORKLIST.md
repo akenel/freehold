@@ -140,9 +140,21 @@ until Object Lock expires. The problem stopped blocking and started charging.
 
 - [ ] **~24 Aug** — delete the 30 versions in `production/volumes/`, wait <24h for
       usage to recalculate. This is now a *bill*, not a blocker. Put it in the calendar.
-- [ ] **Set the B2 lifecycle rule** — keep current version, drop previous after 1 day.
-      Do this *before* 24 Aug: it's the thing that stops a retry storm from silently
-      costing money next time, now that there's no cap to stop it.
+- [x] ~~**Set the B2 lifecycle rule**~~ — **ALREADY SET. This item was never real.**
+      Checked 2026-08-14: `docs/private/HARDENING.md:14` marks it `[x]` done, and
+      `ops/b2-immutable.py` applies it — `daysFromHidingToDeleting: 1` (drop
+      superseded versions after a day, exactly what this item asked for) plus
+      `daysFromUploadingToHiding: 30`, alongside governance Object-Lock 14d.
+      **Why the rule didn't save us on 10 Aug, and this is the part worth keeping:**
+      lifecycle **cannot delete an object under Object Lock**. The rule fired, tried
+      to drop the 29 superseded versions after a day, and governance retention
+      refused. So the two hardening measures worked against each other — immutability
+      won, and locked in 14 days of billing for a retry storm. The 30 GB sitting there
+      *is the evidence the hardening is live*; if `b2-immutable.py` had never run,
+      there'd be no lock and lifecycle would have cleaned it up on 11 Aug.
+      What actually prevents a repeat is the retry caps added 10 Aug, not a rule.
+      ⚠️ Don't "fix" this by lowering `B2_LOCK_DAYS` — that trades ransomware
+      protection for a cost problem the retry caps already solved.
 - [ ] Optional, real off-box copy, run ON THE LAPTOP:
       `rsync -av root@100.122.129.118:/root/freehold/backups/ ~/freehold-offbox/`
 
