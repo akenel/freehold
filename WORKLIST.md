@@ -102,6 +102,9 @@ at `ground-control@323cd07`, minus the items already done.*
       `← FREEHOLD` link bottom-left and **Esc** both land on Freehold, and the link doesn't eat
       shots. The game is no longer a fullscreen dead-end. *Closed the full ritual: pre-flight GO
       → gate → promote → post-flight ✅ → human-green ✅.*
+      **The proof was a real game, not a glance — Angel played to LEVEL 5 / 10,000 points with the
+      link on screen.** That is what human-green means here: a full-speed run is the only way to
+      know the link doesn't steal a shot or block the ship at the rim.
 
 - [ ] **Stale `dev-tempest` block in `Caddyfile.prod`** — ACME keeps trying to cert an unused
       host. It is **committed** at `Caddyfile.prod:100-101`

@@ -14,10 +14,27 @@ is empty → Caddy reads the collapsed line as a global-options block → crashe
 `Caddyfile.prod:16` ("unrecognized global option: header"). `.env` on the box already has
 `SITE_DOMAIN=www.wolfhold.app`, `AUTH_DOMAIN=auth.wolfhold.app`.
 
-**Deploy is `make deploy ENV=production`** (`ops/deploy.py` — stamps build, backup-gate, rebuild,
-health-check). Its 60s health wait can time out while DB migrations run on boot — that "error" is
-often not fatal; verify the served build after. `_common.compose()` runs bare `docker compose`, so
-the prod file set must come from the environment/`.env` (COMPOSE_FILE), not `-f` flags.
+**Deploy is `python3 ops/promote.py production HEAD`** (or `make promote ENV=production`).
+⚠️ **Corrected 2026-08-14 — it is NOT `make deploy ENV=production`.** `deploy.py` *refuses* on this
+box and says so: the box runs the multi-env stack (`freehold-app-sandbox-1`,
+`freehold-app-staging-1`), and `deploy.py` would restart it from `docker-compose.yml` alone — dev
+Caddyfile, dev `KC_HOSTNAME`, every image rebuilt from the working tree. The refusal is a guard, not
+a bug; do not work around it.
+
+`promote.py` is the right tool: it builds `freehold-app:<tag>` from a **git ref** via `git archive`
+(never the working tree), runs the backup gate and the full test suite *inside* the new image, then
+recreates **only that env's** container and confirms the served SHA. So sandbox can run newer code
+than prod, and one ref walks the ladder: `promote.py sandbox` → `staging <sha>` → `production <sha>`.
+Verified 2026-08-14 shipping the Tempest escape hatch: `b120 · 0fce1f7`, 156 tests passed.
+
+The health wait can still time out while DB migrations run on boot — that "error" is often not
+fatal; verify the served build after. `_common.compose()` runs bare `docker compose`, so the prod
+file set must come from the environment/`.env` (COMPOSE_FILE), not `-f` flags.
+
+**Know which machine you are on.** The box holds a public IP on its interface; a laptop holds a
+private LAN one. `ip route get 1.1.1.1 | awk '{print $7}'` → `167.233.125.248` means the box,
+`192.168.…` means you are about to deploy nothing from the wrong machine. The
+`ops/tempest-escape-*flight.sh` scripts guard on exactly this and exit 2 off-box.
 
 **Tempest lives as a ROUTE, not a subdomain.** `/tempest` = `freehold/app/static/tempest.html` +
 `freehold/app/routers/tempest.py` + a nav link in `_topbar.html`/`_footer.html`. No separate app,
