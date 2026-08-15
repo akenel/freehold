@@ -90,6 +90,39 @@ gets expensive fast.*
 - [ ] 5. Put backup-volumes.py on a cron timer on the box (see docs/private/RESTORE.md) — cheap now: nightly hot is ~1.4% of the volume
 - [ ] 6. Re-run `python3 ops/backup-volumes.py --cold` once on the box to ship the 1 GB baseline off-box (the 2026-08-10 attempt failed on the write-only-key 401, now fixed)
 
+## 🧠 MEMORY PRESSURE — measured 2026-08-15
+
+*Found while checking whether a TTS model could live on the box (it can't — see
+`~/lab/tts-poke/FINDINGS.md`). Neither item below was caused by that; both are the box's
+current steady state and were simply never looked at.*
+
+```
+Mem:   3.7Gi total   2.7Gi used   211Mi free   available 1.1Gi
+Swap:  2.0Gi total   1.1Gi used
+```
+
+- [ ] **1 · The box swaps 1.1 GB as its normal state.** It has exceeded physical RAM with
+      nothing unusual running. Not an emergency — but this is precisely the condition that
+      turns into *"why is the site slow today"* in six weeks with no obvious cause, because
+      the symptom appears long after the change that caused it.
+      *Worth deciding deliberately: accept it and write down that it's expected, trim what's
+      resident, or resize the box. The bad outcome is leaving it undecided and rediscovering
+      it during an incident.*
+
+- [ ] **2 · `open-webui` is at 1.164 GiB — 78% of its 1.5 GiB cap**, ~340 MiB from a Docker
+      restart. It is more than half of all container memory (~2.03 GiB across 11 containers).
+      The comment beside that limit in `docker-compose.openwebui.yml` reads *"Brain is remote,
+      so it idles ~300-500 MB; 1.5 GB is comfortable."* **That assumption has drifted by a
+      factor of three and nothing announced it.**
+      *Either the note is stale or the container is leaking — worth knowing which. Same species
+      as `werkstatt` being filed as scratch: a line that was true when written, still sitting
+      there looking true.*
+
+*Context that makes both matter more: this box runs **no local inference** —
+`OLLAMA_BASE_URL: https://ollama.com`, the brain is hosted. 3.7 GiB has been enough only
+because nothing here thinks. That also means the headroom for ever running a model locally is
+zero, and any future "let's self-host X" lands on this same wall.*
+
 ## 🕹️ TEMPEST — inherited 2026-08-14
 
 *These three lived in `ground-control/tig-tempest/WORKLIST.md`, which was deleted when Ground
