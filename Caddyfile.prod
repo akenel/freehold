@@ -125,6 +125,26 @@
 		reverse_proxy wk-web:80
 	}
 
+	# DocuDiff — docudiff.<domain>. Also EXTERNAL: runs from /root/docudiff as its
+	# own compose project, joined to the `freehold` network. Routed here only —
+	# Freehold does not build, deploy or health-check it, and it 502s if stopped.
+	# Its own Caddy holds the basic_auth gate and serves the built frontend.
+	@docudiff host docudiff.{$BASE_DOMAIN:wolfhold.app}
+	handle @docudiff {
+		reverse_proxy docudiff-web:80 {
+			# DocuDiff streams NDJSON progress events for the minutes a comparison
+			# takes. Caddy buffers proxied responses by default, so without this
+			# every event arrives at the end: the progress bar sits at zero then
+			# jumps to done, which looks exactly like a frontend bug and is not.
+			# BOTH proxies in the chain need it — DocuDiff's own Caddyfile has it.
+			flush_interval -1
+			transport http {
+				read_timeout 15m
+				write_timeout 15m
+			}
+		}
+	}
+
 	# default: www.<domain> (and any other subdomain) -> the prod app
 	handle {
 		import appsite app:8000
