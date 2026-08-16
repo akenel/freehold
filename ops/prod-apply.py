@@ -98,6 +98,38 @@ def reconcile(realm, env, tok):
             code, _ = api("POST", f"/admin/realms/{realm}/clients", client, tok=tok)
             print(f"  ✓ open-webui client created in {realm} ({code}) -> {dom}")
 
+    # 1c) docudiff client (kc-prd only): create-or-update, live. Same reason as
+    # open-webui above — realm JSON only imports on first boot.
+    #
+    # PUBLIC client with PKCE, not confidential like open-webui. DocuDiff's
+    # frontend is a single-page app, so there is no server to hold a secret and
+    # nothing here to align to .env. That is a real difference, not an
+    # oversight: a client secret shipped to a browser is not a secret, and a
+    # public client without enforced PKCE can have its authorization code
+    # intercepted and exchanged by whoever intercepted it.
+    if realm == "kc-prd" and real(env.get("BASE_DOMAIN", "")):
+        dom = f"docudiff.{env['BASE_DOMAIN']}"
+        client = {
+            "clientId": "docudiff", "name": "DocuDiff (document comparison)",
+            "enabled": True, "publicClient": True, "standardFlowEnabled": True,
+            "directAccessGrantsEnabled": False,   # DocuDiff never sees a password
+            "serviceAccountsEnabled": False, "protocol": "openid-connect",
+            "redirectUris": [f"https://{dom}/*"],
+            "webOrigins": [f"https://{dom}"],
+            "attributes": {
+                "pkce.code.challenge.method": "S256",
+                "post.logout.redirect.uris": f"https://{dom}/*",
+            },
+        }
+        dd = json.loads(api("GET", f"/admin/realms/{realm}/clients?clientId=docudiff", tok=tok)[1])
+        if dd:
+            client["id"] = dd[0]["id"]
+            api("PUT", f"/admin/realms/{realm}/clients/{dd[0]['id']}", client, tok=tok)
+            print(f"  ✓ docudiff client updated (public + PKCE S256) -> {dom}")
+        else:
+            code, _ = api("POST", f"/admin/realms/{realm}/clients", client, tok=tok)
+            print(f"  ✓ docudiff client created in {realm} ({code}) -> {dom}")
+
     # 2) SMTP (optional)
     vault = REPO / "keycloak" / "vault"; vault.mkdir(exist_ok=True)
     if real(env.get("SMTP_PASSWORD", "")):

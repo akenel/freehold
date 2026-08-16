@@ -79,6 +79,27 @@
       "attributes": {
         "post.logout.redirect.uris": "https://ai.wolfhold.app/*"
       }
+    },
+    {
+      "clientId": "docudiff",
+      "name": "DocuDiff (document comparison)",
+      "description": "AI document comparison at docudiff.wolfhold.app. Runs as its own compose project with its own database; Freehold routes it and owns its identity. PUBLIC client with PKCE, not confidential: the frontend is a single-page app, and a client secret shipped to a browser is not a secret.",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "https://docudiff.wolfhold.app/*"
+      },
+      "redirectUris": [
+        "https://docudiff.wolfhold.app/*"
+      ],
+      "webOrigins": [
+        "https://docudiff.wolfhold.app"
+      ]
     }
   ],
   "identityProviders": [
