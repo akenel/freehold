@@ -130,6 +130,33 @@ def reconcile(realm, env, tok):
             code, _ = api("POST", f"/admin/realms/{realm}/clients", client, tok=tok)
             print(f"  ✓ docudiff client created in {realm} ({code}) -> {dom}")
 
+        # THE ROLE THAT MAKES THE GATE A GATE.
+        #
+        # This realm has registrationAllowed=true and Google/GitHub login on, so
+        # anyone on the internet can obtain a genuine, correctly signed token
+        # for it. A valid token therefore proves identity and nothing else.
+        # DocuDiff requires this role, so access is granted deliberately rather
+        # than to whoever can click "Sign in with Google" — which matters
+        # because every comparison spends real model calls.
+        api("POST", f"/admin/realms/{realm}/roles", {
+            "name": "docudiff-user",
+            "description": "May use DocuDiff. Grant deliberately: each comparison costs model calls.",
+        }, tok=tok)  # 409 if it already exists, which is fine
+        role = json.loads(api("GET", f"/admin/realms/{realm}/roles/docudiff-user", tok=tok))
+
+        granted = []
+        for username in [u.strip() for u in env.get("DOCUDIFF_USERS", "").split(",") if u.strip()]:
+            found = json.loads(api(
+                "GET", f"/admin/realms/{realm}/users?username={urllib.parse.quote(username)}&exact=true",
+                tok=tok))
+            if not found:
+                print(f"  ! docudiff-user: no such user '{username}' — skipped")
+                continue
+            api("POST", f"/admin/realms/{realm}/users/{found[0]['id']}/role-mappings/realm",
+                [{"id": role["id"], "name": role["name"]}], tok=tok)
+            granted.append(username)
+        print(f"  ✓ docudiff-user role present; granted to: {granted or '(nobody — set DOCUDIFF_USERS)'}")
+
     # 2) SMTP (optional)
     vault = REPO / "keycloak" / "vault"; vault.mkdir(exist_ok=True)
     if real(env.get("SMTP_PASSWORD", "")):

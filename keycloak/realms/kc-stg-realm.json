@@ -31,6 +31,10 @@
       {
         "name": "staff",
         "description": "Everyday user"
+      },
+      {
+        "name": "docudiff-user",
+        "description": "May use DocuDiff. Grant deliberately: each comparison costs model calls."
       }
     ]
   },
