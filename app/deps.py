@@ -21,6 +21,11 @@ KC_REALM = os.getenv("KC_REALM") or _REALM_BY_ENV.get(APP_ENV, f"kc-{APP_ENV}")
 KC_PUBLIC_URL = os.getenv("KC_PUBLIC_URL", "http://localhost:8080")
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8080").rstrip("/")
 DATABASE_URL = os.getenv("DATABASE_URL", "")
+# DocuDiff is a SEPARATE application on its own subdomain that trusts this realm's
+# tokens. Unset means the link never renders — sandbox and staging have neither the
+# deployment nor the `docudiff-user` role, and a menu item pointing at nothing is
+# worse than no menu item.
+DOCUDIFF_URL = os.getenv("DOCUDIFF_URL", "").rstrip("/")
 SESSION_SECRET = os.getenv("SESSION_SECRET", "dev-insecure-change-me")
 # Mark the session cookie Secure whenever we're served over HTTPS (the default,
 # even in dev via Caddy's internal CA). Override with SESSION_COOKIE_SECURE if needed.
@@ -38,6 +43,7 @@ def _inject_i18n(request: Request) -> dict:
         "env": APP_ENV,
         "build": {"version": build_info.version(), "sha": build_info.sha(), "date": build_info.date()},
         "nav_user": request.session.get("user"),
+        "docudiff_url": DOCUDIFF_URL,
     }
 
 

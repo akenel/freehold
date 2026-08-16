@@ -55,6 +55,40 @@ def test_audit_forbidden_for_staff(as_user):
     assert client.get("/audit").status_code == 403
 
 
+DOCUDIFF_USER = {"username": "wolf", "name": "Wolf", "roles": ["staff", "docudiff-user"]}
+DOCUDIFF_AT = "https://docudiff.example.test"
+
+
+@pytest.fixture
+def docudiff_url(monkeypatch):
+    """Point Freehold at a DocuDiff deployment (or at none)."""
+    def _set(url):
+        monkeypatch.setattr(deps, "DOCUDIFF_URL", url)
+    return _set
+
+
+def test_docudiff_link_shown_to_role_holder(as_user, docudiff_url):
+    as_user(DOCUDIFF_USER)
+    docudiff_url(DOCUDIFF_AT)
+    assert DOCUDIFF_AT in client.get("/dashboard").text
+
+
+def test_docudiff_link_hidden_without_the_role(as_user, docudiff_url):
+    # A valid Freehold login is not access to DocuDiff — the realm role is.
+    as_user(STAFF)
+    docudiff_url(DOCUDIFF_AT)
+    assert DOCUDIFF_AT not in client.get("/dashboard").text
+
+
+def test_docudiff_link_hidden_when_not_deployed(as_user, docudiff_url):
+    # Sandbox and staging have the role nowhere and no deployment: no dead link.
+    # Assert on the LINK, not on the word — the role chip prints "docudiff-user"
+    # on this same page, so a substring check for "docudiff" always passes.
+    as_user(DOCUDIFF_USER)
+    docudiff_url("")
+    assert "📄 DocuDiff" not in client.get("/dashboard").text
+
+
 def test_robot_drive_requires_admin(as_user):
     # POST /robot/drive is operator-only (admin role) — staff gets 403 JSON
     as_user(STAFF)

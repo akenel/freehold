@@ -36,6 +36,7 @@
         <a class="btn ghost" href="/feedback">{{ t('dash.send_feedback') }}</a>
         <a class="btn ghost" href="/backlog">{{ t('dash.backlog') }}</a>
         <a class="btn ghost" href="/lists">📋 Lists</a>
+        {% if docudiff_url and 'docudiff-user' in user.roles %}<a class="btn ghost" href="{{ docudiff_url }}" rel="noreferrer">📄 DocuDiff ↗</a>{% endif %}
         {% if 'admin' in user.roles %}<a class="btn ghost" href="/qa">{{ t('dash.qa') }}</a>{% endif %}
         {% if 'admin' in user.roles %}<a class="btn ghost" href="/console">{{ t('dash.admin_console') }}</a>{% endif %}
       </div>
