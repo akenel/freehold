@@ -142,13 +142,14 @@ def reconcile(realm, env, tok):
             "name": "docudiff-user",
             "description": "May use DocuDiff. Grant deliberately: each comparison costs model calls.",
         }, tok=tok)  # 409 if it already exists, which is fine
-        role = json.loads(api("GET", f"/admin/realms/{realm}/roles/docudiff-user", tok=tok))
+        # api() returns (status, body) like every other call in this file.
+        role = json.loads(api("GET", f"/admin/realms/{realm}/roles/docudiff-user", tok=tok)[1])
 
         granted = []
         for username in [u.strip() for u in env.get("DOCUDIFF_USERS", "").split(",") if u.strip()]:
             found = json.loads(api(
                 "GET", f"/admin/realms/{realm}/users?username={urllib.parse.quote(username)}&exact=true",
-                tok=tok))
+                tok=tok)[1])
             if not found:
                 print(f"  ! docudiff-user: no such user '{username}' — skipped")
                 continue
