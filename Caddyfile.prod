@@ -145,6 +145,20 @@
 		}
 	}
 
+	# Monstergarden plants demo — plants.<domain>. EXTERNAL: runs from /root/mg-demo as its own
+	# compose project (mg-demo), joined to the `freehold` network as `mg-demo-app`. A sneak peek
+	# for Mike Kenel with sample prices; not indexed. Repo: github.com/akenel/monstergarden-plants.
+	@mgplants host plants.{$BASE_DOMAIN:wolfhold.app}
+	handle @mgplants {
+		header X-Robots-Tag "noindex, nofollow"
+		@mgapidocs path /docs /redoc /openapi.json
+		respond @mgapidocs 404
+		request_body {
+			max_size 3MB
+		}
+		reverse_proxy mg-demo-app:8000
+	}
+
 	# default: www.<domain> (and any other subdomain) -> the prod app
 	handle {
 		import appsite app:8000

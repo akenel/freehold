@@ -17,6 +17,9 @@
     <a href="/backlog">Community</a>
     <a href="/business-hub">🔌 Business Hub</a>
     <a href="/robot">Robot</a>
+    {# Another app entirely, gated by the realm role that grants access there.
+       Roles are read at login, so a freshly granted user sees it after re-login. #}
+    {% if docudiff_url and 'docudiff-user' in nav_user.roles %}<a href="{{ docudiff_url }}" rel="noreferrer">📄 DocuDiff</a>{% endif %}
     {% if 'admin' in nav_user.roles %}<a href="/pulse">Pulse</a>{% endif %}
     {% if 'admin' in nav_user.roles %}<a href="/audit">🕵️ Audit</a>{% endif %}
     {% endif %}
