@@ -91,10 +91,12 @@
 		file_server
 	}
 
-	# Open WebUI — ai.<domain>
+	# Open WebUI — ai.<domain>. Retired 2026-10-14 (container stopped: ops/openwebui-off.sh).
+	# Kept as a redirect, not deleted: the DNS A record still exists, and without a matcher
+	# ai.<domain> would fall through to the catch-all and serve the Freehold app on that name.
 	@ai host {$OPENWEBUI_DOMAIN:ai.disabled.invalid}
 	handle @ai {
-		reverse_proxy open-webui:8080
+		redir https://www.{$BASE_DOMAIN:wolfhold.app} 302
 	}
 
 	# tempest dev instance — dev-tempest.<domain> (backend is external; may be down)
