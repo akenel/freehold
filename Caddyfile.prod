@@ -150,13 +150,8 @@
 	# for Mike Kenel with sample prices; not indexed. Repo: github.com/akenel/monstergarden-plants.
 	@mgplants host plants.{$BASE_DOMAIN:wolfhold.app}
 	handle @mgplants {
-		header X-Robots-Tag "noindex, nofollow"
-		@mgapidocs path /docs /redoc /openapi.json
-		respond @mgapidocs 404
-		request_body {
-			max_size 3MB
-		}
-		reverse_proxy mg-demo-app:8000
+		# Retired 2026-10-13: the demo moved to UAT. Old links (WhatsApp) still land somewhere useful.
+		redir https://uat.plants.wolfhold.app{uri} 302
 	}
 
 	# default: www.<domain> (and any other subdomain) -> the prod app
