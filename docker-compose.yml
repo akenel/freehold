@@ -32,9 +32,11 @@ services:
     networks: [freehold]
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0
+    # Pinned by digest (2026-10-31 audit): a tag can be moved, a digest cannot.
+    image: quay.io/keycloak/keycloak:26.8.1@sha256:a78d6b79572168cb25886b80a8b5b8d4ed4390743e3eecb810538683e209dd6b
     restart: unless-stopped
-    command: ["start-dev", "--import-realm"]   # dev mode; imports the 3 realms on first boot
+    # Production mode (was start-dev until 2026-10-31). Imports the 3 realms on first boot only.
+    command: ["start", "--import-realm"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
