@@ -69,6 +69,12 @@
 	# the shared Keycloak — auth.<domain>
 	@auth host {$AUTH_DOMAIN}
 	handle @auth {
+		# The admin console and the master realm stay off the internet (2026-10-31
+		# audit: /admin answered 200 here). Admin goes over SSH: kcadm.sh inside the
+		# container, or ops/prod-apply.py, which talks to 127.0.0.1:8081 directly.
+		# Same rule as banco-starter's Caddyfile.
+		@kcadmin path /admin /admin/* /realms/master /realms/master/*
+		respond @kcadmin 404
 		reverse_proxy keycloak:8080
 	}
 
